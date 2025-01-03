@@ -1,0 +1,65 @@
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    ViewData["Title"] = "Inicio";
+}
+
+<!-- Hero Section -->
+<div class="hero d-flex justify-content-center">
+    <div class="content-box text-center d-flex flex-column flex-md-row align-items-center">
+        <div>
+            <h2 class="me-3">¡Bienvenido a Gestión de Pañol!</h2>
+            <p>Administra tus productos, familias y subfamilias de manera rápida y eficiente.</p>
+        </div>
+        <a href="/Item" class="ms-md-3 mt-3 mt-md-0">
+            <img src="~/images/logo.png" alt="Gestión de Pañol" style="height: 190px;">
+        </a>
+    </div>
+</div>
+
+<!-- Sección de Características -->
+<section class="container mt-5">
+    <div class="row text-center">
+        <div class="col-md-4 mb-4">
+            <div class="card p-4 shadow">
+                <h5 class="card-title">Familias, Subfamilias e Items</h5>
+                <p>Organiza y gestiona tus productos en familias, subfamilias e items con información relevante.</p>
+                <a href="/FamiliaSubFamilia/Index" class="btn btn-primary">Gestionar</a>
+            </div>
+        </div>
+        <div class="col-md-4 mb-4">
+            <div class="card p-4 shadow">
+                <h5 class="card-title">Personal</h5>
+                <p>Administra el personal y sus roles en la gestión de inventario.</p>
+                <a href="/Personal" class="btn btn-primary">Lista y Alta de Personal</a>
+            </div>
+        </div>
+        <div class="col-md-4 mb-4">
+            <div class="card p-4 shadow">
+                <h5 class="card-title">Proveedores</h5>
+                <p>Gestión de proveedores y sus contactos para mantener relaciones comerciales.</p>
+                <a href="/Proveedor" class="btn btn-primary">Lista y Alta de Proveedores</a>
+            </div>
+        </div>
+        <div class="col-md-4 mb-4">
+            <div class="card p-4 shadow">
+                <h5 class="card-title">Materiales Ingreso</h5>
+                <p>Registra y gestiona el ingreso de materiales al inventario.</p>
+                <a href="/Ingreso/Index" class="btn btn-primary">Registrar Ingreso</a>
+            </div>
+        </div>
+        <div class="col-md-4 mb-4">
+            <div class="card p-4 shadow">
+                <h5 class="card-title">Materiales Egreso</h5>
+                <p>Administra la salida de materiales del inventario de manera eficiente.</p>
+                <a href="/Salida/Index" class="btn btn-primary">Registrar Egreso</a>
+            </div>
+        </div>
+        <div class="col-md-4 mb-4">
+            <div class="card p-4 shadow">
+                <h5 class="card-title">Kardex</h5>
+                <p>Consulta los movimientos y registros de materiales en el inventario.</p>
+                <a href="/Kardex" class="btn btn-primary">Ver Kardex</a>
+            </div>
+        </div>
+    </div>
+</section>

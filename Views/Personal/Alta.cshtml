@@ -1,0 +1,89 @@
+@model Gestion_Compras.Models.Personal
+
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    ViewData["Title"] = "Alta de Personal";
+}
+
+<h3>Agregar Personal</h3>
+
+<form id="altaPersonalForm">
+    @Html.AntiForgeryToken()
+    <div class="mb-3">
+        <div class="col-md-6 col-lg-3">
+            <label for="nombreYApellido" class="form-label">Nombre y Apellido</label>
+            <input asp-for="NombreYApellido" class="form-control" id="nombreYApellido" />
+            <span asp-validation-for="NombreYApellido" class="text-danger"></span>
+        </div>
+        <div class="col-md-6 col-lg-3">
+            <label for="dni" class="form-label">DNI</label>
+            <input asp-for="DNI" class="form-control" id="dni" />
+            <span asp-validation-for="DNI" class="text-danger"></span>
+        </div>
+        <div class="col-md-6 col-lg-3">
+            <label for="sector" class="form-label">Sector</label>
+            <input asp-for="Sector" class="form-control" id="sector" />
+            <span asp-validation-for="Sector" class="text-danger"></span>
+        </div>
+    </div>
+    <button type="submit" class="btn btn-success">Guardar</button>
+    <a href="/Personal" class="btn btn-secondary">Cancelar</a>
+</form>
+
+<!-- Modal para Mensaje de Éxito -->
+<div class="modal fade" id="successModal" tabindex="-1" aria-labelledby="successModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title" id="successModalLabel">Personal Guardado</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body bg-light">
+                Personal guardado exitosamente.
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" onclick="window.location.href='/Personal'">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/5.1.3/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        $(document).ready(function () {
+            $("#altaPersonalForm").submit(function (e) {
+                e.preventDefault();
+
+                var personalData = {
+                    NombreYApellido: $("#nombreYApellido").val(),
+                    DNI: $("#dni").val(),
+                    Sector: $("#sector").val()
+                };
+
+                $.ajax({
+                    url: '/Personal/Create',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify(personalData),
+                    headers: {
+                        'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
+                    },
+                    success: function (response) {
+                        var successModal = new bootstrap.Modal(document.getElementById('successModal'), {
+                            keyboard: false
+                        });
+                        successModal.show();
+                    },
+                    error: function (xhr, status, errorThrown) {
+                        console.error('Error al guardar personal:', xhr.responseText);
+                        alert('Error al guardar personal: ' + xhr.responseText);
+                    }
+                });
+            });
+        });
+    </script>
+}

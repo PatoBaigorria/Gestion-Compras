@@ -1,0 +1,163 @@
+@model Gestion_Compras.ViewModels.FamiliaSubFamiliaViewModel
+
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    ViewData["Title"] = "Buscador de Items";
+}
+
+<div class="container mt-5">
+    <h2 class="text-center mb-4">Buscador de Items</h2>
+
+    <!-- Filtros de Búsqueda -->
+    <div class="row mb-3">
+        <div class="col-md-6 col-lg-2">
+            <label for="familiaSelect" class="form-label">Familia</label>
+            <select id="familiaSelect" name="FamiliaId" class="form-select">
+                <option value=""</option>
+                @foreach (var familia in Model.FamiliaList)
+                {
+                    <option value="@familia.Id">@familia.Descripcion</option>
+                }
+            </select>
+        </div>
+        <div class="col-md-6 col-lg-2">
+            <label for="subfamiliaSelect" class="form-label">Subfamilia</label>
+            <select id="subfamiliaSelect" name="SubFamiliaId" class="form-select">
+                <option value=""</option>
+            </select>
+        </div>
+        <div class="col-md-6 col-lg-8"> 
+            <label for="descripcionItem" class="form-label">Descripción Item</label> 
+            <div class="input-group"> 
+                <input type="text" id="descripcionItem" name="Descripcion" class="form-control"/> 
+                <button type="button" class="btn btn-primary" id="buscarItemsBtn"> 
+                    <i class="fas fa-search"></i> 
+                </button> 
+            </div> 
+        </div>
+    </div>
+
+    <!-- Resultados de la Búsqueda -->
+    <div class="row"> 
+        <div class="col"> 
+            <div class="table-responsive" style="height: 600px; overflow-y: auto;">
+                <table class="table table-striped table-bordered table-hover text-center table-sm"> 
+                    <thead class="table-light"> 
+                        <tr> 
+                            <th style="width: 80px;">Código</th> 
+                            <th style="width: 120px;">Familia</th> 
+                            <th style="width: 120px;">Subfamilia</th> 
+                            <th style="width: auto;">Descripción Items</th> 
+                            <th style="width: 80px;">Stock</th> 
+                            <th style="width: 100px;">Punto de Pedido</th> 
+                            <th style="width: 100px;">Precio</th>
+                            <th style="width: 70px;">Crítico</th>
+                            <th style="width: 70px;">Activo</th>
+                            <th style="width: 120px;">Unidad de Medida</th> 
+                        </tr> 
+                    </thead>
+                    <tbody id="resultadosBusqueda"> 
+                        <!-- Resultados irán aquí --> 
+                    </tbody> 
+                </table> 
+            </div>
+        </div> 
+    </div>
+</div>
+<style>
+    .table-responsive {
+        position: relative;
+    }
+
+    .table-header {
+        position: sticky;
+        top: 0;
+        z-index: 1020;
+        background-color: white;
+        /* Asegúrate de que el fondo sea blanco */
+    }
+    /* Reducir el tamaño de la letra en la tabla */ 
+    .table-sm td, 
+    .table-sm th { 
+        font-size: 0.9em; 
+    }
+</style>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            // Inicializar Select2 para los elementos de selección
+            $('#familiaSelect').select2();
+            
+
+            $('#subfamiliaSelect').select2();
+
+            // Cargar subfamilias al seleccionar una familia
+            $('#familiaSelect').change(function () {
+                const familiaId = $(this).val();
+                if (familiaId) {
+                    $.ajax({
+                        url: '/FamiliaSubFamilia/ObtenerSubfamilias/' + familiaId,
+                        type: 'GET',
+                        success: function (response) {
+                            $('#subfamiliaSelect').empty().append('<option value=""</option>');
+                            $.each(response, function (index, subfamilia) {
+                                $('#subfamiliaSelect').append(`<option value="${subfamilia.id}">${subfamilia.descripcion}</option>`);
+                            });
+                            $('#subfamiliaSelect').select2(); // Re-inicializar Select2
+                        },
+                        error: function (xhr, status, errorThrown) {
+                            console.error('Error al obtener subfamilias:', xhr.responseText);
+                        }
+                    });
+                } else {
+                    $('#subfamiliaSelect').empty().append('<option value=""</option>').select2(); // Re-inicializar Select2
+                }
+            });
+
+            // Manejar el botón de buscar
+            $('#buscarItemsBtn').click(function () {
+                const familiaId = $('#familiaSelect').val() || '';
+                const subFamiliaId = $('#subfamiliaSelect').val() || '';
+                const descripcion = $('#descripcionItem').val() || '';
+
+                $.ajax({
+                    url: '/Item/BuscarItems',
+                    type: 'GET',
+                    data: {
+                        familiaId: familiaId,
+                        subFamiliaId: subFamiliaId,
+                        descripcion: descripcion
+                    },
+                    success: function (response) {
+                        const resultados = $('#resultadosBusqueda');
+                        resultados.empty();
+
+                        $.each(response, function (index, item) {
+                            resultados.append(
+                                `<tr>
+                                    <td>${item.codigo}</td> 
+                                    <td>${item.familiaDescripcion || ''}</td> 
+                                    <td>${item.subFamiliaDescripcion || ''}</td> 
+                                    <td style="text-align: left">${item.descripcionItem}</td> 
+                                    <td>${item.stock !== null ? item.stock : ''}</td> 
+                                    <td>${item.puntoDePedido !== null ? item.puntoDePedido : ''}</td>
+                                    <td>${item.precio !== null ? item.precio : ''}</td>
+                                    <td><input type="checkbox" ${item.critico ? 'checked' : ''} disabled></td> 
+                                    <td><input type="checkbox" ${item.activo ? 'checked' : ''} disabled></td>
+                                    <td>${item.unidadDeMedidaAbreviatura || ''}</td>
+                                </tr>`
+                            );
+                        });
+                    },
+                    error: function (xhr, status, errorThrown) {
+                        console.error('Error al buscar items:', xhr.responseText);
+                    }
+                });
+            });
+        });
+    </script>
+}
+
+
+
