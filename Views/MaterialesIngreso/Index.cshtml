@@ -1,0 +1,76 @@
+@model IEnumerable<Gestion_Compras.Models.Ingreso>
+
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    ViewData["Title"] = "Lista de Ingresos";
+}
+
+<h3>Lista de Ingresos</h3>
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <a href="/Ingreso/AltaIngresos" class="btn btn-primary">Agregar Ingreso</a>
+    <input type="text" id="searchInput" placeholder="Buscar..." class="form-control" style="width: 250px;">
+</div>
+
+<div class="table-responsive" style="height: 600px; overflow-y: auto;">
+    <table id="dataTable" class="table table-striped table-bordered table-sm">
+        <thead class="table-header">
+            <tr>
+                <th style="width: 10%; text-align: center;">Código del Ítem</th>
+                <th style="width: 5%; text-align: center;">Cantidad</th>
+                <th style="width: 20%; text-align: center;">Proveedor</th>
+                <th style="width: 5%; text-align: center;">Remito</th>
+                <th style="width: 10%; text-align: center;">Orden de Compra</th>
+                <th style="width: 5%; text-align: center;">Pedido</th>
+                <th style="width: 5%; text-align: center;">Fecha</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var ingreso in Model)
+            {
+                <tr>
+                    <td>@ingreso.ItemCodigo</td>
+                    <td>@ingreso.CantidadIngreso</td>
+                    <td>@ingreso.Proveedor.RazonSocial</td>
+                    <td>@ingreso.Remito</td>
+                    <td>@ingreso.OrdenCompra</td>
+                    <td>@ingreso.Pedido</td>
+                    <td>@ingreso.Fecha.ToString("dd/MM/yyyy")</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+<style>
+    .table-responsive {
+        position: relative;
+    }
+
+    .table-header {
+        position: sticky;
+        top: 0;
+        z-index: 1020;
+        background-color: white;
+        /* Asegúrate de que el fondo sea blanco */
+    }
+     /* Reducir el tamaño de la letra en la tabla */ 
+    .table-sm td, 
+    .table-sm th { 
+        font-size: 0.9em; 
+    }
+</style>
+
+@section Scripts {
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script>
+        $(document).ready(function () {
+            $("#searchInput").on("keyup", function () {
+                var value = $(this).val().toLowerCase();
+                $("#dataTable tbody tr").filter(function () {
+                    $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
+                });
+            });
+        });
+    </script>
+}

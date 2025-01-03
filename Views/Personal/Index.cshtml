@@ -1,0 +1,128 @@
+@model IEnumerable<Gestion_Compras.Models.Personal>
+
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    ViewData["Title"] = "Lista de Personal";
+}
+
+<h3>Lista de Personal</h3>
+
+<!-- Contenedor para el Mensaje de Éxito -->
+<div id="successMessage" class="alert alert-success" style="display: none;" role="alert">
+    Personal eliminado exitosamente.
+</div>
+
+<!-- Botón de Agregar Personal arriba de la tabla -->
+<a href="/Personal/Alta" class="btn btn-primary mb-3">Agregar Personal</a>
+
+<div class="table-responsive" style="height: 600px; overflow-y: auto;">
+    <table class="table table-striped table-bordered table-sm">
+        <thead class="table-header">
+            <tr>
+                <th style="width: 30%; text-align: center;">Nombre y Apellido</th>
+                <th style="width: 30%; text-align: center;">DNI</th>
+                <th style="width: 30%; text-align: center;">Sector</th>
+                <th style="width: 5%; text-align: center;">Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var persona in Model)
+            {
+                <tr>
+                    <td>@persona.NombreYApellido</td>
+                    <td>@persona.DNI</td>
+                    <td>@persona.Sector</td>
+                    <td>
+                    <div class="d-flex justify-content-center">
+                        <button class="btn btn-danger btn-sm" title="Eliminar Personal"
+                            onclick="confirmDelete(@persona.Id)">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
+                    </div>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+<style>
+    .table-responsive {
+        position: relative;
+    }
+
+    .table-header {
+        position: sticky;
+        top: 0;
+        z-index: 1020;
+        background-color: white;
+        /* Asegúrate de que el fondo sea blanco */
+    }
+    /* Reducir el tamaño de la letra en la tabla */ 
+    .table-sm td, 
+    .table-sm th { 
+        font-size: 0.9em; 
+    }
+</style>
+<!-- Modal para Confirmación de Eliminación -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteModalLabel">Confirmar Eliminación</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                ¿Estás seguro de que deseas eliminar este registro de personal?
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-danger" id="confirmDeleteButton">Eliminar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/5.1.3/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        var deleteId = 0;
+
+        function confirmDelete(id) {
+            deleteId = id;
+            var deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'), {
+                keyboard: false
+            });
+            deleteModal.show();
+        }
+
+        document.getElementById('confirmDeleteButton').addEventListener('click', function () {
+            $.ajax({
+                url: '/Personal/Delete/' + deleteId,
+                type: 'DELETE',
+                success: function (response) {
+                    $('#deleteModal').modal('hide');
+                    showSuccessMessage(response.message);
+                    setTimeout(function () {
+                        location.reload();
+                    }, 1000); // Recargar la página después de 1 segundo
+                },
+                error: function (xhr, status, errorThrown) {
+                    console.error('Error al eliminar personal:', xhr.responseText);
+                    alert('Error al eliminar personal: ' + xhr.responseText);
+                }
+            });
+        });
+
+        function showSuccessMessage(message) {
+            var successMessage = document.getElementById('successMessage');
+            successMessage.textContent = message;
+            successMessage.style.display = 'block';
+            setTimeout(function () {
+                successMessage.style.display = 'none';
+            }, 20000); // El mensaje desaparecerá después de 5 segundos
+        }
+    </script>
+}

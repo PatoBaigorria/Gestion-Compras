@@ -1,0 +1,28 @@
+@model IEnumerable<Gestion_Compras.Models.Proveedor>
+
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    ViewData["Title"] = "Lista de Proveedores";
+}
+
+<h3>Lista de Proveedores</h3>
+
+<table class="table table-striped table-bordered">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Razón Social</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var proveedor in Model)
+        {
+            <tr>
+                <td>@proveedor.Id</td>
+                <td>@proveedor.RazonSocial</td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<a href="/Proveedor/Alta" class="btn btn-primary">Agregar Proveedor</a>

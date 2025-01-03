@@ -1,0 +1,77 @@
+@model Gestion_Compras.Models.Proveedor
+
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    ViewData["Title"] = "Alta de Proveedores";
+}
+
+<h3>Agregar Proveedor</h3>
+
+<form id="altaProveedorForm">
+    @Html.AntiForgeryToken()
+    <div class="mb-3">
+        <div class="col-md-6 col-lg-3">
+            <label for="razonSocial" class="form-label">Razón Social</label>
+            <input asp-for="RazonSocial" class="form-control" id="razonSocial" />
+            <span asp-validation-for="RazonSocial" class="text-danger"></span>
+        </div>
+    </div>
+    <button type="submit" class="btn btn-success">Guardar</button>
+    <a href="/Proveedor" class="btn btn-secondary">Cancelar</a>
+</form>
+
+<!-- Modal para Mensaje de Éxito -->
+<div class="modal fade" id="successModal" tabindex="-1" aria-labelledby="successModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title" id="successModalLabel">Proveedor Guardado</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body bg-light">
+                Proveedor guardado exitosamente.
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" onclick="window.location.href='/Proveedor'">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/5.1.3/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        $(document).ready(function () {
+            $("#altaProveedorForm").submit(function (e) {
+                e.preventDefault();
+
+                var proveedorData = {
+                    RazonSocial: $("#razonSocial").val()
+                };
+
+                $.ajax({
+                    url: '/Proveedor/Create',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify(proveedorData),
+                    headers: {
+                        'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
+                    },
+                    success: function (response) {
+                        var successModal = new bootstrap.Modal(document.getElementById('successModal'), {
+                            keyboard: false
+                        });
+                        successModal.show();
+                    },
+                    error: function (xhr, status, errorThrown) {
+                        console.error('Error al guardar proveedor:', xhr.responseText);
+                        alert('Error al guardar proveedor: ' + xhr.responseText);
+                    }
+                });
+            });
+        });
+    </script>
+}

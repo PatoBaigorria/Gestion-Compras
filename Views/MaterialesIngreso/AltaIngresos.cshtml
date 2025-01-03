@@ -1,0 +1,330 @@
+@model Gestion_Compras.Models.Ingreso
+@using Gestion_Compras.Models
+
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    ViewData["Title"] = "Registrar Ingresos";
+    var proveedorList = ViewBag.ProveedorList as List<Proveedor>;
+    var itemList = ViewBag.ItemList as List<Item>;
+}
+
+<h3>Registrar Ingresos</h3>
+
+<div id="successMessageContainer" class="mb-3"></div> <!-- Contenedor para el mensaje de éxito -->
+<div id="errorMessageContainer" class="mb-3"></div> <!-- Contenedor para el mensaje de error -->
+
+<!-- Modal de Error -->
+<div class="modal fade" id="errorModal" tabindex="-1" aria-labelledby="errorModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="errorModalLabel">Error</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="errorModalBody">
+                <!-- Mensaje de error -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<form id="ingresoForm" class="row g-2">
+    @Html.AntiForgeryToken()
+    <div class="col-md-3">
+        <label for="itemCodigo" class="form-label">Código del Ítem</label>
+        <input type="text" class="form-control form-control-sm" id="itemCodigo" oninput="limpiarError('itemCodigo')" />
+        <div id="itemCodigoError" class="text-danger"></div>
+    </div>
+    <div class="col-md-3">
+        <label for="cantidadIngreso" class="form-label">Cantidad</label>
+        <input type="number" class="form-control form-control-sm" id="cantidadIngreso"
+            oninput="limpiarError('cantidadIngreso')" />
+        <div id="cantidadIngresoError" class="text-danger"></div>
+    </div>
+    <div class="col-md-3">
+        <label for="proveedorId" class="form-label">Proveedor</label>
+        <select class="form-control form-control-sm" id="proveedorId"
+            onchange="limpiarError('proveedorId'); hacerNoEditable(this)">
+            <option value="">Selecciona Proveedor</option> <!-- Opción por defecto -->
+            @foreach (var proveedor in proveedorList)
+            {
+                <option value="@proveedor.Id">@proveedor.RazonSocial</option>
+            }
+        </select>
+        <div id="proveedorIdError" class="text-danger"></div>
+    </div>
+    <div class="col-md-3">
+        <label for="remito" class="form-label">Remito</label>
+        <input type="text" class="form-control form-control-sm" id="remito" onblur="hacerNoEditable(this)"
+            oninput="limpiarError('remito')" />
+        <div id="remitoError" class="text-danger"></div>
+    </div>
+    <div class="col-md-3">
+        <label for="ordenCompra" class="form-label">Orden de Compra</label>
+        <input type="number" class="form-control form-control-sm" id="ordenCompra" onblur="hacerNoEditable(this)"
+            oninput="limpiarError('ordenCompra')" />
+        <div id="ordenCompraError" class="text-danger"></div>
+    </div>
+    <div class="col-md-3">
+        <label for="pedido" class="form-label">Pedido</label>
+        <input type="number" class="form-control form-control-sm" id="pedido" onblur="hacerNoEditable(this)"
+            oninput="limpiarError('pedido')" />
+        <div id="pedidoError" class="text-danger"></div>
+    </div>
+    <div class="col-md-3">
+        <label for="fecha" class="form-label">Fecha</label>
+        <input type="date" class="form-control form-control-sm" id="fecha" onblur="hacerNoEditable(this)"
+            oninput="limpiarError('fecha')" />
+        <div id="fechaError" class="text-danger"></div>
+    </div>
+    <div class="col-md-3 d-flex align-items-end">
+        <button type="button" class="btn btn-success" onclick="agregarIngreso()">Agregar Ingreso</button>
+    </div>
+</form>
+
+<h4 class="mt-4">Lista de Ingresos</h4>
+
+<table class="table table-striped table-bordered">
+    <thead class="text-center">
+        <tr>
+            <th>Código del Ítem</th>
+            <th>Descripción</th>
+            <th>Cantidad</th>
+            <th>Proveedor</th>
+            <th>Remito</th>
+            <th>Orden de Compra</th>
+            <th>Pedido</th>
+            <th>Fecha</th>
+            <th>Acción</th>
+        </tr>
+    </thead>
+    <tbody id="listaIngresos"></tbody>
+</table>
+
+<button type="button" class="btn btn-primary" onclick="registrarIngresos()">Registrar Ingresos</button>
+<a href="/Ingreso/Index" class="btn btn-secondary">Cancelar</a>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/5.1.3/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/js/all.min.js"></script>
+    <!-- Incluir FontAwesome para los íconos -->
+
+    <script>
+        var ingresos = [];
+        var fechaFijada = ""; // Variable para mantener la fecha fijada
+        var proveedorFijado = ""; // Variable para mantener el proveedor fijo
+        var remitoFijado = ""; // Variable para mantener el remito fijo
+        var ordenCompraFijada = ""; // Variable para mantener la orden de compra fija
+        var pedidoFijado = ""; // Variable para mantener el pedido fijo
+        var items = @Html.Raw(Json.Serialize(ViewBag.ItemList));
+        console.log("Estructura de los ítems cargados:", items.slice(0, 5)); // Verificar la estructura de los primeros ítems
+
+        items.forEach(item => console.log("Item:", item, "codigo:", item.codigo)); // Verificar el código de cada ítem
+
+        function mostrarError(campo, mensaje) {
+            document.getElementById(campo + "Error").textContent = mensaje;
+        }
+
+        function mostrarMensajeError(mensaje) {
+            var errorMessageContainer = document.getElementById("errorMessageContainer");
+            errorMessageContainer.innerHTML = `<div class="alert alert-danger">${mensaje}</div>`;
+            setTimeout(function () {
+                errorMessageContainer.innerHTML = "";
+            }, 5000); // El mensaje desaparecerá después de 5 segundos
+        }
+
+        function mostrarMensajeExito(mensaje) {
+            var successMessageContainer = document.getElementById("successMessageContainer");
+            successMessageContainer.innerHTML = `<div class="alert alert-success">${mensaje}</div>`;
+            setTimeout(function () {
+                successMessageContainer.innerHTML = "";
+            }, 5000); // El mensaje desaparecerá después de 5 segundos
+        }
+
+        function limpiarErrores() {
+            ["itemCodigo", "cantidadIngreso", "proveedorId", "remito", "ordenCompra", "pedido", "fecha"].forEach(function (campo) {
+                document.getElementById(campo + "Error").textContent = "";
+            });
+        }
+
+        function limpiarError(campo) {
+            document.getElementById(campo + "Error").textContent = "";
+        }
+
+        function hacerNoEditable(input) {
+            var campo = input.id;
+            if (campo === "fecha" && fechaFijada === "" && input.value !== "") {
+                fechaFijada = input.value; // Fijar la fecha una vez
+                input.setAttribute("readonly", true);
+                input.style.backgroundColor = "#e9ecef"; // Cambiar el color de fondo a gris claro
+            } else if (campo === "proveedorId" && proveedorFijado === "" && input.value !== "") {
+                proveedorFijado = input.value; // Fijar el proveedor una vez
+                input.setAttribute("disabled", true);
+                input.style.backgroundColor = "#e9ecef"; // Cambiar el color de fondo a gris claro
+            } else if (campo === "remito" && remitoFijado === "" && input.value.length > 1) {
+                remitoFijado = input.value; // Fijar el remito una vez
+                input.setAttribute("readonly", true);
+                input.style.backgroundColor = "#e9ecef"; // Cambiar el color de fondo a gris claro
+            } else if (campo === "ordenCompra" && ordenCompraFijada === "" && input.value.length > 1) {
+                ordenCompraFijada = input.value; // Fijar la orden de compra una vez
+                input.setAttribute("readonly", true);
+                input.style.backgroundColor = "#e9ecef"; // Cambiar el color de fondo a gris claro
+            } else if (campo === "pedido" && pedidoFijado === "" && input.value.length > 1) {
+                pedidoFijado = input.value; // Fijar el pedido una vez
+                input.setAttribute("readonly", true);
+                input.style.backgroundColor = "#e9ecef"; // Cambiar el color de fondo a gris claro
+            }
+        }
+
+        function limpiarCampos() {
+            document.getElementById("itemCodigo").value = "";
+            document.getElementById("cantidadIngreso").value = "";
+            // No limpiar la fecha, proveedor, ordenCompra, pedido y remito para mantenerlos fijos
+        }
+
+        function formatearFecha(fecha) {
+            var partes = fecha.split("-");
+            return `${partes[2]}/${partes[1]}/${partes[0]}`;
+        }
+
+        function agregarIngreso() {
+            limpiarErrores();
+
+            var itemCodigo = document.getElementById("itemCodigo").value.trim();
+            var cantidadIngreso = parseInt(document.getElementById("cantidadIngreso").value);
+            var proveedorId = document.getElementById("proveedorId").value;
+            var remito = document.getElementById("remito").value.trim();
+            var ordenCompra = parseInt(document.getElementById("ordenCompra").value);
+            var pedido = parseInt(document.getElementById("pedido").value);
+            var fecha = document.getElementById("fecha").value;
+
+            if (itemCodigo === "") {
+                mostrarError("itemCodigo", "Por favor, ingresa un código de ítem válido.");
+                return;
+            }
+
+            if (!cantidadIngreso || cantidadIngreso <= 0) {
+                mostrarError("cantidadIngreso", "Por favor, ingresa una cantidad válida.");
+                return;
+            }
+
+            if (proveedorId === "") {
+                mostrarError("proveedorId", "Por favor, selecciona un proveedor.");
+                return;
+            }
+
+            if (remito === "") {
+                mostrarError("remito", "Por favor, ingresa un remito.");
+                return;
+            }
+
+            if (!ordenCompra || ordenCompra <= 0 || ordenCompra > 2147483647) {
+                mostrarError("ordenCompra", "Por favor, ingresa una orden de compra válida.");
+                return;
+            }
+
+            if (!pedido || pedido <= 0 || pedido > 2147483647) {
+                mostrarError("pedido", "Por favor, ingresa un pedido válido.");
+                return;
+            }
+
+            if (fecha === "") {
+                mostrarError("fecha", "Por favor, selecciona una fecha.");
+                return;
+            }
+
+            // Verificar si el ítem existe
+            var item = items.find(i => i.codigo === itemCodigo);
+            if (!item) {
+                mostrarModalError("El código del ítem no existe.");
+                return;
+            }
+
+            var descripcion = item ? item.descripcion : "Descripción no encontrada";
+            var proveedorText = document.getElementById("proveedorId").options[document.getElementById("proveedorId").selectedIndex].text;
+
+            ingresos.push({
+                ItemCodigo: itemCodigo,
+                CantidadIngreso: cantidadIngreso,
+                ProveedorId: parseInt(proveedorId),
+                Remito: remito,
+                OrdenCompra: ordenCompra,
+                Pedido: pedido,
+                Fecha: fecha
+            });
+
+            limpiarCampos();
+
+            var fechaFormateada = formatearFecha(fecha);
+
+            var listaIngresos = document.getElementById("listaIngresos");
+            var tr = document.createElement("tr");
+            tr.innerHTML = `<td>${itemCodigo}</td><td>${descripcion}</td><td>${cantidadIngreso}</td><td>${proveedorText}</td><td>${remito}</td><td>${ordenCompra}</td><td>${pedido}</td><td>${fechaFormateada}</td><td class="text-center align-middle"><button class="btn btn-danger btn-sm" title="Borrar Fila" onclick="borrarFila(this)"><i class="fas fa-trash-alt"></i></button></td>`;
+            listaIngresos.appendChild(tr);
+        }
+
+        function borrarFila(button) {
+            var row = button.parentNode.parentNode;
+            row.parentNode.removeChild(row);
+
+            var itemCodigo = row.cells[0].textContent;
+            ingresos = ingresos.filter(s => s.ItemCodigo !== itemCodigo);
+        }
+
+        async function registrarIngresos() {
+            if (ingresos.length === 0) {
+                mostrarMensajeError("No hay items en la lista para registrar.");
+                return;
+            }
+            const ingresosDto = ingresos.map(i => ({ 
+                ItemCodigo: i.ItemCodigo, 
+                CantidadIngreso: i.CantidadIngreso, 
+                PersonalId: i.PersonalId, 
+                Fecha: i.Fecha, 
+                ItemId: i.ItemId,
+                Remito: i.Remito,
+                OrdenCompra: i.OrdenCompra, 
+                Pedido: i.Pedido,
+                ProveedorId: i.ProveedorId
+            }));
+            console.log("Ingresos a registrar:", ingresosDto); // Verificar la estructura antes de enviar
+
+            $.ajax({
+                url: '/Ingreso/Create',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(ingresosDto),
+                headers: {
+                    'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
+                },
+                success: function (response) {
+                    mostrarMensajeExito(response.message);
+                    setTimeout(function () {
+                        location.reload();
+                    }, 1000);
+                },
+                error: function (xhr, status, errorThrown) {
+                    console.error('Error al registrar ingresos:', xhr.responseText);
+                    alert('Error al registrar ingresos: ' + xhr.responseText);
+                }
+            });
+        }
+
+        function mostrarModalError(mensaje) {
+            document.getElementById("errorModalBody").innerText = mensaje;
+            var errorModal = new bootstrap.Modal(document.getElementById('errorModal'), {});
+            errorModal.show();
+
+            // Limpiar campos al cerrar el modal 
+            errorModal._element.addEventListener('hidden.bs.modal', function () {
+                limpiarCampos();
+            });
+        }
+    </script>
+
+}
