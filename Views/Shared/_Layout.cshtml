@@ -5,6 +5,7 @@
 
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -21,18 +22,22 @@
             min-height: 100vh;
             margin: 0;
         }
+
         .hero {
             background: linear-gradient(90deg, #007bff 0%, #00bcd4 100%);
             color: white;
             padding: 2rem 0;
             text-align: center;
         }
+
         .features .card {
             transition: transform 0.3s;
         }
+
         .features .card:hover {
             transform: scale(1.05);
         }
+
         footer {
             background-color: #343a40;
             color: white;
@@ -40,17 +45,21 @@
             padding: 1rem;
             margin-top: auto;
         }
+
         footer a {
             color: #00bcd4;
         }
+
         footer a:hover {
             text-decoration: underline;
         }
+
         .content {
             flex: 1 0 auto;
         }
     </style>
 </head>
+
 <body>
 
     <!-- Barra de Navegación -->
@@ -89,23 +98,41 @@
                     <li class="nav-item">
                         <a class="nav-link" href="/Kardex">Kardex</a>
                     </li>
-                    @if (SignInManager.IsSignedIn(User))
+                    @if (User.Identity.IsAuthenticated)
                     {
                         var givenName = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.GivenName)?.Value;
                         var surname = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Surname)?.Value;
+
                         <li class="nav-item">
                             <span class="nav-link">Hola, @givenName @surname</span>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" asp-controller="Autenticacion" asp-action="Logout">Cerrar sesión</a>
+                            <a class="nav-link" href="/Autenticacion/Logout">Cerrar sesión</a>
                         </li>
+
+                        <!-- Prueba de diagnóstico -->
+                        <li class="nav-item">
+                            <span class="nav-link text-success">Autenticado como: @User.Identity.Name</span>
+                        </li>
+                        @foreach (var claim in User.Claims)
+                        {
+                            <li class="nav-item">
+                                <span class="nav-link">@claim.Type: @claim.Value</span>
+                            </li>
+                        }
                     }
                     else
                     {
                         <li class="nav-item">
                             <a class="nav-link" href="/Autenticacion/Login">Iniciar sesión</a>
                         </li>
+
+                        <!-- Prueba de diagnóstico -->
+                        <li class="nav-item">
+                            <span class="nav-link text-danger">No autenticado</span>
+                        </li>
                     }
+
                 </ul>
             </div>
         </div>
@@ -133,4 +160,5 @@
 
     @RenderSection("Scripts", required: false) <!-- Sección Scripts personalizada -->
 </body>
+
 </html>

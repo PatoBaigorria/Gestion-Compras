@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.Authorization;
 
 namespace Gestion_Compras.Controllers
 {
-    [Authorize] // Aplica a todo el controlador
+    [Route("Autenticacion")]
     public class AutenticacionController : Controller
     {
         private readonly DataContext context;
@@ -20,15 +20,16 @@ namespace Gestion_Compras.Controllers
 
         // Permitir acceso anónimo a la vista de login
         [AllowAnonymous]
-        [HttpGet]
+        [HttpGet("Login")]
         public IActionResult Login()
         {
             return View();
         }
 
+
         // Permitir acceso anónimo al post de login
         [AllowAnonymous]
-        [HttpPost]
+        [HttpPost("Login")]
         public async Task<IActionResult> Login(string username, string password)
         {
             var usuario = context.Usuario.SingleOrDefault(u => u.UsuarioLogin == username);
@@ -66,7 +67,7 @@ namespace Gestion_Compras.Controllers
 
         // Permitir acceso anónimo a la vista de registro
         [AllowAnonymous]
-        [HttpGet]
+        [HttpGet("Signup")]
         public IActionResult Signup()
         {
             return View();
@@ -74,7 +75,7 @@ namespace Gestion_Compras.Controllers
 
         // Permitir acceso anónimo al post de registro
         [AllowAnonymous]
-        [HttpPost]
+        [HttpPost("Signup")]
         public async Task<IActionResult> Signup(Usuario usuario)
         {
             if (ModelState.IsValid)
@@ -90,7 +91,7 @@ namespace Gestion_Compras.Controllers
         }
 
         // Proteger el método de logout
-        [HttpGet]
+        [HttpGet("Logout")]
         public async Task<IActionResult> Logout()
         {
             await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
@@ -104,7 +105,7 @@ namespace Gestion_Compras.Controllers
             return View();
         }
 
-        [HttpGet]
+        [HttpGet("CambiarPassword/{id}")]
         public IActionResult CambiarPassword(int id)
         {
             var usuario = context.Usuario.Find(id);
@@ -115,7 +116,7 @@ namespace Gestion_Compras.Controllers
             return View(usuario);
         }
 
-        [HttpPost]
+        [HttpPost("CambiarPassword/{id}")]
         public async Task<IActionResult> CambiarPassword(int id, string newPassword)
         {
             var usuario = context.Usuario.Find(id);

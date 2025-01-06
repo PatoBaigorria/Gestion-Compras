@@ -3,6 +3,7 @@ using Gestion_Compras.Models;
 using Microsoft.EntityFrameworkCore;
 using Gestion_Compras.ViewModels;
 using Newtonsoft.Json;
+using Microsoft.AspNetCore.Authorization;
 
 
 namespace Gestion_Compras.Controllers
