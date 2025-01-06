@@ -1,20 +1,19 @@
-using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.IdentityModel.Tokens;
 using Gestion_Compras.Models;
 using Microsoft.OpenApi.Models;
-using System.Text;
+using Gestion_Compras.Filters;
 using Newtonsoft.Json.Converters;
 using System.Diagnostics;
-using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Identity;
 
 var builder = WebApplication.CreateBuilder(args);
 
-/* Código para hashear la contraseña 
-string password = "1234"; 
+/*Código para hashear la contraseña 
+string password = "123"; 
 string hashedPassword = BCrypt.Net.BCrypt.HashPassword(password); 
 Console.WriteLine($"Contraseña hasheada: {hashedPassword}");*/
+
 
 // Configurar servicios de Identity 
 builder.Services.AddIdentity<IdentityUser, IdentityRole>()
@@ -30,52 +29,20 @@ builder.Services.AddControllers()
         options.SerializerSettings.Converters.Add(new StringEnumConverter());
     });
 
-builder.Services.AddControllersWithViews();
+builder.Services.AddControllersWithViews(options =>
+{
+    options.Filters.Add(new UserNameFilter()); // Registrar el filtro de acción globalmente
+});
 
 builder.WebHost.UseUrls("http://localhost:5001", "https://localhost:5002");
 
-// Configuración de autenticación con JWT y cookies
-builder.Services.AddAuthentication(options =>
-    {
-        options.DefaultAuthenticateScheme = CookieAuthenticationDefaults.AuthenticationScheme;
-        options.DefaultChallengeScheme = CookieAuthenticationDefaults.AuthenticationScheme;
-        options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
-    })
-    .AddJwtBearer(options =>
-    {
-        options.TokenValidationParameters = new TokenValidationParameters
-        {
-            ValidateIssuer = true,
-            ValidateAudience = true,
-            ValidateLifetime = true,
-            ValidateIssuerSigningKey = true,
-            ValidIssuer = builder.Configuration["TokenAuthentication:Issuer"],
-            ValidAudience = builder.Configuration["TokenAuthentication:Audience"],
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(
-                builder.Configuration["TokenAuthentication:SecretKey"])),
-        };
-        options.Events = new JwtBearerEvents
-        {
-            OnMessageReceived = context =>
-            {
-                // Leer el token desde el query string
-                var accessToken = context.Request.Query["access_token"];
-                var path = context.HttpContext.Request.Path;
-                if (!string.IsNullOrEmpty(accessToken) &&
-                    (path.StartsWithSegments("/chatsegurohub") ||
-                    path.StartsWithSegments("/agentes/reset") ||
-                    path.StartsWithSegments("/agentes/cambiarpassword")))
-                {
-                    context.Token = accessToken;
-                }
-                return Task.CompletedTask;
-            }
-        };
-    })
+// Configuración de autenticación con cookies
+builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>
     {
         options.LoginPath = "/Autenticacion/Login";
         options.LogoutPath = "/Autenticacion/Logout";
+        options.AccessDeniedPath = "/Autenticacion/AccessDenied";
     });
 
 var serverVersion = ServerVersion.AutoDetect("Server=localhost;User=root;Password=;Database=GestionComprasP;SslMode=none");
@@ -107,6 +74,15 @@ builder.Logging.SetMinimumLevel(LogLevel.Information);
 
 var app = builder.Build();
 
+
+
+app.UseHttpsRedirection();
+app.UseStaticFiles();
+app.UseCors(x => x.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
+app.UseRouting();
+app.UseAuthentication();
+app.UseAuthorization();
+
 if (app.Environment.IsDevelopment())
 {
     app.UseDeveloperExceptionPage();
@@ -116,32 +92,6 @@ else
     app.UseExceptionHandler("/Home/Error");
     app.UseHsts();
 }
-
-app.UseHttpsRedirection();
-
-app.Use(async (context, next) =>
-{
-    try
-    {
-        await next.Invoke();
-    }
-    catch (Exception ex)
-    {
-        Console.WriteLine($"Exception: {ex.Message}");
-        throw;
-    }
-});
-
-app.UseStaticFiles();
-
-app.UseCors(x => x.AllowAnyOrigin()
-                .AllowAnyMethod()
-                .AllowAnyHeader());
-
-app.UseRouting();
-
-app.UseAuthentication();
-app.UseAuthorization();
 
 app.MapControllerRoute(
     name: "proveedor",
