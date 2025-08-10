@@ -6,11 +6,18 @@
 }
 
 <div class="container mt-5">
+<div class="container-custom mt-5">
     <h2 class="text-center mb-4">Buscador de Items</h2>
 
     <!-- Filtros de Búsqueda -->
     <div class="row mb-3">
-        <div class="col-md-6 col-lg-2">
+        <div class="col-md-4 col-lg-2">
+            <label for="codigoItem" class="form-label">Código</label> 
+            <div class="input-group"> 
+                <input type="text" id="codigoItem" name="Codigo" class="form-control" maxlength="10"/> 
+            </div>
+        </div>
+        <div class="col-md-4 col-lg-2">
             <label for="familiaSelect" class="form-label">Familia</label>
             <select id="familiaSelect" name="FamiliaId" class="form-select">
                 <option value=""</option>
@@ -20,13 +27,13 @@
                 }
             </select>
         </div>
-        <div class="col-md-6 col-lg-2">
+        <div class="col-md-4 col-lg-2">
             <label for="subfamiliaSelect" class="form-label">Subfamilia</label>
             <select id="subfamiliaSelect" name="SubFamiliaId" class="form-select">
                 <option value=""</option>
             </select>
         </div>
-        <div class="col-md-6 col-lg-8"> 
+        <div class="col-md-12 col-lg-6"> 
             <label for="descripcionItem" class="form-label">Descripción Item</label> 
             <div class="input-group"> 
                 <input type="text" id="descripcionItem" name="Descripcion" class="form-control"/> 
@@ -45,15 +52,16 @@
                     <thead class="table-light"> 
                         <tr> 
                             <th style="width: 80px;">Código</th> 
-                            <th style="width: 120px;">Familia</th> 
-                            <th style="width: 120px;">Subfamilia</th> 
-                            <th style="width: auto;">Descripción Items</th> 
+                            <th style="width: 12%;">Familia</th> 
+                            <th style="width: 15%;">Subfamilia</th> 
+                            <th style="width: 32%;">Descripción Items</th> 
                             <th style="width: 80px;">Stock</th> 
-                            <th style="width: 100px;">Punto de Pedido</th> 
-                            <th style="width: 100px;">Precio</th>
+                            <th style="width: 150px;">Punto de Pedido</th>
+                            <th style="width: 180px;">Unidad de Medida</th> 
+                            <th style="width: 90px;">Precio</th>
                             <th style="width: 70px;">Crítico</th>
                             <th style="width: 70px;">Activo</th>
-                            <th style="width: 120px;">Unidad de Medida</th> 
+                            <th style="width: 80px;">Ajuste</th>
                         </tr> 
                     </thead>
                     <tbody id="resultadosBusqueda"> 
@@ -65,6 +73,15 @@
     </div>
 </div>
 <style>
+    .container-custom {
+        width: 100%;
+        padding-right: 15px;
+        padding-left: 15px;
+        margin-right: auto;
+        margin-left: auto;
+        max-width: 1400px; /* Un poco más ancho que el container estándar (1200px) */
+    }
+
     .table-responsive {
         position: relative;
     }
@@ -117,6 +134,7 @@
 
             // Manejar el botón de buscar
             $('#buscarItemsBtn').click(function () {
+                const codigo = $('#codigoItem').val() || '';
                 const familiaId = $('#familiaSelect').val() || '';
                 const subFamiliaId = $('#subfamiliaSelect').val() || '';
                 const descripcion = $('#descripcionItem').val() || '';
@@ -125,6 +143,7 @@
                     url: '/Item/BuscarItems',
                     type: 'GET',
                     data: {
+                        codigo: codigo,
                         familiaId: familiaId,
                         subFamiliaId: subFamiliaId,
                         descripcion: descripcion
@@ -142,10 +161,11 @@
                                     <td style="text-align: left">${item.descripcionItem}</td> 
                                     <td>${item.stock !== null ? item.stock : ''}</td> 
                                     <td>${item.puntoDePedido !== null ? item.puntoDePedido : ''}</td>
+                                    <td>${item.unidadDeMedidaAbreviatura || ''}</td>
                                     <td>${item.precio !== null ? item.precio : ''}</td>
                                     <td><input type="checkbox" ${item.critico ? 'checked' : ''} disabled></td> 
                                     <td><input type="checkbox" ${item.activo ? 'checked' : ''} disabled></td>
-                                    <td>${item.unidadDeMedidaAbreviatura || ''}</td>
+                                    <td><button type="button" class="btn btn-sm btn-outline-primary" data-item-id="${item.id}" title="Ajustar Stock"><i class="fas fa-cog"></i></button></td>
                                 </tr>`
                             );
                         });
