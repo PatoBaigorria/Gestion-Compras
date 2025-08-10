@@ -36,9 +36,14 @@ namespace Gestion_Compras.Controllers
 
 
         [HttpGet("BuscarItems")]
-        public async Task<ActionResult<IEnumerable<object>>> BuscarItems(int? familiaId, int? subFamiliaId, string descripcion = null)
+        public async Task<ActionResult<IEnumerable<object>>> BuscarItems(string codigo = null, int? familiaId = null, int? subFamiliaId = null, string descripcion = null)
         {
             var query = context.Item.AsQueryable();
+
+            if (!string.IsNullOrEmpty(codigo))
+            {
+                query = query.Where(i => i.Codigo == codigo);
+            }
 
             if (familiaId.HasValue)
             {
