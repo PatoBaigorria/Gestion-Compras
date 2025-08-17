@@ -60,43 +60,43 @@
 <body>
 
     <!-- Barra de Navegación -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark menu-container">
+    <nav class="navbar navbar-expand-lg navbar-dark menu-container" style="background: linear-gradient(90deg, #007bff 0%, #00bcd4 100%);">
         <div class="container">
-            <a class="navbar-brand" href="/">Gestión de Pañol</a>
+            <a class="navbar-brand" href="/" style="color: white !important;">Gestión de Pañol</a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarResponsive">
                 <span class="navbar-toggler-icon"></span>
             </button>
 
             <div class="collapse navbar-collapse" id="navbarResponsive">
-                <ul class="navbar-nav ms-auto">
+                <ul class="navbar-nav ms-auto" style="color: white !important;">
                     <li class="nav-item">
-                        <a class="nav-link" href="/">Inicio</a>
+                        <a class="nav-link" href="/" title="Página Principal del Sistema" style="color: white !important;">Inicio</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="/FamiliaSubFamilia/Index">Familias-Subfamilias-Items</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/Item/Buscador" target="_blank">Buscador Items</a>
+                        <a class="nav-link" href="/FamiliaSubFamilia/Index" title="Gestión de Familias, Subfamilias e Items" style="color: white !important;">Maestro</a>
                     </li>
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" id="materialesDropdown" role="button"
-                            data-bs-toggle="dropdown" aria-expanded="false"> Movimientos </a>
+                            data-bs-toggle="dropdown" aria-expanded="false" title="Movimientos de Inventario" style="color: white !important;"> Movimientos </a>
                         <ul class="dropdown-menu" aria-labelledby="materialesDropdown">
-                            <li><a class="dropdown-item" href="/Ingreso/Index">Ingreso</a></li>
-                            <li><a class="dropdown-item" href="/Salida/Index">Egreso</a></li>
+                            <li><a class="dropdown-item" href="/Ingreso/Index" title="Registrar Ingresos de Materiales">Ingreso</a></li>
+                            <li><a class="dropdown-item" href="/Salida/Index" title="Registrar Salidas de Materiales">Egreso</a></li>
                         </ul>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/Item/Buscador" target="_blank" title="Buscar y Consultar Items" style="color: white !important;">Items</a>
+                    </li>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="/Ajuste/Index">Ajustes</a>
+                        <a class="nav-link" href="/Ajuste/Index" title="Realizar Ajustes de Stock" style="color: white !important;">Ajustes</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="/Personal">Lista-Alta Personal</a>
+                        <a class="nav-link" href="/Personal" title="Lista y Alta de Personal" style="color: white !important;">Personal</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="/Proveedor">Lista-Alta Proveedores</a>
+                        <a class="nav-link" href="/Proveedor" title="Lista y Alta de Proveedores" style="color: white !important;">Proveedores</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="/Kardex">Kardex</a>
+                        <a class="nav-link" href="/Kardex" title="Historial de Movimientos de Stock" style="color: white !important;">Kardex</a>
                     </li>
                     @if (User.Identity.IsAuthenticated)
                     {
@@ -104,16 +104,16 @@
                         var surname = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Surname)?.Value;
 
                         <li class="nav-item">
-                            <span class="nav-link">Bienvenido, @givenName @surname</span>
+                            <span class="nav-link" style="color: white !important;"><i class="fas fa-user-circle"></i> @givenName @surname</span>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="/Autenticacion/Logout">Cerrar sesión</a>
+                            <a class="nav-link" href="/Autenticacion/Logout" title="Cerrar Sesión" style="color: white !important;"><i class="fas fa-power-off"></i></a>
                         </li>
                     }
                     else
                     {
                         <li class="nav-item">
-                            <a class="nav-link" href="/Autenticacion/Login">Iniciar sesión</a>
+                            <a class="nav-link" href="/Autenticacion/Login" style="color: white !important;">Iniciar sesión</a>
                         </li>
                     }
 

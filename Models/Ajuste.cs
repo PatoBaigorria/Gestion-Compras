@@ -18,5 +18,9 @@ namespace Gestion_Compras.Models
         public string Observaciones { get; set; }
 
         public DateOnly FechaAjuste { get; set; }
+
+        // Propiedad de navegación para Item (no mapeada a la base de datos)
+        [NotMapped]
+        public Item? Item { get; set; }
 	}
 }

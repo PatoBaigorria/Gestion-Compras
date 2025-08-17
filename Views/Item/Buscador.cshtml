@@ -1,12 +1,11 @@
 @model Gestion_Compras.ViewModels.FamiliaSubFamiliaViewModel
 
 @{
-    Layout = "~/Views/Shared/_Layout.cshtml";
+    Layout = "~/Views/Shared/_LayoutPopup.cshtml";
     ViewData["Title"] = "Buscador de Items";
 }
 
-<div class="container-custom mt-5">
-    <h2 class="text-center mb-4">Buscador de Items</h2>
+<div class="container-custom mt-3">
 
     <!-- Filtros de Búsqueda -->
     <div class="row mb-3">
@@ -130,8 +129,8 @@
                 }
             });
 
-            // Manejar el botón de buscar
-            $('#buscarItemsBtn').click(function () {
+            // Función para buscar items (reutilizable)
+            function buscarItems() {
                 const codigo = $('#codigoItem').val() || '';
                 const familiaId = $('#familiaSelect').val() || '';
                 const subFamiliaId = $('#subfamiliaSelect').val() || '';
@@ -171,7 +170,35 @@
                         console.error('Error al buscar items:', xhr.responseText);
                     }
                 });
+            }
+
+            // Manejar el botón de buscar
+            $('#buscarItemsBtn').click(function () {
+                buscarItems();
             });
+
+            // Función para refrescar automáticamente el buscador
+            function refrescarBuscador() {
+                // Solo refrescar si hay resultados mostrados
+                if ($('#resultadosBusqueda tr').length > 0) {
+                    buscarItems();
+                }
+            }
+
+            // Exponer la función globalmente para que otras ventanas puedan llamarla
+            window.refrescarBuscador = refrescarBuscador;
+
+            // Verificar si hay cambios en el inventario cada 2 segundos
+            setInterval(function() {
+                // Verificar si hay cambios en localStorage que indiquen nuevos movimientos
+                const ultimoMovimiento = localStorage.getItem('ultimoMovimientoKardex');
+                const ultimoCheckBuscador = localStorage.getItem('ultimoCheckBuscador') || '0';
+                
+                if (ultimoMovimiento && ultimoMovimiento !== ultimoCheckBuscador) {
+                    localStorage.setItem('ultimoCheckBuscador', ultimoMovimiento);
+                    refrescarBuscador();
+                }
+            }, 2000);
         });
     </script>
 }

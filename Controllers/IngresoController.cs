@@ -20,6 +20,7 @@ namespace Gestion_Compras.Controllers
         public IActionResult Index() 
         { 
             var ingresos = context.Ingreso.Include(i => i.Proveedor)
+                                          .OrderByDescending(i => i.FechaRemito)
                                           .ToList(); 
             return View("~/Views/MaterialesIngreso/Index.cshtml", ingresos); 
         }

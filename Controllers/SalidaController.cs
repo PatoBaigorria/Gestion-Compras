@@ -21,6 +21,7 @@ namespace Gestion_Compras.Controllers
         {
             var salidas = context.Salida.Include(s => s.Personal)
                                         .Include(s => s.Item)
+                                        .OrderByDescending(s => s.FechaVale)
                                         .ToList();
             return View("~/Views/MaterialesSalida/Index.cshtml", salidas);
         }
