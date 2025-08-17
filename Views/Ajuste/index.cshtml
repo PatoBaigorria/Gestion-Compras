@@ -158,6 +158,15 @@
                 }, 500);
             });
 
+            // Limpiar formulario cuando se abre el modal
+            $('#nuevoAjusteModal').on('show.bs.modal', function () {
+                // Limpiar todos los campos del formulario
+                $('#nuevoAjusteForm')[0].reset();
+                $('#itemInfo').hide();
+                $('#stockIni').val('');
+                $('#itemId').val('');
+            });
+
             // Funcionalidad del modal de nuevo ajuste
             $('#buscarItemBtn').click(function () {
                 const itemCodigo = $('#itemCodigo').val();
