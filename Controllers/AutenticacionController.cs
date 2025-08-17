@@ -32,9 +32,20 @@ namespace Gestion_Compras.Controllers
         [HttpPost("Login")]
         public async Task<IActionResult> Login(string username, string password)
         {
+            Console.WriteLine($"Intento de login - Usuario: {username}");
             var usuario = context.Usuario.SingleOrDefault(u => u.UsuarioLogin == username);
-            if (usuario != null && BCrypt.Net.BCrypt.Verify(password, usuario.Password))
+            
+            if (usuario != null)
             {
+                Console.WriteLine($"Usuario encontrado: {usuario.UsuarioLogin}");
+                Console.WriteLine($"Password en BD: {usuario.Password}");
+                Console.WriteLine($"Password ingresada: {password}");
+                
+                bool passwordValida = VerificarPassword(password, usuario.Password);
+                Console.WriteLine($"Password válida: {passwordValida}");
+                
+                if (passwordValida)
+                {
                 if (usuario.ActivarLogin)
                 {
                     // Redirigir al usuario a la página de cambio de contraseña
@@ -59,8 +70,14 @@ namespace Gestion_Compras.Controllers
                 }
 
                 return RedirectToAction("Index", "Home");
+                }
+            }
+            else
+            {
+                Console.WriteLine($"Usuario NO encontrado: {username}");
             }
 
+            Console.WriteLine("Login fallido - credenciales incorrectas");
             ViewBag.ErrorMessage = "Nombre de usuario o contraseña incorrectos";
             return View();
         }
@@ -129,6 +146,50 @@ namespace Gestion_Compras.Controllers
                 return RedirectToAction("Login", "Autenticacion");
             }
             return View(usuario);
+        }
+
+        // Método auxiliar para verificar contraseñas con manejo de errores
+        private bool VerificarPassword(string password, string hash)
+        {
+            try
+            {
+                // Verificar si es un hash BCrypt (comienza con $2a$, $2b$, etc.)
+                if (hash.StartsWith("$2"))
+                {
+                    return BCrypt.Net.BCrypt.Verify(password, hash);
+                }
+                
+                // Si parece ser Base64, intentar decodificar y comparar
+                if (hash.Length > 20 && !hash.Contains(" "))
+                {
+                    try
+                    {
+                        byte[] hashBytes = Convert.FromBase64String(hash);
+                        string decodedHash = System.Text.Encoding.UTF8.GetString(hashBytes);
+                        Console.WriteLine($"Hash decodificado de Base64: {decodedHash}");
+                        return password == decodedHash;
+                    }
+                    catch
+                    {
+                        // Si no es Base64 válido, comparar directamente
+                        Console.WriteLine("No es Base64 válido, comparando directamente");
+                        return password == hash;
+                    }
+                }
+                
+                // Comparación directa para contraseñas sin hashear
+                return password == hash;
+            }
+            catch (BCrypt.Net.SaltParseException)
+            {
+                // Si el hash está corrupto o en formato incorrecto, comparar directamente
+                return password == hash;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error en verificación de password: {ex.Message}");
+                return false;
+            }
         }
     }
 }
