@@ -1,7 +1,4 @@
-@using Microsoft.AspNetCore.Identity
 @using System.Security.Claims
-@inject SignInManager<IdentityUser> SignInManager
-@inject UserManager<IdentityUser> UserManager
 
 <!DOCTYPE html>
 <html lang="es">
@@ -107,32 +104,16 @@
                         var surname = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Surname)?.Value;
 
                         <li class="nav-item">
-                            <span class="nav-link">Hola, @givenName @surname</span>
+                            <span class="nav-link">Bienvenido, @givenName @surname</span>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link" href="/Autenticacion/Logout">Cerrar sesión</a>
                         </li>
-
-                        <!-- Prueba de diagnóstico -->
-                        <li class="nav-item">
-                            <span class="nav-link text-success">Autenticado como: @User.Identity.Name</span>
-                        </li>
-                        @foreach (var claim in User.Claims)
-                        {
-                            <li class="nav-item">
-                                <span class="nav-link">@claim.Type: @claim.Value</span>
-                            </li>
-                        }
                     }
                     else
                     {
                         <li class="nav-item">
                             <a class="nav-link" href="/Autenticacion/Login">Iniciar sesión</a>
-                        </li>
-
-                        <!-- Prueba de diagnóstico -->
-                        <li class="nav-item">
-                            <span class="nav-link text-danger">No autenticado</span>
                         </li>
                     }
 

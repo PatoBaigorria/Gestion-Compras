@@ -5,7 +5,6 @@ using Microsoft.OpenApi.Models;
 using Gestion_Compras.Filters;
 using Newtonsoft.Json.Converters;
 using System.Diagnostics;
-using Microsoft.AspNetCore.Identity;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -15,10 +14,7 @@ string hashedPassword = BCrypt.Net.BCrypt.HashPassword(password);
 Console.WriteLine($"Contraseña hasheada: {hashedPassword}");*/
 
 
-// Configurar servicios de Identity 
-builder.Services.AddIdentity<IdentityUser, IdentityRole>()
-    .AddEntityFrameworkStores<DataContext>()
-    .AddDefaultTokenProviders();
+// Identity removido - usando autenticación personalizada con cookies
 
 builder.Logging.AddDebug();
 
@@ -34,7 +30,7 @@ builder.Services.AddControllersWithViews(options =>
     options.Filters.Add(new UserNameFilter()); // Registrar el filtro de acción globalmente
 });
 
-builder.WebHost.UseUrls("http://localhost:5001", "https://localhost:5002");
+// Configuración removida - se usa app.Urls.Add más abajo
 
 // Configuración de autenticación con cookies
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
@@ -130,7 +126,12 @@ app.MapControllerRoute(
 
 app.MapControllers(); // Mapea los controladores restantes
 
-// Abrir la aplicación en el navegador
+// Configuración para LAN - escuchar en todas las interfaces
+app.Urls.Clear(); // Limpiar URLs existentes
+app.Urls.Add("http://localhost:5000");
+app.Urls.Add("http://*:5000");
+
+// Abrir la aplicación en el navegador con localhost
 var url = "http://localhost:5000";
 Task.Run(() =>
 {
@@ -147,8 +148,6 @@ Task.Run(() =>
         Console.WriteLine($"Error al abrir el navegador: {ex.Message}");
     }
 });
-
-app.Urls.Add("http://*:5000");
 
 // Ejecutar la aplicación y cerrar la consola
 app.Run();
