@@ -50,12 +50,28 @@ namespace Gestion_Compras.Controllers
                     return NotFound(new { error = $"El ítem con código {ingreso.ItemCodigo} no fue encontrado." });
                 }
 
+                // Guardar el stock anterior para el Kardex
+                double stockAnterior = item.Stock;
+
+                // Actualizar el stock del item
                 item.Stock += ingreso.CantidadIngreso;
                 ingreso.ItemId = item.Id;
                 ingreso.Item = null;
 
-                // Añade la salida a la base de datos
+                // Crear registro en Kardex
+                var kardexRegistro = new Kardex
+                {
+                    ItemId = item.Id,
+                    StockIni = stockAnterior,
+                    Cantidad = ingreso.CantidadIngreso,
+                    TipoDeMov = "Ingreso",
+                    FechaRegistro = DateTime.Now,
+                    FechaMov = ingreso.FechaRemito  // Para ingresos: fecha del remito
+                };
+
+                // Añadir el ingreso y el registro de Kardex a la base de datos
                 context.Ingreso.Add(ingreso);
+                context.Kardex.Add(kardexRegistro);
             }
 
             await context.SaveChangesAsync();

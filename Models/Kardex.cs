@@ -21,6 +21,6 @@ namespace Gestion_Compras.Models
 
         public DateTime FechaRegistro { get; set; }
 
-        public DateOnly FechaVale { get; set; }
+        public DateOnly FechaMov { get; set; }
 	}
 }

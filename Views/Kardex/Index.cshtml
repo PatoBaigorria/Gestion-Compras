@@ -1,0 +1,196 @@
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    ViewData["Title"] = "Kardex de Movimientos";
+}
+
+<h2 class="text-center mb-4">Kardex</h2>
+
+<div class="row mb-3">
+    <div class="col-md-2">
+        <label for="codigoItem" class="form-label">Código</label>
+        <input type="text" id="codigoItem" class="form-control" maxlength="10"/>
+    </div>
+    <div class="col-md-3">
+        <label for="descripcionItem" class="form-label">Descripción</label>
+        <input type="text" id="descripcionItem" class="form-control"/>
+    </div>
+    <div class="col-md-2">
+        <label for="fechaRegistro" class="form-label">Fecha Registro</label>
+        <input type="date" id="fechaRegistro" class="form-control"/>
+    </div>
+    <div class="col-md-2">
+        <label for="fechaMovimiento" class="form-label">Fecha Movimiento</label>
+        <input type="date" id="fechaMovimiento" class="form-control"/>
+    </div>
+    <div class="col-md-2">
+        <label for="tipoMovimiento" class="form-label">Tipo Movimiento</label>
+        <select id="tipoMovimiento" class="form-select">
+            <option value="">Todos</option>
+            <option value="Ingreso">Ingreso</option>
+            <option value="Salida">Salida</option>
+            <option value="Ajuste">Ajuste</option>
+        </select>
+    </div>
+    <div class="col-md-1 d-flex align-items-end">
+        <button type="button" class="btn btn-primary w-100" id="buscarKardexBtn">
+            <i class="fas fa-search"></i>
+        </button>
+    </div>
+</div>
+
+<div class="table-responsive" style="height: 600px; overflow-y: auto;">
+    <table id="dataTable" class="table table-striped table-bordered table-sm">
+        <thead class="table-header">
+            <tr>
+                <th style="width: 120px; text-align: center;">Fecha Registro</th>
+                <th style="width: 100px; text-align: center;">Fecha Movimiento</th>
+                <th style="width: 80px; text-align: center;">Código</th>
+                <th style="width: 25%; text-align: center;">Descripción</th>
+                <th style="width: 120px; text-align: center;">Tipo Movimiento</th>
+                <th style="width: 80px; text-align: center;">Stock Inicial</th>
+                <th style="width: 120px; text-align: center;">Cantidad Ingreso/Salida</th>
+                <th style="width: 80px; text-align: center;">Stock Final</th>
+            </tr>
+        </thead>
+        <tbody id="resultadosKardex">
+            <!-- Resultados irán aquí -->
+        </tbody>
+    </table>
+</div>
+
+<style>
+    .table-responsive {
+        position: relative;
+    }
+
+    .table-header {
+        position: sticky;
+        top: 0;
+        z-index: 1020;
+        background-color: white;
+    }
+
+    .tipo-ingreso {
+        color: #28a745;
+        font-weight: bold;
+    }
+
+    .tipo-salida {
+        color: #dc3545;
+        font-weight: bold;
+    }
+
+    .tipo-ajuste {
+        color: #ffc107;
+        font-weight: bold;
+    }
+
+    .cantidad-positiva {
+        color: #28a745;
+    }
+
+    .cantidad-negativa {
+        color: #dc3545;
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const buscarBtn = document.getElementById('buscarKardexBtn');
+        const resultadosContainer = document.getElementById('resultadosKardex');
+
+        // Función para buscar movimientos de kardex
+        async function buscarKardex() {
+            const codigo = document.getElementById('codigoItem').value;
+            const descripcion = document.getElementById('descripcionItem').value;
+            const fechaRegistro = document.getElementById('fechaRegistro').value;
+            const fechaMovimiento = document.getElementById('fechaMovimiento').value;
+            const tipoMovimiento = document.getElementById('tipoMovimiento').value;
+
+            const params = new URLSearchParams();
+            if (codigo) params.append('codigo', codigo);
+            if (descripcion) params.append('descripcion', descripcion);
+            if (fechaRegistro) params.append('fechaDesde', fechaRegistro);
+            if (fechaMovimiento) params.append('fechaVale', fechaMovimiento);
+            if (tipoMovimiento) params.append('tipoMovimiento', tipoMovimiento);
+
+            try {
+                const response = await fetch(`/Kardex/BuscarKardex?${params.toString()}`);
+                if (!response.ok) {
+                    throw new Error('Error en la búsqueda');
+                }
+
+                const movimientos = await response.json();
+                mostrarResultados(movimientos);
+            } catch (error) {
+                console.error('Error:', error);
+                resultadosContainer.innerHTML = '<tr><td colspan="8" class="text-center text-danger">Error al cargar los datos</td></tr>';
+            }
+        }
+
+        // Función para mostrar los resultados en la tabla
+        function mostrarResultados(movimientos) {
+            resultadosContainer.innerHTML = '';
+
+            if (movimientos.length === 0) {
+                resultadosContainer.innerHTML = '<tr><td colspan="8" class="text-center">No se encontraron movimientos</td></tr>';
+                return;
+            }
+
+            movimientos.forEach(mov => {
+                const tipoClass = getTipoMovimientoClass(mov.tipoMovimiento);
+                const cantidadClass = mov.cantidadMovimiento.startsWith('-') ? 'cantidad-negativa' : 'cantidad-positiva';
+
+                const row = `
+                    <tr>
+                        <td>${mov.fechaRegistro}</td>
+                        <td>${mov.fechaMovimiento}</td>
+                        <td>${mov.codigo || ''}</td>
+                        <td class="text-start">${mov.descripcion || ''}</td>
+                        <td><span class="${tipoClass}">${mov.tipoMovimiento || ''}</span></td>
+                        <td>${mov.stockInicial !== null ? mov.stockInicial : ''}</td>
+                        <td><span class="${cantidadClass}">${mov.cantidadMovimiento}</span></td>
+                        <td><strong>${mov.stockFinal !== null ? mov.stockFinal : ''}</strong></td>
+                    </tr>
+                `;
+                resultadosContainer.insertAdjacentHTML('beforeend', row);
+            });
+        }
+
+        // Función para obtener la clase CSS según el tipo de movimiento
+        function getTipoMovimientoClass(tipo) {
+            switch (tipo?.toLowerCase()) {
+                case 'ingreso':
+                    return 'tipo-ingreso';
+                case 'salida':
+                    return 'tipo-salida';
+                case 'ajuste':
+                    return 'tipo-ajuste';
+                default:
+                    return '';
+            }
+        }
+
+        // Event listeners
+        buscarBtn.addEventListener('click', buscarKardex);
+
+        // Buscar al presionar Enter en cualquier campo de filtro
+        document.querySelectorAll('#codigoItem, #descripcionItem, #fechaRegistro, #fechaMovimiento').forEach(input => {
+            input.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    buscarKardex();
+                }
+            });
+        });
+
+        // Buscar al cambiar las fechas
+        document.getElementById('fechaRegistro').addEventListener('change', buscarKardex);
+        document.getElementById('fechaMovimiento').addEventListener('change', buscarKardex);
+
+        // Buscar al cambiar el select de tipo de movimiento
+        document.getElementById('tipoMovimiento').addEventListener('change', buscarKardex);
+
+        // Cargar todos los movimientos al inicio
+        buscarKardex();
+    });
+</script>

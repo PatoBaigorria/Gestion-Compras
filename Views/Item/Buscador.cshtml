@@ -60,7 +60,6 @@
                             <th style="width: 90px;">Precio</th>
                             <th style="width: 70px;">Crítico</th>
                             <th style="width: 70px;">Activo</th>
-                            <th style="width: 80px;">Ajuste</th>
                         </tr> 
                     </thead>
                     <tbody id="resultadosBusqueda"> 
@@ -164,7 +163,6 @@
                                     <td>${item.precio !== null ? item.precio : ''}</td>
                                     <td><input type="checkbox" ${item.critico ? 'checked' : ''} disabled></td> 
                                     <td><input type="checkbox" ${item.activo ? 'checked' : ''} disabled></td>
-                                    <td><button type="button" class="btn btn-sm btn-outline-primary" data-item-id="${item.id}" title="Ajustar Stock"><i class="fas fa-cog"></i></button></td>
                                 </tr>`
                             );
                         });
