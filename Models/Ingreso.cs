@@ -26,6 +26,6 @@ namespace Gestion_Compras.Models
 
         public int Pedido { get; set; }
 
-        public DateOnly Fecha { get; set; }
+        public DateOnly FechaRemito { get; set; }
 	}
 }

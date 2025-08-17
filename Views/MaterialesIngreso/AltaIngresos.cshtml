@@ -75,7 +75,7 @@
         <div id="pedidoError" class="text-danger"></div>
     </div>
     <div class="col-md-3">
-        <label for="fecha" class="form-label">Fecha</label>
+        <label for="fecha" class="form-label">Fecha Remito</label>
         <input type="date" class="form-control form-control-sm" id="fecha" onblur="hacerNoEditable(this)"
             oninput="limpiarError('fecha')" />
         <div id="fechaError" class="text-danger"></div>
@@ -97,7 +97,7 @@
             <th>Remito</th>
             <th>Orden de Compra</th>
             <th>Pedido</th>
-            <th>Fecha</th>
+            <th>Fecha Remito</th>
             <th>Acción</th>
         </tr>
     </thead>
@@ -255,7 +255,7 @@
                 Remito: remito,
                 OrdenCompra: ordenCompra,
                 Pedido: pedido,
-                Fecha: fecha
+                FechaRemito: fecha
             });
 
             limpiarCampos();
@@ -285,7 +285,7 @@
                 ItemCodigo: i.ItemCodigo, 
                 CantidadIngreso: i.CantidadIngreso, 
                 PersonalId: i.PersonalId, 
-                Fecha: i.Fecha, 
+                FechaRemito: i.FechaRemito, 
                 ItemId: i.ItemId,
                 Remito: i.Remito,
                 OrdenCompra: i.OrdenCompra, 

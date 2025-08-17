@@ -69,17 +69,34 @@ namespace Gestion_Compras.Controllers
                     return NotFound(new { error = $"El ítem con código {salida.ItemCodigo} no fue encontrado." });
                 }
 
-                // Actualiza el stock del ítem
+                // Verificar stock suficiente
                 if (item.Stock < salida.Cantidad)
                 {
                     return BadRequest(new { error = $"Stock insuficiente para el ítem {item.Codigo}." });
                 }
-                item.Stock -= salida.Cantidad;
-                salida.ItemId = item.Id; // Asegúrate de establecer ItemId correctamente
-                salida.Item = null; // Asegúrate de no enviar el objeto Item completo en la solicitud
 
-                // Añade la salida a la base de datos
+                // Guardar el stock anterior para el Kardex
+                double stockAnterior = item.Stock;
+
+                // Actualizar el stock del ítem
+                item.Stock -= salida.Cantidad;
+                salida.ItemId = item.Id;
+                salida.Item = null;
+
+                // Crear registro en Kardex
+                var kardexRegistro = new Kardex
+                {
+                    ItemId = item.Id,
+                    StockIni = stockAnterior,
+                    Cantidad = salida.Cantidad,
+                    TipoDeMov = "Salida",
+                    FechaRegistro = DateTime.Now,
+                    FechaMov = salida.FechaVale
+                };
+
+                // Añadir la salida y el registro de Kardex a la base de datos
                 context.Salida.Add(salida);
+                context.Kardex.Add(kardexRegistro);
             }
 
             await context.SaveChangesAsync();

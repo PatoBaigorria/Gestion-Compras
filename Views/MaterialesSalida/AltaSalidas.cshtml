@@ -55,7 +55,7 @@
         <div id="personalIdError" class="text-danger"></div>
     </div>
     <div class="col-md-3">
-        <label for="fecha" class="form-label">Fecha</label>
+        <label for="fecha" class="form-label">Fecha Vale</label>
         <input type="date" class="form-control form-control-sm" id="fecha"
             onchange="limpiarError('fecha'); hacerNoEditable('fecha')" />
         <div id="fechaError" class="text-danger"></div>
@@ -74,7 +74,7 @@
             <th>Descripción</th>
             <th>Cantidad</th>
             <th>Personal</th>
-            <th>Fecha</th>
+            <th>Fecha Vale</th>
             <th>Acción</th>
         </tr>
     </thead>
@@ -201,7 +201,7 @@
                 ItemCodigo: itemCodigo,
                 Cantidad: cantidad,
                 PersonalId: parseInt(personalId),
-                Fecha: fecha,
+                FechaVale: fecha,
                 ItemId: item.Id,
                 Descripcion: descripcion
             });
@@ -239,7 +239,7 @@
                 ItemCodigo: s.ItemCodigo,
                 Cantidad: s.Cantidad,
                 PersonalId: s.PersonalId,
-                Fecha: s.Fecha,
+                FechaVale: s.FechaVale,
                 ItemId: s.ItemId
             }));
 
