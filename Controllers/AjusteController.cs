@@ -20,6 +20,12 @@ namespace Gestion_Compras.Controllers
                 .OrderByDescending(a => a.FechaAjuste)
                 .ToListAsync();
 
+            // Cargar manualmente los Items relacionados
+            foreach (var ajuste in ajustes)
+            {
+                ajuste.Item = await context.Item.FirstOrDefaultAsync(i => i.Codigo == ajuste.ItemCodigo);
+            }
+
             return View(ajustes);
         }
 
@@ -27,11 +33,15 @@ namespace Gestion_Compras.Controllers
         [HttpGet]
         public async Task<IActionResult> BuscarAjustes(string searchTerm = "")
         {
-            var query = context.Ajuste.AsQueryable();
-
-            var ajustes = await query
+            var ajustes = await context.Ajuste
                 .OrderByDescending(a => a.FechaAjuste)
                 .ToListAsync();
+
+            // Cargar manualmente los Items relacionados
+            foreach (var ajuste in ajustes)
+            {
+                ajuste.Item = await context.Item.FirstOrDefaultAsync(i => i.Codigo == ajuste.ItemCodigo);
+            }
 
             if (!string.IsNullOrEmpty(searchTerm))
             {
@@ -40,6 +50,7 @@ namespace Gestion_Compras.Controllers
                 
                 ajustes = ajustes.Where(a => 
                     (a.ItemCodigo?.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) == true) ||
+                    (a.Item?.Descripcion?.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) == true) ||
                     (a.Observaciones?.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) == true) ||
                     (isNumeric && (a.StockIni == numericValue || a.StockReal == numericValue)) ||
                     a.FechaAjuste.ToString().Contains(searchTerm, StringComparison.OrdinalIgnoreCase)
@@ -103,7 +114,7 @@ namespace Gestion_Compras.Controllers
                 // Crear el ajuste
                 var ajuste = new Ajuste
                 {
-                    ItemCodigo = itemCodigo,
+                    ItemCodigo = itemCodigo.ToUpper(),
                     StockIni = stockIni,
                     StockReal = stockReal,
                     Observaciones = observaciones,

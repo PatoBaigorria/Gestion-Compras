@@ -68,8 +68,8 @@ namespace Gestion_Compras.Controllers
 
             var movimientos = await query
                 .Where(k => k.FechaRegistro != DateTime.MinValue) // Filtrar registros con fechas válidas
-                .OrderByDescending(k => k.FechaRegistro)
-                .ThenByDescending(k => k.FechaMov)
+                .OrderBy(k => k.FechaRegistro) // Ordenar ascendente para calcular correctamente
+                .ThenBy(k => k.FechaMov)
                 .Select(k => new
                 {
                     id = k.Id,
@@ -90,29 +90,35 @@ namespace Gestion_Compras.Controllers
 
             foreach (var mov in movimientos)
             {
-                // Inicializar stock si es la primera vez que vemos este item
-                if (!stockPorItem.ContainsKey(mov.itemId))
-                {
-                    stockPorItem[mov.itemId] = mov.stockInicial;
-                }
-
-                // Calcular el cambio en stock según el tipo de movimiento
-                double cambioStock = 0;
+                // Para cada movimiento, el stock final es: stock inicial + cambio
+                double stockFinal = 0;
                 switch (mov.tipoMovimiento?.ToLower())
                 {
                     case "ingreso":
-                        cambioStock = mov.cantidad;
+                        stockFinal = mov.stockInicial + mov.cantidad;
                         break;
                     case "salida":
-                        cambioStock = -mov.cantidad;
+                        stockFinal = mov.stockInicial - mov.cantidad;
                         break;
                     case "ajuste":
-                        cambioStock = mov.cantidad; // Puede ser positivo o negativo
+                        // Para ajustes, el stock final es directamente la cantidad ajustada
+                        stockFinal = mov.stockInicial + mov.cantidad;
                         break;
                 }
 
-                // Actualizar stock acumulado
-                stockPorItem[mov.itemId] += cambioStock;
+                // Determinar cómo mostrar la cantidad según el tipo de movimiento
+                string cantidadMostrar;
+
+                if (mov.tipoMovimiento?.ToLower() == "ajuste")
+                {
+                    // Para ajustes, mostrar la cantidad ajustada (stock final)
+                    cantidadMostrar = stockFinal.ToString();
+                }
+                else
+                {
+                    // Para ingresos y salidas, mostrar la diferencia como antes
+                    cantidadMostrar = mov.tipoMovimiento?.ToLower() == "salida" ? $"-{mov.cantidad}" : $"+{mov.cantidad}";
+                }
 
                 movimientosConStockFinal.Add(new
                 {
@@ -123,12 +129,17 @@ namespace Gestion_Compras.Controllers
                     descripcion = mov.descripcion,
                     tipoMovimiento = mov.tipoMovimiento,
                     stockInicial = mov.stockInicial,
-                    cantidadMovimiento = mov.tipoMovimiento?.ToLower() == "salida" ? $"-{mov.cantidad}" : $"+{mov.cantidad}",
-                    stockFinal = stockPorItem[mov.itemId]
+                    cantidadMovimiento = cantidadMostrar,
+                    stockFinal = stockFinal
                 });
             }
 
-            return Ok(movimientosConStockFinal);
+            // Ordenar los resultados por fecha descendente para mostrar los más recientes primero
+            var movimientosOrdenados = movimientosConStockFinal
+                .OrderByDescending(m => DateTime.Parse(((dynamic)m).fechaRegistro))
+                .ToList();
+
+            return Ok(movimientosOrdenados);
         }
     }
 }

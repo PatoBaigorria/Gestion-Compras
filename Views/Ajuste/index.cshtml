@@ -61,7 +61,7 @@
                     <div id="itemInfo" style="display: none;">
                         <div class="alert alert-info">
                             <h6 id="itemDescripcion">Descripción del Item</h6>
-                            <p><strong>Stock Actual:</strong> <span id="stockActual">0</span></p>
+                            <p><strong>Stock Anterior:</strong> <span id="stockActual">0</span></p>
                         </div>
                     </div>
 
@@ -199,6 +199,14 @@
                 });
             });
 
+            // Convertir a mayúsculas mientras se escribe
+            $('#itemCodigo').on('input', function () {
+                var cursorPos = this.selectionStart;
+                var value = $(this).val().toUpperCase();
+                $(this).val(value);
+                this.setSelectionRange(cursorPos, cursorPos);
+            });
+
             // Buscar item al presionar Enter
             $('#itemCodigo').on('keypress', function (e) {
                 if (e.which === 13) {
@@ -233,6 +241,9 @@
                             
                             // Recargar la tabla
                             buscarAjustes();
+                            
+                            // Notificar a otras ventanas que hay un nuevo movimiento
+                            localStorage.setItem('ultimoMovimientoKardex', Date.now().toString());
                         } else {
                             mostrarToast('Error: ' + response.message, 'error');
                         }

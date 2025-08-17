@@ -264,6 +264,26 @@
             actualizarIconosOrdenamiento();
         };
 
+        // Función para refrescar automáticamente el Kardex
+        function refrescarKardex() {
+            buscarKardex();
+        }
+
+        // Exponer la función globalmente para que otras ventanas puedan llamarla
+        window.refrescarKardex = refrescarKardex;
+
+        // Verificar si hay otras ventanas abiertas cada 2 segundos
+        setInterval(function() {
+            // Verificar si hay cambios en localStorage que indiquen nuevos movimientos
+            const ultimoMovimiento = localStorage.getItem('ultimoMovimientoKardex');
+            const ultimoCheck = localStorage.getItem('ultimoCheckKardex') || '0';
+            
+            if (ultimoMovimiento && ultimoMovimiento !== ultimoCheck) {
+                localStorage.setItem('ultimoCheckKardex', ultimoMovimiento);
+                refrescarKardex();
+            }
+        }, 2000);
+
         // Cargar todos los movimientos al inicio
         buscarKardex();
     });

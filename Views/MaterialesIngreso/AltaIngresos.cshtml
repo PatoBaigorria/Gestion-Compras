@@ -304,6 +304,10 @@
                 },
                 success: function (response) {
                     mostrarMensajeExito(response.message);
+                    
+                    // Notificar a otras ventanas que hay un nuevo movimiento
+                    localStorage.setItem('ultimoMovimientoKardex', Date.now().toString());
+                    
                     setTimeout(function () {
                         location.reload();
                     }, 1000);

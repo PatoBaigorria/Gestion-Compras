@@ -3,11 +3,18 @@
     ViewData["Title"] = "Inicio";
 }
 
+<style>
+    /* Override navbar style only for home page */
+    .navbar.menu-container {
+        background: #343a40 !important; /* Dark background like original */
+    }
+</style>
+
 <!-- Hero Section -->
 <div class="hero d-flex justify-content-center">
     <div class="content-box text-center d-flex flex-column flex-md-row align-items-center">
         <div>
-            <h2 class="me-3">¡Bienvenido a Gestión de Pañol!</h2>
+            <h2 class="me-3">Gestión de Pañol</h2>
             <p>Administra tus productos, familias y subfamilias de manera rápida y eficiente.</p>
         </div>
         <a href="/Item" class="ms-md-3 mt-3 mt-md-0">

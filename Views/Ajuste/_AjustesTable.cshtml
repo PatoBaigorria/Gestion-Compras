@@ -4,11 +4,12 @@
     <table class="table table-striped table-bordered table-hover text-center table-sm">
         <thead class="table-light table-header">
             <tr>
-                <th style="width: 120px;">Código del Item</th>
-                <th style="width: 120px;">Stock Actual</th>
-                <th style="width: 120px;">Stock Real</th>
-                <th style="width: 250px;">Observaciones</th>
-                <th style="width: 120px;">Fecha</th>
+                <th style="width: 60px;">Código del Item</th>
+                <th style="width: 350px;">Descripción</th>
+                <th style="width: 40px;">Stock Anterior</th>
+                <th style="width: 40px;">Stock Real</th>
+                <th style="width: 200px;">Observaciones</th>
+                <th style="width: 60px;">Fecha</th>
             </tr>
         </thead>
         <tbody>
@@ -17,7 +18,8 @@
                 @foreach (var ajuste in Model)
                 {
                     <tr>
-                        <td>@ajuste.ItemCodigo</td>
+                        <td>@ajuste.ItemCodigo?.ToUpper()</td>
+                        <td style="text-align: left;">@(ajuste.Item?.Descripcion ?? "")</td>
                         <td>@ajuste.StockIni</td>
                         <td>@ajuste.StockReal</td>
                         <td style="text-align: left;">@(ajuste.Observaciones ?? "")</td>
@@ -28,7 +30,7 @@
             else
             {
                 <tr>
-                    <td colspan="5" class="text-center text-muted">
+                    <td colspan="6" class="text-center text-muted">
                         <i class="fas fa-info-circle"></i> No se encontraron ajustes
                     </td>
                 </tr>
