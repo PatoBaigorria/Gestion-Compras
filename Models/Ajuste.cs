@@ -10,9 +10,6 @@ namespace Gestion_Compras.Models
 		public int Id { get; set; }
 
 		public string ItemCodigo { get; set; }
-		[ForeignKey(nameof(ItemId))] 
-		public Item? Item { get; set; } 
-		public int ItemId { get; set; }
 		 
 		public int StockIni { get; set; }
 

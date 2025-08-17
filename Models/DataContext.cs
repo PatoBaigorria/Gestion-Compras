@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -35,6 +35,8 @@ namespace Gestion_Compras.Models
 		public DbSet<Usuario> Usuario { get; set; }
 
 		public DbSet<Registro> Registro { get; set; }
+
+		public DbSet<Ajuste> Ajuste { get; set; }
 
 	}
 }

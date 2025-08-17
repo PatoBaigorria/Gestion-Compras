@@ -1,0 +1,295 @@
+@model IEnumerable<Gestion_Compras.Models.Ajuste>
+
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    ViewData["Title"] = "Lista de Ajustes";
+}
+
+<div class="container-custom mt-5">
+    <h2 class="text-center mb-4">Lista de Ajustes</h2>
+
+    <!-- Barra de búsqueda y botón nuevo -->
+    <div class="row mb-3">
+        <div class="col-md-8">
+            <div class="input-group">
+                <input type="text" id="searchInput" class="form-control" placeholder="Buscar por código, descripción, observaciones, stock o fecha...">
+                <button type="button" class="btn btn-primary" id="buscarBtn">
+                    <i class="fas fa-search"></i> Buscar
+                </button>
+            </div>
+        </div>
+        <div class="col-md-4 text-end">
+            <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#nuevoAjusteModal">
+                <i class="fas fa-plus"></i> Nuevo Ajuste
+            </button>
+        </div>
+    </div>
+
+    <!-- Tabla de ajustes -->
+    <div class="row">
+        <div class="col">
+            <div id="ajustesContainer">
+                @await Html.PartialAsync("_AjustesTable", Model)
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Nuevo Ajuste -->
+<div class="modal fade" id="nuevoAjusteModal" tabindex="-1" aria-labelledby="nuevoAjusteModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-md">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="nuevoAjusteModalLabel">Nuevo Ajuste</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="nuevoAjusteForm">
+                    
+                    <!-- Campo para Código del Item -->
+                    <div class="mb-3">
+                        <label for="itemCodigo" class="form-label">Código del Item</label>
+                        <div class="input-group">
+                            <input type="text" id="itemCodigo" name="ItemCodigo" class="form-control" placeholder="Ingrese el código del item" required />
+                            <button type="button" class="btn btn-outline-secondary" id="buscarItemBtn">
+                                <i class="fas fa-search"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Información del Item (se muestra después de buscar) -->
+                    <div id="itemInfo" style="display: none;">
+                        <div class="alert alert-info">
+                            <h6 id="itemDescripcion">Descripción del Item</h6>
+                            <p><strong>Stock Actual:</strong> <span id="stockActual">0</span></p>
+                        </div>
+                    </div>
+
+                    <!-- Campo para Stock Real -->
+                    <div class="mb-3">
+                        <label for="stockReal" class="form-label">Stock Real</label>
+                        <input type="number" id="stockReal" name="StockReal" class="form-control" placeholder="Ingrese el stock real" required />
+                    </div>
+
+                    <!-- Campo para Observaciones -->
+                    <div class="mb-3">
+                        <label for="observaciones" class="form-label">Observaciones</label>
+                        <textarea id="observaciones" name="Observaciones" class="form-control" rows="3" placeholder="Ingrese observaciones (opcional)"></textarea>
+                    </div>
+
+                    <!-- Campos ocultos -->
+                    <input type="hidden" id="stockIni" name="StockIni" />
+                    <input type="hidden" id="itemId" name="ItemId" />
+
+                    <button type="submit" class="btn btn-primary">Guardar Ajuste</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .container-custom {
+        width: 100%;
+        padding-right: 15px;
+        padding-left: 15px;
+        margin-right: auto;
+        margin-left: auto;
+        max-width: 1400px;
+    }
+
+    .table-responsive {
+        position: relative;
+        height: 600px;
+        overflow-y: auto;
+    }
+
+    .table-header {
+        position: sticky;
+        top: 0;
+        z-index: 1020;
+        background-color: white;
+    }
+
+    .table-sm td,
+    .table-sm th {
+        font-size: 0.9em;
+    }
+</style>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            // Función para buscar ajustes
+            function buscarAjustes() {
+                const searchTerm = $('#searchInput').val();
+                
+                $.ajax({
+                    url: '@Url.Action("BuscarAjustes", "Ajuste")',
+                    type: 'GET',
+                    data: { searchTerm: searchTerm },
+                    success: function (response) {
+                        $('#ajustesContainer').html(response);
+                    },
+                    error: function (xhr, status, errorThrown) {
+                        console.error('Error al buscar ajustes:', xhr.responseText);
+                    }
+                });
+            }
+
+            // Evento click del botón buscar
+            $('#buscarBtn').click(function () {
+                buscarAjustes();
+            });
+
+            // Búsqueda en tiempo real al escribir
+            $('#searchInput').on('keyup', function (e) {
+                if (e.keyCode === 13) { // Enter key
+                    buscarAjustes();
+                }
+            });
+
+            // Búsqueda automática después de 500ms de inactividad
+            let searchTimeout;
+            $('#searchInput').on('input', function () {
+                clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(function () {
+                    buscarAjustes();
+                }, 500);
+            });
+
+            // Funcionalidad del modal de nuevo ajuste
+            $('#buscarItemBtn').click(function () {
+                const itemCodigo = $('#itemCodigo').val();
+                if (!itemCodigo) {
+                    mostrarToast('Por favor ingrese un código de item', 'warning');
+                    return;
+                }
+
+                $.ajax({
+                    url: '@Url.Action("ObtenerItemPorCodigo", "Ajuste")',
+                    type: 'GET',
+                    data: { codigo: itemCodigo },
+                    success: function (response) {
+                        if (response.success) {
+                            $('#itemDescripcion').text(response.item.descripcion);
+                            $('#stockActual').text(response.item.stock);
+                            $('#stockIni').val(response.item.stock);
+                            $('#itemId').val(response.item.id);
+                            $('#itemInfo').show();
+                        } else {
+                            mostrarToast('Item no encontrado', 'warning');
+                            $('#itemInfo').hide();
+                        }
+                    },
+                    error: function (xhr, status, errorThrown) {
+                        console.error('Error al buscar item:', xhr.responseText);
+                        mostrarToast('Error al buscar item', 'error');
+                        $('#itemInfo').hide();
+                    }
+                });
+            });
+
+            // Buscar item al presionar Enter
+            $('#itemCodigo').on('keypress', function (e) {
+                if (e.which === 13) {
+                    $('#buscarItemBtn').click();
+                }
+            });
+
+            // Enviar formulario de nuevo ajuste
+            $('#nuevoAjusteForm').submit(function (e) {
+                e.preventDefault();
+
+                const ajusteData = {
+                    ItemCodigo: $('#itemCodigo').val(),
+                    StockIni: parseInt($('#stockIni').val()),
+                    StockReal: parseInt($('#stockReal').val()),
+                    Observaciones: $('#observaciones').val()
+                };
+
+                $.ajax({
+                    url: '@Url.Action("GuardarAjuste", "Ajuste")',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify(ajusteData),
+                    success: function (response) {
+                        if (response.success) {
+                            mostrarToast('Ajuste guardado exitosamente', 'success');
+                            $('#nuevoAjusteModal').modal('hide');
+                            
+                            // Limpiar formulario
+                            $('#nuevoAjusteForm')[0].reset();
+                            $('#itemInfo').hide();
+                            
+                            // Recargar la tabla
+                            buscarAjustes();
+                        } else {
+                            mostrarToast('Error: ' + response.message, 'error');
+                        }
+                    },
+                    error: function (xhr, status, errorThrown) {
+                        console.error('Error al guardar ajuste:', xhr.responseText);
+                        mostrarToast('Error al guardar ajuste', 'error');
+                    }
+                });
+            });
+
+            // Función para mostrar notificaciones toast modernas
+            function mostrarToast(mensaje, tipo) {
+                // Crear el contenedor de toasts si no existe
+                if ($('#toast-container').length === 0) {
+                    $('body').append('<div id="toast-container" class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 9999;"></div>');
+                }
+
+                // Definir colores según el tipo
+                let bgClass = '';
+                let iconClass = '';
+                switch(tipo) {
+                    case 'success':
+                        bgClass = 'bg-success text-white';
+                        iconClass = 'fas fa-check-circle';
+                        break;
+                    case 'error':
+                        bgClass = 'bg-danger text-white';
+                        iconClass = 'fas fa-exclamation-circle';
+                        break;
+                    case 'warning':
+                        bgClass = 'bg-warning text-dark';
+                        iconClass = 'fas fa-exclamation-triangle';
+                        break;
+                    default:
+                        bgClass = 'bg-info text-white';
+                        iconClass = 'fas fa-info-circle';
+                }
+
+                // Crear el toast
+                const toastId = 'toast-' + Date.now();
+                const toastHtml = `
+                    <div id="${toastId}" class="toast ${bgClass}" role="alert" aria-live="assertive" aria-atomic="true" data-bs-delay="4000">
+                        <div class="toast-header ${bgClass} border-0">
+                            <i class="${iconClass} me-2"></i>
+                            <strong class="me-auto">Notificación</strong>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
+                        </div>
+                        <div class="toast-body">
+                            ${mensaje}
+                        </div>
+                    </div>
+                `;
+
+                // Agregar el toast al contenedor
+                $('#toast-container').append(toastHtml);
+
+                // Mostrar el toast
+                const toastElement = new bootstrap.Toast(document.getElementById(toastId));
+                toastElement.show();
+
+                // Remover el toast del DOM después de que se oculte
+                document.getElementById(toastId).addEventListener('hidden.bs.toast', function () {
+                    $(this).remove();
+                });
+            }
+        });
+    </script>
+}
