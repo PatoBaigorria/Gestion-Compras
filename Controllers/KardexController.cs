@@ -68,8 +68,8 @@ namespace Gestion_Compras.Controllers
 
             var movimientos = await query
                 .Where(k => k.FechaRegistro != DateTime.MinValue) // Filtrar registros con fechas válidas
-                .OrderBy(k => k.ItemId)
-                .ThenBy(k => k.FechaRegistro)
+                .OrderByDescending(k => k.FechaRegistro)
+                .ThenByDescending(k => k.FechaMov)
                 .Select(k => new
                 {
                     id = k.Id,

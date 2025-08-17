@@ -1,0 +1,38 @@
+@model IEnumerable<Gestion_Compras.Models.Ajuste>
+
+<div class="table-responsive">
+    <table class="table table-striped table-bordered table-hover text-center table-sm">
+        <thead class="table-light table-header">
+            <tr>
+                <th style="width: 120px;">Código del Item</th>
+                <th style="width: 120px;">Stock Actual</th>
+                <th style="width: 120px;">Stock Real</th>
+                <th style="width: 250px;">Observaciones</th>
+                <th style="width: 120px;">Fecha</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (Model != null && Model.Any())
+            {
+                @foreach (var ajuste in Model)
+                {
+                    <tr>
+                        <td>@ajuste.ItemCodigo</td>
+                        <td>@ajuste.StockIni</td>
+                        <td>@ajuste.StockReal</td>
+                        <td style="text-align: left;">@(ajuste.Observaciones ?? "")</td>
+                        <td>@ajuste.FechaAjuste.ToString("dd/MM/yyyy")</td>
+                    </tr>
+                }
+            }
+            else
+            {
+                <tr>
+                    <td colspan="5" class="text-center text-muted">
+                        <i class="fas fa-info-circle"></i> No se encontraron ajustes
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>

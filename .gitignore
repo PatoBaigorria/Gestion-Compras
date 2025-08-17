@@ -66,5 +66,3 @@ node_modules/
 # OS-specific files
 .DS_Store
 Thumbs.db
-/bin
-/obj

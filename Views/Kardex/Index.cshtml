@@ -42,14 +42,18 @@
     <table id="dataTable" class="table table-striped table-bordered table-sm">
         <thead class="table-header">
             <tr>
-                <th style="width: 120px; text-align: center;">Fecha Registro</th>
-                <th style="width: 100px; text-align: center;">Fecha Movimiento</th>
-                <th style="width: 80px; text-align: center;">Código</th>
-                <th style="width: 25%; text-align: center;">Descripción</th>
-                <th style="width: 120px; text-align: center;">Tipo Movimiento</th>
-                <th style="width: 80px; text-align: center;">Stock Inicial</th>
+                <th style="width: 120px; text-align: center; cursor: pointer;" onclick="ordenarPor('fechaRegistro')">
+                    Fecha Registro <i id="icon-fechaRegistro" class="fas fa-sort"></i>
+                </th>
+                <th style="width: 100px; text-align: center; cursor: pointer;" onclick="ordenarPor('fechaMovimiento')">
+                    Fecha Movimiento <i id="icon-fechaMovimiento" class="fas fa-sort"></i>
+                </th>
+                <th style="width: 50px; text-align: center;">Código</th>
+                <th style="width: 45%; text-align: center;">Descripción</th>
+                <th style="width: 100px; text-align: center;">Tipo Movimiento</th>
+                <th style="width: 50px; text-align: center;">Stock Inicial</th>
                 <th style="width: 120px; text-align: center;">Cantidad Ingreso/Salida</th>
-                <th style="width: 80px; text-align: center;">Stock Final</th>
+                <th style="width: 50px; text-align: center;">Stock Final</th>
             </tr>
         </thead>
         <tbody id="resultadosKardex">
@@ -91,6 +95,15 @@
 
     .cantidad-negativa {
         color: #dc3545;
+    }
+
+    .sortable-header {
+        cursor: pointer;
+        user-select: none;
+    }
+
+    .sortable-header:hover {
+        background-color: #f8f9fa;
     }
 </style>
 
@@ -143,14 +156,14 @@
 
                 const row = `
                     <tr>
-                        <td>${mov.fechaRegistro}</td>
-                        <td>${mov.fechaMovimiento}</td>
-                        <td>${mov.codigo || ''}</td>
+                        <td class="text-center">${mov.fechaRegistro}</td>
+                        <td class="text-center">${mov.fechaMovimiento}</td>
+                        <td class="text-center">${mov.codigo || ''}</td>
                         <td class="text-start">${mov.descripcion || ''}</td>
-                        <td><span class="${tipoClass}">${mov.tipoMovimiento || ''}</span></td>
-                        <td>${mov.stockInicial !== null ? mov.stockInicial : ''}</td>
-                        <td><span class="${cantidadClass}">${mov.cantidadMovimiento}</span></td>
-                        <td><strong>${mov.stockFinal !== null ? mov.stockFinal : ''}</strong></td>
+                        <td class="text-center"><span class="${tipoClass}">${mov.tipoMovimiento || ''}</span></td>
+                        <td class="text-center">${mov.stockInicial !== null ? mov.stockInicial : ''}</td>
+                        <td class="text-center"><span class="${cantidadClass}">${mov.cantidadMovimiento}</span></td>
+                        <td class="text-center"><strong>${mov.stockFinal !== null ? mov.stockFinal : ''}</strong></td>
                     </tr>
                 `;
                 resultadosContainer.insertAdjacentHTML('beforeend', row);
@@ -189,6 +202,67 @@
 
         // Buscar al cambiar el select de tipo de movimiento
         document.getElementById('tipoMovimiento').addEventListener('change', buscarKardex);
+
+        // Variables para el ordenamiento
+        let movimientosOriginales = [];
+        let ordenActual = { campo: 'fechaRegistro', direccion: 'desc' };
+
+        // Función para ordenar por columna
+        window.ordenarPor = function(campo) {
+            // Cambiar dirección si es la misma columna, sino usar descendente por defecto
+            if (ordenActual.campo === campo) {
+                ordenActual.direccion = ordenActual.direccion === 'asc' ? 'desc' : 'asc';
+            } else {
+                ordenActual.campo = campo;
+                ordenActual.direccion = 'desc';
+            }
+
+            // Actualizar iconos
+            actualizarIconosOrdenamiento();
+
+            // Ordenar y mostrar
+            const movimientosOrdenados = [...movimientosOriginales].sort((a, b) => {
+                let valorA, valorB;
+                
+                if (campo === 'fechaRegistro') {
+                    valorA = new Date(a.fechaRegistro.split(' ')[0].split('/').reverse().join('-'));
+                    valorB = new Date(b.fechaRegistro.split(' ')[0].split('/').reverse().join('-'));
+                } else if (campo === 'fechaMovimiento') {
+                    valorA = a.fechaMovimiento ? new Date(a.fechaMovimiento.split('/').reverse().join('-')) : new Date(0);
+                    valorB = b.fechaMovimiento ? new Date(b.fechaMovimiento.split('/').reverse().join('-')) : new Date(0);
+                }
+
+                if (ordenActual.direccion === 'asc') {
+                    return valorA - valorB;
+                } else {
+                    return valorB - valorA;
+                }
+            });
+
+            mostrarResultados(movimientosOrdenados);
+        };
+
+        // Función para actualizar iconos de ordenamiento
+        function actualizarIconosOrdenamiento() {
+            // Resetear todos los iconos
+            document.querySelectorAll('[id^="icon-"]').forEach(icon => {
+                icon.className = 'fas fa-sort';
+            });
+
+            // Actualizar el icono de la columna actual
+            const iconoActual = document.getElementById(`icon-${ordenActual.campo}`);
+            if (iconoActual) {
+                iconoActual.className = ordenActual.direccion === 'asc' ? 'fas fa-sort-up' : 'fas fa-sort-down';
+            }
+        }
+
+        // Modificar la función mostrarResultados para guardar los datos originales
+        const mostrarResultadosOriginal = mostrarResultados;
+        mostrarResultados = function(movimientos) {
+            movimientosOriginales = movimientos;
+            mostrarResultadosOriginal(movimientos);
+            actualizarIconosOrdenamiento();
+        };
 
         // Cargar todos los movimientos al inicio
         buscarKardex();
