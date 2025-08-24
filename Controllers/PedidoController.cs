@@ -177,6 +177,62 @@ namespace Gestion_Compras.Controllers
             return Ok(new { message = "Pedido eliminado exitosamente" });
         }
 
+        [HttpPut("anular/{numeroPedido}")]
+        public async Task<IActionResult> AnularPedido(int numeroPedido)
+        {
+            try
+            {
+                // Buscar todos los pedidos con el número de pedido especificado
+                var pedidos = await context.Pedido
+                    .Where(p => p.NumeroPedido == numeroPedido)
+                    .ToListAsync();
+
+                if (!pedidos.Any())
+                {
+                    return NotFound(new { message = $"No se encontró el pedido N° {numeroPedido}" });
+                }
+
+                // Verificar si ya está anulado
+                if (pedidos.All(p => p.Estado == "CANCELADO"))
+                {
+                    return BadRequest(new { message = $"El pedido N° {numeroPedido} ya está anulado" });
+                }
+
+                // Verificar si algún pedido ya fue recibido
+                if (pedidos.Any(p => p.Estado == "RECIBIDO" || p.Estado == "COMPLETADO"))
+                {
+                    return BadRequest(new { message = $"No se puede anular el pedido N° {numeroPedido} porque algunos ítems ya fueron recibidos" });
+                }
+
+                // Anular todos los pedidos con ese número
+                foreach (var pedido in pedidos)
+                {
+                    pedido.Estado = "CANCELADO";
+                    
+                    // Revertir la cantidad en pedidos del item
+                    var item = await context.Item.FirstOrDefaultAsync(i => i.Codigo == pedido.ItemCodigo);
+                    if (item != null)
+                    {
+                        item.CantidadEnPedidos = Math.Max(0, item.CantidadEnPedidos - pedido.Cantidad);
+                        context.Item.Update(item);
+                    }
+                }
+
+                await context.SaveChangesAsync();
+
+                return Ok(new { 
+                    message = $"Pedido N° {numeroPedido} anulado exitosamente. Se anularon {pedidos.Count} ítems.",
+                    pedidosAnulados = pedidos.Count
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { 
+                    message = "Error al anular el pedido: " + ex.Message
+                });
+            }
+        }
+
         [HttpGet("items")]
         public async Task<ActionResult<IEnumerable<object>>> GetItems()
         {
