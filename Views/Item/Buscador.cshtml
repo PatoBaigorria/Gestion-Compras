@@ -70,6 +70,7 @@
                             <th style="width: 32%;">Descripción Items</th> 
                             <th style="width: 80px;">Stock</th> 
                             <th style="width: 150px;">Punto de Pedido</th>
+                            <th style="width: 80px;">Cant. Pedidos</th>
                             <th style="width: 180px;">Unidad de Medida</th> 
                             <th style="width: 90px;">Precio</th>
                             <th style="width: 70px;">Crítico</th>
@@ -165,8 +166,9 @@
                         resultados.empty();
 
                         $.each(response, function (index, item) {
-                            // Nueva lógica: Stock < PuntoPedido AND sin pedidos pendientes
-                            const necesitaComprar = (item.stock < item.puntoDePedido) && (item.cantidadEnPedidosPendientes === 0);
+                            // Lógica corregida: Stock < PuntoPedido Y (stock + cantidadEnPedidos) < puntoPedido
+                            const stockTotal = item.stock + item.cantidadEnPedidos;
+                            const necesitaComprar = (item.stock < item.puntoDePedido) && (stockTotal < item.puntoDePedido);
                             const comprarHtml = necesitaComprar ? 
                                 '<i class="fas fa-shopping-cart text-danger" title="Necesita comprar"></i>' : 
                                 '<span class="text-muted">-</span>';
@@ -179,6 +181,7 @@
                                     <td style="text-align: left">${item.descripcionItem}</td> 
                                     <td>${item.stock !== null ? item.stock : ''}</td> 
                                     <td>${item.puntoDePedido !== null ? item.puntoDePedido : ''}</td>
+                                    <td>${item.cantidadEnPedidos !== null ? item.cantidadEnPedidos : '0'}</td>
                                     <td>${item.unidadDeMedidaAbreviatura || ''}</td>
                                     <td>${item.precio !== null ? item.precio : ''}</td>
                                     <td><input type="checkbox" ${item.critico ? 'checked' : ''} disabled></td> 
