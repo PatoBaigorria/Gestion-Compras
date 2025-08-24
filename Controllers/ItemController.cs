@@ -75,6 +75,7 @@ namespace Gestion_Compras.Controllers
                     SubFamiliaDescripcion = i.SubFamilia.Descripcion,
                     UnidadDeMedidaAbreviatura = i.UnidadDeMedida.Abreviatura,
                     DescripcionItem = i.Descripcion,
+                    CantidadEnPedidos = i.CantidadEnPedidos,
                     CantidadEnPedidosPendientes = context.Pedido
                         .Where(p => p.ItemCodigo == i.Codigo && p.Estado == "PENDIENTE")
                         .Sum(p => (int?)p.Cantidad) ?? 0
