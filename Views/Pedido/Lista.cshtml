@@ -9,9 +9,53 @@
             <h2 class="mb-3">Lista de Pedidos</h2>
         </div>
         <div class="col-md-6 text-end">
-            <a href="/Pedido/Nuevo" class="btn btn-primary">
+            <a href="/Pedido/Nuevo" class="btn btn-primary me-2">
                 <i class="fas fa-plus"></i> Generar Pedido
             </a>
+            <button type="button" class="btn btn-danger" onclick="anularPedido()">
+                <i class="fas fa-times"></i> Anular Pedido
+            </button>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="card shadow mb-3">
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <label for="filtroGeneral" class="form-label">Filtro General:</label>
+                    <input type="text" class="form-control" id="filtroGeneral" placeholder="Buscar en todos los campos..." onkeyup="filtrarTabla()">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Filtrar por Estado:</label>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="filtroPendiente" onchange="filtrarTabla()" checked>
+                                <label class="form-check-label" for="filtroPendiente">
+                                    Pendiente
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="filtroCompletado" onchange="filtrarTabla()" checked>
+                                <label class="form-check-label" for="filtroCompletado">
+                                    Completado
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="filtroAnulado" onchange="filtrarTabla()">
+                                <label class="form-check-label" for="filtroAnulado">
+                                    Anulado
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -27,6 +71,7 @@
                             <th style="width: 100px;">Código Item</th>
                             <th style="width: 300px;">Descripción</th>
                             <th style="width: 100px;">Unidad Medida</th>
+                            <th style="width: 80px;">Cantidad</th>
                             <th style="width: 80px;">Pendiente</th>
                             <th style="width: 80px;">Recibido</th>
                             <th style="width: 150px;">Subfamilia</th>
@@ -85,6 +130,7 @@
                                     <td>${pedido.itemCodigo || ''}</td>
                                     <td style="text-align: left;">${pedido.itemDescripcion || ''}</td>
                                     <td>${pedido.unidadMedida || ''}</td>
+                                    <td>${pedido.cantidad}</td>
                                     <td>${pedido.cantidad - pedido.recibido}</td>
                                     <td>${pedido.recibido}</td>
                                     <td>${pedido.subFamilia || ''}</td>
@@ -92,10 +138,13 @@
                                 </tr>
                             `);
                         });
+                        
+                        // Aplicar filtros después de cargar los datos
+                        filtrarTabla();
                     } else {
                         tbody.append(`
                             <tr>
-                                <td colspan="9" class="text-center text-muted">
+                                <td colspan="10" class="text-center text-muted">
                                     <i class="fas fa-info-circle"></i> No se encontraron pedidos
                                 </td>
                             </tr>
@@ -106,7 +155,7 @@
                     console.error('Error al cargar pedidos:', xhr.responseText);
                     $('#listaPedidos').html(`
                         <tr>
-                            <td colspan="9" class="text-center text-danger">
+                            <td colspan="10" class="text-center text-danger">
                                 <i class="fas fa-exclamation-triangle"></i> Error al cargar los pedidos
                             </td>
                         </tr>
@@ -128,6 +177,118 @@
                 default:
                     return '<span class="badge bg-secondary">' + estado + '</span>';
             }
+        }
+
+        // Función para filtrar la tabla
+        function filtrarTabla() {
+            const filtroGeneral = document.getElementById('filtroGeneral').value.toLowerCase();
+            const filtroPendiente = document.getElementById('filtroPendiente').checked;
+            const filtroCompletado = document.getElementById('filtroCompletado').checked;
+            const filtroAnulado = document.getElementById('filtroAnulado').checked;
+            const filas = document.querySelectorAll('#listaPedidos tr');
+
+            filas.forEach(function(fila) {
+                // Obtener el texto de todas las celdas de la fila
+                const textoFila = fila.textContent.toLowerCase();
+                
+                // Verificar filtro general
+                const cumpleFiltroGeneral = filtroGeneral === '' || textoFila.includes(filtroGeneral);
+                
+                // Verificar filtro de estado
+                let cumpleFiltroEstado = false;
+                const estadoCell = fila.querySelector('td:nth-child(10)'); // Columna de estado
+                if (estadoCell) {
+                    const estado = estadoCell.textContent.toUpperCase();
+                    
+                    // Verificar cada tipo de estado
+                    if (filtroPendiente && estado.includes('PENDIENTE')) {
+                        cumpleFiltroEstado = true;
+                    }
+                    if (filtroCompletado && (estado.includes('COMPLETADO') || estado.includes('RECIBIDO'))) {
+                        cumpleFiltroEstado = true;
+                    }
+                    if (filtroAnulado && (estado.includes('CANCELADO') || estado.includes('ANULADO'))) {
+                        cumpleFiltroEstado = true;
+                    }
+                } else {
+                    // Si no hay celda de estado, mostrar si al menos un filtro está activo
+                    cumpleFiltroEstado = filtroPendiente || filtroCompletado || filtroAnulado;
+                }
+                
+                // Mostrar u ocultar fila
+                if (cumpleFiltroGeneral && cumpleFiltroEstado) {
+                    fila.style.display = '';
+                } else {
+                    fila.style.display = 'none';
+                }
+            });
+        }
+
+        // Función para anular pedido
+        function anularPedido() {
+            Swal.fire({
+                title: 'Anular Pedido',
+                text: 'Ingrese el número de pedido que desea anular:',
+                input: 'number',
+                inputAttributes: {
+                    min: 1,
+                    step: 1
+                },
+                showCancelButton: true,
+                confirmButtonText: 'Anular',
+                cancelButtonText: 'Cancelar',
+                confirmButtonColor: '#dc3545',
+                inputValidator: (value) => {
+                    if (!value || value <= 0) {
+                        return 'Debe ingresar un número de pedido válido';
+                    }
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    const numeroPedido = result.value;
+                    
+                    // Confirmar anulación
+                    Swal.fire({
+                        title: '¿Está seguro?',
+                        text: `¿Desea anular el pedido N° ${numeroPedido}? Esta acción no se puede deshacer.`,
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonColor: '#dc3545',
+                        cancelButtonColor: '#6c757d',
+                        confirmButtonText: 'Sí, anular',
+                        cancelButtonText: 'Cancelar'
+                    }).then((confirmResult) => {
+                        if (confirmResult.isConfirmed) {
+                            // Realizar la anulación
+                            $.ajax({
+                                url: `/api/pedido/anular/${numeroPedido}`,
+                                type: 'PUT',
+                                success: function(response) {
+                                    Swal.fire({
+                                        title: '¡Pedido Anulado!',
+                                        text: `El pedido N° ${numeroPedido} ha sido anulado correctamente.`,
+                                        icon: 'success',
+                                        timer: 2000,
+                                        showConfirmButton: false
+                                    });
+                                    cargarPedidos(); // Recargar la lista
+                                },
+                                error: function(xhr, status, errorThrown) {
+                                    let mensaje = 'Error al anular el pedido';
+                                    if (xhr.responseJSON && xhr.responseJSON.message) {
+                                        mensaje = xhr.responseJSON.message;
+                                    }
+                                    Swal.fire({
+                                        title: 'Error',
+                                        text: mensaje,
+                                        icon: 'error'
+                                    });
+                                }
+                            });
+                        }
+                    });
+                }
+            });
         }
 
         // Actualizar lista automáticamente cada 5 segundos

@@ -48,6 +48,12 @@
                     <i class="fas fa-shopping-cart text-danger"></i> Solo comprar
                 </label>
             </div>
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="filtroCritico">
+                <label class="form-check-label" for="filtroCritico">
+                    <i class="fas fa-exclamation-triangle text-warning"></i> Solo críticos
+                </label>
+            </div>
         </div>
     </div>
 
@@ -166,7 +172,7 @@
                                 '<span class="text-muted">-</span>';
                             
                             resultados.append(
-                                `<tr data-necesita-comprar="${necesitaComprar}">
+                                `<tr data-necesita-comprar="${necesitaComprar}" data-critico="${item.critico}">
                                     <td>${item.codigo}</td> 
                                     <td>${item.familiaDescripcion || ''}</td> 
                                     <td>${item.subFamiliaDescripcion || ''}</td> 
@@ -181,8 +187,8 @@
                             );
                         });
                         
-                        // Aplicar filtro si está activo
-                        aplicarFiltroComprar();
+                        // Aplicar filtros si están activos
+                        aplicarFiltros();
                     },
                     error: function (xhr, status, errorThrown) {
                         console.error('Error al buscar items:', xhr.responseText);
@@ -190,24 +196,32 @@
                 });
             }
 
-            // Función para aplicar filtro de comprar
-            function aplicarFiltroComprar() {
-                const filtroActivo = $('#filtroComprar').is(':checked');
+            // Función para aplicar todos los filtros
+            function aplicarFiltros() {
+                const filtroComprarActivo = $('#filtroComprar').is(':checked');
+                const filtroCriticoActivo = $('#filtroCritico').is(':checked');
                 
-                if (filtroActivo) {
-                    // Mostrar solo filas que necesitan comprar
-                    $('#resultadosBusqueda tr').each(function() {
-                        const necesitaComprar = $(this).data('necesita-comprar');
-                        if (necesitaComprar) {
-                            $(this).show();
-                        } else {
-                            $(this).hide();
-                        }
-                    });
-                } else {
-                    // Mostrar todas las filas
-                    $('#resultadosBusqueda tr').show();
-                }
+                $('#resultadosBusqueda tr').each(function() {
+                    const necesitaComprar = $(this).data('necesita-comprar');
+                    const esCritico = $(this).data('critico');
+                    let mostrar = true;
+                    
+                    // Aplicar filtro de comprar si está activo
+                    if (filtroComprarActivo && !necesitaComprar) {
+                        mostrar = false;
+                    }
+                    
+                    // Aplicar filtro de crítico si está activo
+                    if (filtroCriticoActivo && !esCritico) {
+                        mostrar = false;
+                    }
+                    
+                    if (mostrar) {
+                        $(this).show();
+                    } else {
+                        $(this).hide();
+                    }
+                });
             }
 
             // Manejar el botón de buscar
@@ -215,9 +229,13 @@
                 buscarItems();
             });
 
-            // Manejar el filtro de comprar
+            // Manejar los filtros
             $('#filtroComprar').change(function () {
-                aplicarFiltroComprar();
+                aplicarFiltros();
+            });
+
+            $('#filtroCritico').change(function () {
+                aplicarFiltros();
             });
 
             // Función para refrescar automáticamente el buscador
