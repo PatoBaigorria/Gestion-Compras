@@ -1,0 +1,138 @@
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    ViewData["Title"] = "Lista de Pedidos";
+}
+
+<div class="container-custom mt-1">
+    <div class="row">
+        <div class="col-md-6">
+            <h2 class="mb-3">Lista de Pedidos</h2>
+        </div>
+        <div class="col-md-6 text-end">
+            <a href="/Pedido/Nuevo" class="btn btn-primary">
+                <i class="fas fa-plus"></i> Generar Pedido
+            </a>
+        </div>
+    </div>
+
+    <!-- Tabla de Pedidos -->
+    <div class="card shadow">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped table-bordered table-hover text-center table-sm" id="tablaPedidos">
+                    <thead class="table-light">
+                        <tr>
+                            <th style="width: 100px;">N° Pedido</th>
+                            <th style="width: 100px;">Fecha</th>
+                            <th style="width: 100px;">Código Item</th>
+                            <th style="width: 300px;">Descripción</th>
+                            <th style="width: 100px;">Unidad Medida</th>
+                            <th style="width: 80px;">Pendiente</th>
+                            <th style="width: 80px;">Recibido</th>
+                            <th style="width: 150px;">Subfamilia</th>
+                            <th style="width: 100px;">Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody id="listaPedidos">
+                        <!-- Los pedidos se cargarán aquí -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .container-custom {
+        width: 100%;
+        padding-right: 15px;
+        padding-left: 15px;
+        margin-right: auto;
+        margin-left: auto;
+        max-width: 1400px;
+    }
+    
+    .table-sm td, 
+    .table-sm th { 
+        font-size: 0.9em; 
+    }
+</style>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            cargarPedidos();
+        });
+
+        function cargarPedidos() {
+            $.ajax({
+                url: '/api/pedido/list',
+                type: 'GET',
+                success: function (response) {
+                    const tbody = $('#listaPedidos');
+                    tbody.empty();
+
+                    if (response && response.length > 0) {
+                        $.each(response, function (index, pedido) {
+                            const estadoBadge = getEstadoBadge(pedido.estado);
+                            // Corregir formato de fecha - agregar tiempo para evitar problemas de zona horaria
+                            const fecha = new Date(pedido.fechaPedido + 'T00:00:00').toLocaleDateString('es-ES');
+                            
+                            tbody.append(`
+                                <tr>
+                                    <td>${pedido.numeroPedido}</td>
+                                    <td>${fecha}</td>
+                                    <td>${pedido.itemCodigo || ''}</td>
+                                    <td style="text-align: left;">${pedido.itemDescripcion || ''}</td>
+                                    <td>${pedido.unidadMedida || ''}</td>
+                                    <td>${pedido.cantidad - pedido.recibido}</td>
+                                    <td>${pedido.recibido}</td>
+                                    <td>${pedido.subFamilia || ''}</td>
+                                    <td>${estadoBadge}</td>
+                                </tr>
+                            `);
+                        });
+                    } else {
+                        tbody.append(`
+                            <tr>
+                                <td colspan="9" class="text-center text-muted">
+                                    <i class="fas fa-info-circle"></i> No se encontraron pedidos
+                                </td>
+                            </tr>
+                        `);
+                    }
+                },
+                error: function (xhr, status, errorThrown) {
+                    console.error('Error al cargar pedidos:', xhr.responseText);
+                    $('#listaPedidos').html(`
+                        <tr>
+                            <td colspan="9" class="text-center text-danger">
+                                <i class="fas fa-exclamation-triangle"></i> Error al cargar los pedidos
+                            </td>
+                        </tr>
+                    `);
+                }
+            });
+        }
+
+        function getEstadoBadge(estado) {
+            switch (estado) {
+                case 'PENDIENTE':
+                    return '<span class="badge bg-warning">PENDIENTE</span>';
+                case 'RECIBIDO':
+                    return '<span class="badge bg-success">RECIBIDO</span>';
+                case 'COMPLETADO':
+                    return '<span class="badge bg-success">COMPLETADO</span>';
+                case 'CANCELADO':
+                    return '<span class="badge bg-danger">CANCELADO</span>';
+                default:
+                    return '<span class="badge bg-secondary">' + estado + '</span>';
+            }
+        }
+
+        // Actualizar lista automáticamente cada 5 segundos
+        setInterval(function() {
+            cargarPedidos();
+        }, 5000);
+    </script>
+}

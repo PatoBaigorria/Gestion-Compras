@@ -10,7 +10,7 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css" rel="stylesheet" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
-    <link rel="icon" type="image/x-icon" href="~/favicon.ico">
+    
     <style>
         body {
             font-family: 'Roboto', sans-serif;
@@ -40,7 +40,7 @@
             color: white;
             text-align: center;
             padding: 1rem;
-            margin-top: auto;
+            margin-top: 4rem;
         }
 
         footer a {
@@ -96,6 +96,9 @@
                         <a class="nav-link" href="/Proveedor" title="Lista y Alta de Proveedores" style="color: white !important;">Proveedores</a>
                     </li>
                     <li class="nav-item">
+                        <a class="nav-link" href="/Pedido" title="Lista y Alta de Pedidos" style="color: white !important;">Pedidos</a>
+                    </li>
+                    <li class="nav-item">
                         <a class="nav-link" href="/Kardex" title="Historial de Movimientos de Stock" style="color: white !important;">Kardex</a>
                     </li>
                     @if (User.Identity.IsAuthenticated)
@@ -141,8 +144,12 @@
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     @RenderSection("Scripts", required: false) <!-- Sección Scripts personalizada -->
+
+    <!-- dotnet watch browser refresh (sólo visible en desarrollo) -->
+    <script src="/_framework/aspnetcore-browser-refresh.js"></script>
 </body>
 
 </html>
