@@ -14,6 +14,17 @@ namespace Gestion_Compras.Models
 		{
 
 		}
+
+		protected override void OnModelCreating(ModelBuilder modelBuilder)
+		{
+			base.OnModelCreating(modelBuilder);
+			
+			// Configuración explícita para el modelo Ingreso
+			modelBuilder.Entity<Ingreso>(entity =>
+			{
+				entity.Property(e => e.PedidoId).HasColumnName("PedidoId");
+			});
+		}
 		public DbSet<Familia> Familia { get; set; }
 
 		public DbSet<SubFamilia> SubFamilia { get; set; }
@@ -25,6 +36,8 @@ namespace Gestion_Compras.Models
 		public DbSet<Personal> Personal { get; set; }
 
 		public DbSet<Proveedor> Proveedor { get; set; }
+
+		public DbSet<Pedido> Pedido { get; set; }
 
 		public DbSet<Ingreso> Ingreso { get; set; }
 

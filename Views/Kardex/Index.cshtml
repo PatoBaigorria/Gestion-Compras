@@ -160,7 +160,7 @@
                         <td class="text-center">${mov.fechaMovimiento}</td>
                         <td class="text-center">${mov.codigo || ''}</td>
                         <td class="text-start">${mov.descripcion || ''}</td>
-                        <td class="text-center"><span class="${tipoClass}">${mov.tipoMovimiento || ''}</span></td>
+                        <td class="text-center"><span class="${tipoClass}">${(mov.tipoMovimiento || '').toLowerCase()}</span></td>
                         <td class="text-center">${mov.stockInicial !== null ? mov.stockInicial : ''}</td>
                         <td class="text-center"><span class="${cantidadClass}">${mov.cantidadMovimiento}</span></td>
                         <td class="text-center"><strong>${mov.stockFinal !== null ? mov.stockFinal : ''}</strong></td>

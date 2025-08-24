@@ -31,7 +31,7 @@
                 <option value=""</option>
             </select>
         </div>
-        <div class="col-md-12 col-lg-6"> 
+        <div class="col-md-8 col-lg-4"> 
             <label for="descripcionItem" class="form-label">Descripción Item</label> 
             <div class="input-group"> 
                 <input type="text" id="descripcionItem" name="Descripcion" class="form-control"/> 
@@ -39,6 +39,15 @@
                     <i class="fas fa-search"></i> 
                 </button> 
             </div> 
+        </div>
+        <div class="col-md-4 col-lg-2">
+            <label for="filtroComprar" class="form-label">Filtrar</label>
+            <div class="form-check mt-2">
+                <input class="form-check-input" type="checkbox" id="filtroComprar">
+                <label class="form-check-label" for="filtroComprar">
+                    <i class="fas fa-shopping-cart text-danger"></i> Solo comprar
+                </label>
+            </div>
         </div>
     </div>
 
@@ -58,7 +67,7 @@
                             <th style="width: 180px;">Unidad de Medida</th> 
                             <th style="width: 90px;">Precio</th>
                             <th style="width: 70px;">Crítico</th>
-                            <th style="width: 70px;">Activo</th>
+                            <th style="width: 100px;">Comprar</th>
                         </tr> 
                     </thead>
                     <tbody id="resultadosBusqueda"> 
@@ -150,8 +159,14 @@
                         resultados.empty();
 
                         $.each(response, function (index, item) {
+                            // Nueva lógica: Stock < PuntoPedido AND sin pedidos pendientes
+                            const necesitaComprar = (item.stock < item.puntoDePedido) && (item.cantidadEnPedidosPendientes === 0);
+                            const comprarHtml = necesitaComprar ? 
+                                '<i class="fas fa-shopping-cart text-danger" title="Necesita comprar"></i>' : 
+                                '<span class="text-muted">-</span>';
+                            
                             resultados.append(
-                                `<tr>
+                                `<tr data-necesita-comprar="${necesitaComprar}">
                                     <td>${item.codigo}</td> 
                                     <td>${item.familiaDescripcion || ''}</td> 
                                     <td>${item.subFamiliaDescripcion || ''}</td> 
@@ -161,10 +176,13 @@
                                     <td>${item.unidadDeMedidaAbreviatura || ''}</td>
                                     <td>${item.precio !== null ? item.precio : ''}</td>
                                     <td><input type="checkbox" ${item.critico ? 'checked' : ''} disabled></td> 
-                                    <td><input type="checkbox" ${item.activo ? 'checked' : ''} disabled></td>
+                                    <td>${comprarHtml}</td>
                                 </tr>`
                             );
                         });
+                        
+                        // Aplicar filtro si está activo
+                        aplicarFiltroComprar();
                     },
                     error: function (xhr, status, errorThrown) {
                         console.error('Error al buscar items:', xhr.responseText);
@@ -172,9 +190,34 @@
                 });
             }
 
+            // Función para aplicar filtro de comprar
+            function aplicarFiltroComprar() {
+                const filtroActivo = $('#filtroComprar').is(':checked');
+                
+                if (filtroActivo) {
+                    // Mostrar solo filas que necesitan comprar
+                    $('#resultadosBusqueda tr').each(function() {
+                        const necesitaComprar = $(this).data('necesita-comprar');
+                        if (necesitaComprar) {
+                            $(this).show();
+                        } else {
+                            $(this).hide();
+                        }
+                    });
+                } else {
+                    // Mostrar todas las filas
+                    $('#resultadosBusqueda tr').show();
+                }
+            }
+
             // Manejar el botón de buscar
             $('#buscarItemsBtn').click(function () {
                 buscarItems();
+            });
+
+            // Manejar el filtro de comprar
+            $('#filtroComprar').change(function () {
+                aplicarFiltroComprar();
             });
 
             // Función para refrescar automáticamente el buscador

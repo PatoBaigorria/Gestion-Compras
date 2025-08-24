@@ -24,6 +24,7 @@ namespace Gestion_Compras.Models
 		public double PuntoDePedido { get; set; }
 		public double Precio { get; set; }
 		public bool Critico { get; set; } = true;
+		public int CantidadEnPedidos { get; set; }
 		public bool Activo { get; set; } = true;
 
 		[ForeignKey(nameof(UnidadDeMedidaId))]

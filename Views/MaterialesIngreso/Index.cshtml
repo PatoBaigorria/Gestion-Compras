@@ -1,4 +1,4 @@
-@model IEnumerable<Gestion_Compras.Models.Ingreso>
+@model IEnumerable<dynamic>
 
 @{
     Layout = "~/Views/Shared/_Layout.cshtml";
@@ -21,7 +21,7 @@
                 <th style="width: 20%; text-align: center;">Proveedor</th>
                 <th style="width: 5%; text-align: center;">Remito</th>
                 <th style="width: 10%; text-align: center;">Orden de Compra</th>
-                <th style="width: 5%; text-align: center;">Pedido</th>
+                <th style="width: 5%; text-align: center;">N° Pedido</th>
                 <th style="width: 5%; text-align: center;">Fecha Remito</th>
             </tr>
         </thead>
@@ -34,7 +34,7 @@
                     <td>@ingreso.Proveedor.RazonSocial</td>
                     <td>@ingreso.Remito</td>
                     <td>@ingreso.OrdenCompra</td>
-                    <td>@ingreso.Pedido</td>
+                    <td>@ingreso.NumeroPedido</td>
                     <td>@ingreso.FechaRemito.ToString("dd/MM/yyyy")</td>
                 </tr>
             }

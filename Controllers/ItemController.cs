@@ -38,7 +38,7 @@ namespace Gestion_Compras.Controllers
         [HttpGet("BuscarItems")]
         public async Task<ActionResult<IEnumerable<object>>> BuscarItems(string codigo = null, int? familiaId = null, int? subFamiliaId = null, string descripcion = null)
         {
-            var query = context.Item.AsQueryable();
+            var query = context.Item.Where(i => i.Activo).AsQueryable();
 
             if (!string.IsNullOrEmpty(codigo))
             {
@@ -65,15 +65,19 @@ namespace Gestion_Compras.Controllers
                 {
                     i.Id,
                     i.Codigo,
-                    FamiliaDescripcion = i.SubFamilia.Familia.Descripcion,
-                    SubFamiliaDescripcion = i.SubFamilia.Descripcion,
-                    DescripcionItem = i.Descripcion,
+                    i.Descripcion,
                     i.Stock,
                     i.PuntoDePedido,
                     i.Precio,
                     i.Critico,
                     i.Activo,
-                    UnidadDeMedidaAbreviatura = i.UnidadDeMedida.Abreviatura
+                    FamiliaDescripcion = i.SubFamilia.Familia.Descripcion,
+                    SubFamiliaDescripcion = i.SubFamilia.Descripcion,
+                    UnidadDeMedidaAbreviatura = i.UnidadDeMedida.Abreviatura,
+                    DescripcionItem = i.Descripcion,
+                    CantidadEnPedidosPendientes = context.Pedido
+                        .Where(p => p.ItemCodigo == i.Codigo && p.Estado == "PENDIENTE")
+                        .Sum(p => (int?)p.Cantidad) ?? 0
                 })
                 .ToListAsync();
 

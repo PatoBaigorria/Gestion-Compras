@@ -9,13 +9,11 @@ namespace Gestion_Compras.Models
 		[Key] 
 		public int Id { get; set; }
 
-        public int NumPedido { get; set; }
+		[Required]
+		public int NumeroPedido { get; set; }
 
-		public string ItemCodigo { get; set; }
-		[ForeignKey(nameof(ItemId))] 
-
-		public Item? Item { get; set; } 
-		public int ItemId { get; set; }
+		[Required]
+		public string ItemCodigo { get; set; } = string.Empty;
 
 		public int UnidadDeMedidaId { get; set; }
         
@@ -25,7 +23,8 @@ namespace Gestion_Compras.Models
 
         public int  SubFamiliaId { get; set; }
 
-        public string Estado { get; set; }
+        [Required]
+        public string Estado { get; set; } = string.Empty;
 
         public DateOnly FechaPedido { get; set; }
 	}

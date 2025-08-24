@@ -124,6 +124,18 @@ app.MapControllerRoute(
     defaults: new { controller = "Ingreso", action = "Index" }
 );
 
+app.MapControllerRoute(
+    name: "pedido",
+    pattern: "Pedido/{action=Lista}/{id?}",
+    defaults: new { controller = "PedidoView", action = "Lista" }
+);
+
+app.MapControllerRoute(
+    name: "pedidoNuevo",
+    pattern: "Pedido/Nuevo",
+    defaults: new { controller = "PedidoView", action = "Index" }
+);
+
 app.MapControllers(); // Mapea los controladores restantes
 
 // Configuración para LAN - escuchar en todas las interfaces

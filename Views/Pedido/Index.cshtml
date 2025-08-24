@@ -1,0 +1,547 @@
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    ViewData["Title"] = "Nota de Pedidos";
+}
+
+<div class="container-custom mt-1">
+    <h2 class="text-center mb-2">Nota de Pedidos</h2>
+
+    <!-- Formulario de Nota de Pedidos -->
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-clipboard-list me-2"></i>Formulario de Pedido</h5>
+                    <a href="/Pedido" class="btn btn-outline-light btn-sm">
+                        <i class="fas fa-arrow-left"></i> Volver a Lista
+                    </a>
+                </div>
+                <div class="card-body">
+                    <form id="formNotaPedido">
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <h6><strong>N° de Pedido: <span id="numPedido" class="text-primary">-</span></strong></h6>
+                            </div>
+                            <div class="col-md-6 text-end">
+                                <h6><strong>Fecha: <span id="fechaPedido" class="text-primary">-</span></strong></h6>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-2">
+                                <label for="codigoItem" class="form-label">Código *</label>
+                                <input type="text" class="form-control" id="codigoItem" placeholder="Código del ítem" maxlength="7" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="descripcionItem" class="form-label">Descripción</label>
+                                <input type="text" class="form-control" id="descripcionItem" readonly>
+                            </div>
+                            <div class="col-md-1">
+                                <label for="cantidad" class="form-label">Cant. *</label>
+                                <input type="number" class="form-control" id="cantidad" min="1" max="9999" required>
+                            </div>
+                            <div class="col-md-1">
+                                <label for="unidadMedida" class="form-label">Unidad</label>
+                                <input type="text" class="form-control" id="unidadMedida" readonly>
+                            </div>
+                            <div class="col-md-1 d-flex align-items-end">
+                                <button type="button" class="btn btn-success" id="agregarItemBtn">
+                                    <i class="fas fa-plus"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Lista de Items Agregados -->
+    <div class="row justify-content-center mt-4">
+        <div class="col-lg-10">
+            <div class="card shadow">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="mb-0"><i class="fas fa-list me-2"></i>Items del Pedido</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover" id="tablaItemsPedido">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>Código</th>
+                                    <th>Descripción</th>
+                                    <th>Cantidad</th>
+                                    <th>Unidad</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="itemsPedidoBody">
+                                <tr id="emptyRow">
+                                    <td colspan="5" class="text-center text-muted">
+                                        <i class="fas fa-info-circle"></i> No hay items agregados al pedido
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div class="row mt-3">
+                        <div class="col-md-12 text-end">
+                            <button type="button" class="btn btn-danger me-2" id="limpiarListaBtn">
+                                <i class="fas fa-trash"></i> Limpiar Lista
+                            </button>
+                            <button type="button" class="btn btn-primary" id="generarPedidoBtn" disabled>
+                                <i class="fas fa-save"></i> Generar Pedido
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!-- Estilos CSS -->
+<style>
+    .container-custom {
+        width: 100%;
+        padding-right: 15px;
+        padding-left: 15px;
+        margin-right: auto;
+        margin-left: auto;
+        max-width: 1400px;
+    }
+
+    .table-responsive {
+        position: relative;
+        min-height: 200px;
+        max-height: 600px;
+        overflow-y: auto;
+    }
+
+    .table-header {
+        position: sticky;
+        top: 0;
+        z-index: 1020;
+        background-color: white;
+    }
+
+    .table-sm td,
+    .table-sm th {
+        font-size: 0.9em;
+    }
+
+    .swal2-small {
+        font-size: 0.85rem;
+    }
+    
+    .swal2-small .swal2-title {
+        font-size: 1.1rem;
+        margin: 0.5rem 0;
+    }
+    
+    .swal2-small .swal2-actions {
+        margin: 0.5rem 0;
+    }
+    
+    .swal2-small .swal2-icon {
+        width: 50px !important;
+        height: 50px !important;
+        margin: 0.5rem auto !important;
+    }
+    
+    .swal2-small .swal2-icon::before {
+        font-size: 24px !important;
+    }
+</style>
+
+@section Scripts {
+    <script>
+        // Variables globales
+        let itemsPedido = [];
+        let itemSeleccionado = null;
+
+        $(document).ready(function () {
+            // Inicializar formulario
+            inicializarFormulario();
+            configurarEventos();
+        });
+
+        // Inicializar formulario con número de pedido y fecha
+        function inicializarFormulario() {
+            // Obtener siguiente número de pedido
+            cargarNumPedido();
+            
+            // Establecer fecha actual
+            const hoy = new Date();
+            const fechaFormateada = hoy.toLocaleDateString('es-AR');
+            $('#fechaPedido').text(fechaFormateada);
+        }
+
+        // Cargar número de pedido
+        function cargarNumPedido() {
+            $.ajax({
+                url: '/api/pedido/siguiente-numero',
+                type: 'GET',
+                success: function (numero) {
+                    $('#numPedido').text(numero);
+                },
+                error: function (xhr, status, errorThrown) {
+                    console.error('Error al obtener número de pedido:', xhr.responseText);
+                    $('#numPedido').text('1'); // Valor por defecto
+                }
+            });
+        }
+
+        // Configurar eventos
+        function configurarEventos() {
+            // Buscar item por Enter (mantener funcionalidad)
+            $('#codigoItem').keypress(function(e) {
+                if (e.which === 13) { // Enter
+                    buscarItemPorCodigo();
+                }
+            });
+
+            // Convertir código a mayúsculas y buscar automáticamente al llegar a 7 caracteres
+            $('#codigoItem').on('input', function() {
+                var cursorPos = this.selectionStart;
+                var value = $(this).val().toUpperCase();
+                $(this).val(value);
+                this.setSelectionRange(cursorPos, cursorPos);
+                
+                // Buscar automáticamente cuando tenga 7 caracteres
+                if (value.length === 7) {
+                    buscarItemPorCodigo();
+                } else if (value.length < 7) {
+                    // Limpiar campos si tiene menos de 7 caracteres
+                    limpiarCamposItem();
+                }
+            });
+
+            // Agregar item a la lista
+            $('#agregarItemBtn').click(agregarItemALista);
+            $('#cantidad').keypress(function(e) {
+                if (e.which === 13) { // Enter
+                    agregarItemALista();
+                }
+            });
+
+            // Limpiar lista
+            $('#limpiarListaBtn').click(limpiarLista);
+
+            // Generar pedido
+            $('#generarPedidoBtn').click(generarPedido);
+        }
+
+        // Buscar item por código
+        function buscarItemPorCodigo() {
+            const codigo = $('#codigoItem').val().trim();
+            if (!codigo) {
+                mostrarToast('Por favor ingrese un código de item', 'warning');
+                return;
+            }
+
+            $.ajax({
+                url: '/api/pedido/item-por-codigo',
+                type: 'GET',
+                data: { codigo: codigo },
+                success: function (response) {
+                    if (response.success) {
+                        itemSeleccionado = response.item;
+                        $('#descripcionItem').val(response.item.descripcion);
+                        $('#unidadMedida').val(response.item.unidadDeMedida || '');
+                        $('#cantidad').focus();
+                    } else {
+                        console.log('Item no encontrado. Debug info:', response.debug);
+                        if (response.debug && response.debug.itemsSimilares) {
+                            console.log('Items similares:', response.debug.itemsSimilares);
+                        }
+                        
+                        // Si el item está inactivo, mostrar mensaje específico
+                        if (response.inactivo) {
+                            mostrarToast(response.message, 'warning');
+                        } else {
+                            mostrarToast('Item no encontrado', 'warning');
+                        }
+                        limpiarCamposItem();
+                    }
+                },
+                error: function (xhr, status, errorThrown) {
+                    console.error('Error al buscar item:', xhr.responseText);
+                    try {
+                        const response = JSON.parse(xhr.responseText);
+                        if (response.debug) {
+                            console.log('Debug info:', response.debug);
+                            console.log('Items similares encontrados:', response.debug.itemsSimilares);
+                        }
+                    } catch (e) {
+                        console.log('No se pudo parsear la respuesta de debug');
+                    }
+                    mostrarToast('Error al buscar item', 'error');
+                    limpiarCamposItem();
+                }
+            });
+        }
+
+        // Limpiar campos del item
+        function limpiarCamposItem() {
+            itemSeleccionado = null;
+            $('#descripcionItem').val('');
+            $('#unidadMedida').val('');
+        }
+
+        // Agregar item a la lista
+        function agregarItemALista() {
+            if (!itemSeleccionado) {
+                mostrarToast('Primero debe buscar un item válido', 'warning');
+                return;
+            }
+
+            const cantidad = parseInt($('#cantidad').val());
+            if (!cantidad || cantidad <= 0) {
+                mostrarToast('Ingrese una cantidad válida', 'warning');
+                $('#cantidad').focus();
+                return;
+            }
+
+            // Verificar si el item ya está en la lista
+            const itemExistente = itemsPedido.find(item => item.codigo === itemSeleccionado.codigo);
+            if (itemExistente) {
+                mostrarToast(`El ítem ${itemSeleccionado.codigo} ya está agregado en la lista.`, 'warning');
+                $('#codigoItem').focus();
+                return;
+            }
+
+            // Agregar item a la lista
+            const itemPedido = {
+                codigo: itemSeleccionado.codigo,
+                descripcion: itemSeleccionado.descripcion,
+                cantidad: cantidad,
+                unidadMedida: itemSeleccionado.unidadDeMedida || '',
+                itemId: itemSeleccionado.id
+            };
+
+            itemsPedido.push(itemPedido);
+            actualizarTablaItems();
+            limpiarFormularioItem();
+            mostrarToast('Item agregado exitosamente', 'success');
+        }
+
+        // Actualizar tabla de items
+        function actualizarTablaItems() {
+            const tbody = $('#itemsPedidoBody');
+            tbody.empty();
+
+            if (itemsPedido.length === 0) {
+                tbody.append(`
+                    <tr id="emptyRow">
+                        <td colspan="5" class="text-center text-muted">
+                            <i class="fas fa-info-circle"></i> No hay items agregados al pedido
+                        </td>
+                    </tr>
+                `);
+                $('#generarPedidoBtn').prop('disabled', true);
+            } else {
+                itemsPedido.forEach((item, index) => {
+                    tbody.append(`
+                        <tr>
+                            <td>${item.codigo}</td>
+                            <td>${item.descripcion}</td>
+                            <td>${item.cantidad}</td>
+                            <td>${item.unidadMedida}</td>
+                            <td>
+                                <button type="button" class="btn btn-danger btn-sm" onclick="eliminarItem(${index})">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    `);
+                });
+                $('#generarPedidoBtn').prop('disabled', false);
+            }
+
+            // Contador removido - ya no es necesario
+        }
+
+        // Eliminar item de la lista
+        function eliminarItem(index) {
+            Swal.fire({
+                title: '¿Eliminar ítem?',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'Eliminar',
+                cancelButtonText: 'Cancelar',
+                reverseButtons: true,
+                width: '300px',
+                padding: '0.5rem',
+                customClass: {
+                    popup: 'swal2-small'
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    itemsPedido.splice(index, 1);
+                    actualizarTablaItems();
+                    mostrarToast('Ítem eliminado de la lista', 'success');
+                }
+            });
+        }
+
+        // Limpiar formulario de item
+        function limpiarFormularioItem() {
+            $('#codigoItem').val('');
+            $('#cantidad').val('');
+            $('#descripcionItem').val('');
+            $('#unidadMedida').val('');
+            itemSeleccionado = null;
+            $('#codigoItem').focus();
+        }
+
+        // Limpiar toda la lista
+        function limpiarLista() {
+            if (itemsPedido.length === 0) {
+                mostrarToast('La lista ya está vacía', 'info');
+                return;
+            }
+
+            Swal.fire({
+                title: '¿Limpiar lista?',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'Limpiar',
+                cancelButtonText: 'Cancelar',
+                reverseButtons: true,
+                width: '300px',
+                padding: '0.5rem',
+                customClass: {
+                    popup: 'swal2-small'
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    itemsPedido = [];
+                    actualizarTablaItems();
+                    mostrarToast('Lista limpiada exitosamente', 'success');
+                }
+            });
+        }
+
+        // Generar pedido
+        function generarPedido() {
+            if (itemsPedido.length === 0) {
+                mostrarToast('Debe agregar al menos un item al pedido', 'warning');
+                return;
+            }
+
+            const pedidoData = {
+                Items: itemsPedido.map(item => ({
+                    ItemId: item.itemId,
+                    Cantidad: item.cantidad
+                }))
+            };
+
+            $.ajax({
+                url: '/api/pedido/generar-pedido',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(pedidoData),
+                success: function (response) {
+                    if (response.success) {
+                        mostrarToast('Pedido generado exitosamente', 'success');
+                        
+                        // Actualizar buscador de items si está abierto
+                        if (window.refrescarBuscador && typeof window.refrescarBuscador === 'function') {
+                            window.refrescarBuscador();
+                        }
+                        
+                        // Notificar cambio para refrescar automáticamente
+                        localStorage.setItem('ultimoMovimientoKardex', Date.now().toString());
+                        
+                        // Limpiar formulario
+                        itemsPedido = [];
+                        actualizarTablaItems();
+                        limpiarFormularioItem();
+                        inicializarFormulario();
+                    } else {
+                        mostrarToast('Error: ' + response.message, 'error');
+                    }
+                },
+                error: function (xhr, status, errorThrown) {
+                    console.error('Error al generar pedido:', xhr.responseText);
+                    try {
+                        const errorResponse = JSON.parse(xhr.responseText);
+                        console.error('Error detallado:', errorResponse);
+                        if (errorResponse.innerException) {
+                            console.error('Inner exception:', errorResponse.innerException);
+                        }
+                        if (errorResponse.stackTrace) {
+                            console.error('Stack trace:', errorResponse.stackTrace);
+                        }
+                    } catch (e) {
+                        console.error('No se pudo parsear el error');
+                    }
+                    mostrarToast('Error al generar pedido', 'error');
+                }
+            });
+        }
+
+        // Función para mostrar notificaciones toast
+        function mostrarToast(mensaje, tipo) {
+            // Crear el contenedor de toasts si no existe
+            if ($('#toast-container').length === 0) {
+                $('body').append('<div id="toast-container" class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 9999;"></div>');
+            }
+
+            // Definir colores según el tipo
+            let bgClass = '';
+            let iconClass = '';
+            switch(tipo) {
+                case 'success':
+                    bgClass = 'bg-success text-white';
+                    iconClass = 'fas fa-check-circle';
+                    break;
+                case 'error':
+                    bgClass = 'bg-danger text-white';
+                    iconClass = 'fas fa-exclamation-circle';
+                    break;
+                case 'warning':
+                    bgClass = 'bg-warning text-dark';
+                    iconClass = 'fas fa-exclamation-triangle';
+                    break;
+                default:
+                    bgClass = 'bg-info text-white';
+                    iconClass = 'fas fa-info-circle';
+            }
+
+            // Crear el toast
+            const toastId = 'toast-' + Date.now();
+            const toastHtml = `
+                <div id="${toastId}" class="toast ${bgClass}" role="alert" aria-live="assertive" aria-atomic="true" data-bs-delay="4000">
+                    <div class="toast-header ${bgClass} border-0">
+                        <i class="${iconClass} me-2"></i>
+                        <strong class="me-auto">Notificación</strong>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
+                    </div>
+                    <div class="toast-body">
+                        ${mensaje}
+                    </div>
+                </div>
+            `;
+
+            // Agregar el toast al contenedor
+            $('#toast-container').append(toastHtml);
+
+            // Mostrar el toast
+            const toastElement = new bootstrap.Toast(document.getElementById(toastId));
+            toastElement.show();
+
+            // Remover el toast del DOM después de que se oculte
+            document.getElementById(toastId).addEventListener('hidden.bs.toast', function () {
+                $(this).remove();
+            });
+        }
+    </script>
+}
