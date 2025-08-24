@@ -24,14 +24,16 @@
             <div class="row">
                 <div class="col-md-6">
                     <label for="filtroGeneral" class="form-label">Filtro General:</label>
-                    <input type="text" class="form-control" id="filtroGeneral" placeholder="Buscar en todos los campos..." onkeyup="filtrarTabla()">
+                    <input type="text" class="form-control" id="filtroGeneral"
+                        placeholder="Buscar en todos los campos..." onkeyup="filtrarTabla()">
                 </div>
                 <div class="col-md-6">
                     <label class="form-label">Filtrar por Estado:</label>
                     <div class="row">
                         <div class="col-md-4">
                             <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="filtroPendiente" onchange="filtrarTabla()" checked>
+                                <input class="form-check-input" type="checkbox" id="filtroPendiente"
+                                    onchange="filtrarTabla()" checked>
                                 <label class="form-check-label" for="filtroPendiente">
                                     Pendiente
                                 </label>
@@ -39,7 +41,8 @@
                         </div>
                         <div class="col-md-4">
                             <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="filtroCompletado" onchange="filtrarTabla()" checked>
+                                <input class="form-check-input" type="checkbox" id="filtroCompletado"
+                                    onchange="filtrarTabla()" checked>
                                 <label class="form-check-label" for="filtroCompletado">
                                     Completado
                                 </label>
@@ -47,7 +50,8 @@
                         </div>
                         <div class="col-md-4">
                             <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="filtroAnulado" onchange="filtrarTabla()" checked>
+                                <input class="form-check-input" type="checkbox" id="filtroAnulado"
+                                    onchange="filtrarTabla()" checked>
                                 <label class="form-check-label" for="filtroAnulado">
                                     Anulado
                                 </label>
@@ -62,9 +66,9 @@
     <!-- Tabla de Pedidos -->
     <div class="card shadow">
         <div class="card-body">
-            <div class="table-responsive">
+            <div class="table-responsive" style="max-height:600px; overflow-y:auto;">
                 <table class="table table-striped table-bordered table-hover text-center table-sm" id="tablaPedidos">
-                    <thead class="table-light">
+                    <thead class="table-light sticky-header">
                         <tr>
                             <th style="width: 100px;">N° Pedido</th>
                             <th style="width: 100px;">Fecha</th>
@@ -96,10 +100,20 @@
         margin-left: auto;
         max-width: 1400px;
     }
-    
-    .table-sm td, 
-    .table-sm th { 
-        font-size: 0.9em; 
+
+    /* Encabezado fijo en tablas */
+    .sticky-header th {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        background-color: #f8f9fa;
+        /* color de .table-light */
+    }
+
+
+    .table-sm td,
+    .table-sm th {
+        font-size: 0.9em;
     }
 </style>
 
@@ -122,44 +136,44 @@
                             const estadoBadge = getEstadoBadge(pedido.estado);
                             // Corregir formato de fecha - agregar tiempo para evitar problemas de zona horaria
                             const fecha = new Date(pedido.fechaPedido + 'T00:00:00').toLocaleDateString('es-ES');
-                            
+
                             tbody.append(`
-                                <tr>
-                                    <td>${pedido.numeroPedido}</td>
-                                    <td>${fecha}</td>
-                                    <td>${pedido.itemCodigo || ''}</td>
-                                    <td style="text-align: left;">${pedido.itemDescripcion || ''}</td>
-                                    <td>${pedido.unidadMedida || ''}</td>
-                                    <td>${pedido.cantidad}</td>
-                                    <td>${pedido.estado === 'CANCELADO' ? 0 : (pedido.cantidad - pedido.recibido)}</td>
-                                    <td>${pedido.recibido}</td>
-                                    <td>${pedido.subFamilia || ''}</td>
-                                    <td>${estadoBadge}</td>
-                                </tr>
-                            `);
+                                    <tr>
+                                        <td>${pedido.numeroPedido}</td>
+                                        <td>${fecha}</td>
+                                        <td>${pedido.itemCodigo || ''}</td>
+                                        <td style="text-align: left;">${pedido.itemDescripcion || ''}</td>
+                                        <td>${pedido.unidadMedida || ''}</td>
+                                        <td>${pedido.cantidad}</td>
+                                        <td>${pedido.estado === 'CANCELADO' ? 0 : (pedido.cantidad - pedido.recibido)}</td>
+                                        <td>${pedido.recibido}</td>
+                                        <td>${pedido.subFamilia || ''}</td>
+                                        <td>${estadoBadge}</td>
+                                    </tr>
+                                `);
                         });
-                        
+
                         // Aplicar filtros después de cargar los datos
                         filtrarTabla();
                     } else {
                         tbody.append(`
-                            <tr>
-                                <td colspan="10" class="text-center text-muted">
-                                    <i class="fas fa-info-circle"></i> No se encontraron pedidos
-                                </td>
-                            </tr>
-                        `);
+                                <tr>
+                                    <td colspan="10" class="text-center text-muted">
+                                        <i class="fas fa-info-circle"></i> No se encontraron pedidos
+                                    </td>
+                                </tr>
+                            `);
                     }
                 },
                 error: function (xhr, status, errorThrown) {
                     console.error('Error al cargar pedidos:', xhr.responseText);
                     $('#listaPedidos').html(`
-                        <tr>
-                            <td colspan="10" class="text-center text-danger">
-                                <i class="fas fa-exclamation-triangle"></i> Error al cargar los pedidos
-                            </td>
-                        </tr>
-                    `);
+                            <tr>
+                                <td colspan="10" class="text-center text-danger">
+                                    <i class="fas fa-exclamation-triangle"></i> Error al cargar los pedidos
+                                </td>
+                            </tr>
+                        `);
                 }
             });
         }
@@ -187,19 +201,19 @@
             const filtroAnulado = document.getElementById('filtroAnulado').checked;
             const filas = document.querySelectorAll('#listaPedidos tr');
 
-            filas.forEach(function(fila) {
+            filas.forEach(function (fila) {
                 // Obtener el texto de todas las celdas de la fila
                 const textoFila = fila.textContent.toLowerCase();
-                
+
                 // Verificar filtro general
                 const cumpleFiltroGeneral = filtroGeneral === '' || textoFila.includes(filtroGeneral);
-                
+
                 // Verificar filtro de estado
                 let cumpleFiltroEstado = false;
                 const estadoCell = fila.querySelector('td:nth-child(10)'); // Columna de estado
                 if (estadoCell) {
                     const estado = estadoCell.textContent.toUpperCase();
-                    
+
                     // Verificar cada tipo de estado
                     if (filtroPendiente && estado.includes('PENDIENTE')) {
                         cumpleFiltroEstado = true;
@@ -214,7 +228,7 @@
                     // Si no hay celda de estado, mostrar si al menos un filtro está activo
                     cumpleFiltroEstado = filtroPendiente || filtroCompletado || filtroAnulado;
                 }
-                
+
                 // Mostrar u ocultar fila
                 if (cumpleFiltroGeneral && cumpleFiltroEstado) {
                     fila.style.display = '';
@@ -261,7 +275,7 @@
             $.ajax({
                 url: `/api/pedido/items/${numeroPedido}`,
                 type: 'GET',
-                success: function(response) {
+                success: function (response) {
                     if (response && response.length > 0) {
                         // Verificar si todos los ítems están anulados
                         const todosAnulados = response.every(item => item.estado === 'CANCELADO');
@@ -278,51 +292,51 @@
                             return;
                         }
                         let tablaItems = `
-                            <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
-                                <table class="table table-sm table-striped">
-                                    <thead class="table-light">
-                                        <tr>
-                                            <th>Código</th>
-                                            <th>Descripción</th>
-                                            <th>Cantidad</th>
-                                            <th>Estado</th>
-                                            <th>Acción</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                        `;
-                        
-                        response.forEach(function(item) {
+                                <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                                    <table class="table table-sm table-striped">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>Código</th>
+                                                <th>Descripción</th>
+                                                <th>Cantidad</th>
+                                                <th>Estado</th>
+                                                <th>Acción</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                            `;
+
+                        response.forEach(function (item) {
                             const estadoBadge = getEstadoBadge(item.estado);
                             const puedeAnular = item.estado === 'PENDIENTE';
-                            const botonAnular = puedeAnular ? 
+                            const botonAnular = puedeAnular ?
                                 `<button class="btn btn-sm btn-outline-danger" onclick="anularItemIndividual(${item.id}, '${item.itemCodigo}', ${item.cantidad})">
-                                    <i class="fas fa-times"></i> Anular
-                                </button>` : 
+                                        <i class="fas fa-times"></i> Anular
+                                    </button>` :
                                 '<span class="text-muted">No disponible</span>';
-                            
+
                             tablaItems += `
-                                <tr>
-                                    <td style="font-size: 0.85em;">${item.itemCodigo}</td>
-                                    <td>${item.itemDescripcion || ''}</td>
-                                    <td>${item.cantidad}</td>
-                                    <td>${estadoBadge}</td>
-                                    <td>${botonAnular}</td>
-                                </tr>
-                            `;
+                                    <tr>
+                                        <td style="font-size: 0.85em;">${item.itemCodigo}</td>
+                                        <td>${item.itemDescripcion || ''}</td>
+                                        <td>${item.cantidad}</td>
+                                        <td>${estadoBadge}</td>
+                                        <td>${botonAnular}</td>
+                                    </tr>
+                                `;
                         });
-                        
+
                         tablaItems += `
-                                    </tbody>
-                                </table>
-                            </div>
-                            <div class="mt-3 text-center">
-                                <button class="btn btn-danger" onclick="anularPedidoCompleto(${numeroPedido})">
-                                    <i class="fas fa-times-circle"></i> Anular Pedido Completo
-                                </button>
-                            </div>
-                        `;
-                        
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <div class="mt-3 text-center">
+                                    <button class="btn btn-danger" onclick="anularPedidoCompleto(${numeroPedido})">
+                                        <i class="fas fa-times-circle"></i> Anular Pedido Completo
+                                    </button>
+                                </div>
+                            `;
+
                         Swal.fire({
                             title: `Ítems del Pedido N° ${numeroPedido}`,
                             html: tablaItems,
@@ -339,7 +353,7 @@
                         });
                     }
                 },
-                error: function(xhr, status, errorThrown) {
+                error: function (xhr, status, errorThrown) {
                     let mensaje = 'Error al buscar el pedido';
                     if (xhr.responseJSON && xhr.responseJSON.message) {
                         mensaje = xhr.responseJSON.message;
@@ -369,7 +383,7 @@
                     $.ajax({
                         url: `/api/pedido/anular-item/${itemId}`,
                         type: 'PUT',
-                        success: function(response) {
+                        success: function (response) {
                             Swal.fire({
                                 title: '¡Ítem Anulado!',
                                 text: `El ítem ${codigoItem} ha sido anulado correctamente.`,
@@ -380,7 +394,7 @@
                             cargarPedidos(); // Recargar la lista
                             Swal.close(); // Cerrar el modal de ítems
                         },
-                        error: function(xhr, status, errorThrown) {
+                        error: function (xhr, status, errorThrown) {
                             let mensaje = 'Error al anular el ítem';
                             if (xhr.responseJSON && xhr.responseJSON.message) {
                                 mensaje = xhr.responseJSON.message;
@@ -412,7 +426,7 @@
                     $.ajax({
                         url: `/api/pedido/anular/${numeroPedido}`,
                         type: 'PUT',
-                        success: function(response) {
+                        success: function (response) {
                             Swal.fire({
                                 title: '¡Pedido Anulado!',
                                 text: `El pedido N° ${numeroPedido} ha sido anulado completamente.`,
@@ -422,7 +436,7 @@
                             });
                             cargarPedidos(); // Recargar la lista
                         },
-                        error: function(xhr, status, errorThrown) {
+                        error: function (xhr, status, errorThrown) {
                             let mensaje = 'Error al anular el pedido';
                             if (xhr.responseJSON && xhr.responseJSON.message) {
                                 mensaje = xhr.responseJSON.message;
@@ -439,7 +453,7 @@
         }
 
         // Actualizar lista automáticamente cada 5 segundos
-        setInterval(function() {
+        setInterval(function () {
             cargarPedidos();
         }, 5000);
     </script>
