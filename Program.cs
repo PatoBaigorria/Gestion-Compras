@@ -5,6 +5,7 @@ using Microsoft.OpenApi.Models;
 using Gestion_Compras.Filters;
 using Newtonsoft.Json.Converters;
 using System.Diagnostics;
+using QuestPDF.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -17,6 +18,9 @@ Console.WriteLine($"Contraseña hasheada: {hashedPassword}");*/
 // Identity removido - usando autenticación personalizada con cookies
 
 builder.Logging.AddDebug();
+
+// Configuración de licencia QuestPDF (Community)
+QuestPDF.Settings.License = LicenseType.Community;
 
 // Configurar servicios
 builder.Services.AddControllers()
