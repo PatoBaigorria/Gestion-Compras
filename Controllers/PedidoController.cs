@@ -1,6 +1,14 @@
 using Microsoft.AspNetCore.Mvc;
 using Gestion_Compras.Models;
 using Microsoft.EntityFrameworkCore;
+using QuestPDF.Fluent;
+using QuestPDF.Helpers;
+using QuestPDF.Infrastructure;
+using Microsoft.AspNetCore.Hosting;
+using System.IO;
+using System.Linq;
+using System.Security.Claims;
+using System.Globalization;
 
 namespace Gestion_Compras.Controllers
 {
@@ -9,10 +17,12 @@ namespace Gestion_Compras.Controllers
     public class PedidoController : Controller
     {
         private readonly DataContext context;
+        private readonly IWebHostEnvironment env;
 
-        public PedidoController(DataContext context)
+        public PedidoController(DataContext context, IWebHostEnvironment env)
         {
             this.context = context;
+            this.env = env;
         }
 
         // Vista principal de pedidos
@@ -352,6 +362,239 @@ namespace Gestion_Compras.Controllers
                 .ToListAsync();
 
             return Ok(items);
+        }
+
+        [HttpGet("pdf/{numeroPedido}")]
+        public async Task<IActionResult> GenerarPdfPedido(int numeroPedido)
+        {
+            try
+            {
+                // 1) Traer pedidos por número (sin joins)
+                var pedidos = await context.Pedido
+                    .Where(p => p.NumeroPedido == numeroPedido)
+                    .OrderBy(p => p.Id)
+                    .Select(p => new
+                    {
+                        p.NumeroPedido,
+                        p.FechaPedido,
+                        Codigo = p.ItemCodigo,
+                        p.Cantidad,
+                        p.Estado
+                    })
+                    .ToListAsync();
+
+                if (!pedidos.Any())
+                {
+                    return NotFound(new { message = $"No se encontraron ítems para el pedido N° {numeroPedido}" });
+                }
+
+                // 2) Cargar datos de ítems por código en una sola consulta
+                var codigos = pedidos.Select(x => x.Codigo).Distinct().ToList();
+                var itemsDict = await context.Item
+                    .Where(i => codigos.Contains(i.Codigo))
+                    .Select(i => new { i.Codigo, i.Descripcion, i.UnidadDeMedidaId, i.SubFamiliaId, i.Precio })
+                    .ToDictionaryAsync(i => i.Codigo!, i => i);
+
+                // 3) Cargar abreviaturas de unidades para los ítems involucrados
+                var unidadIds = itemsDict.Values.Select(v => v.UnidadDeMedidaId).Distinct().ToList();
+                var unidadesDict = await context.UnidadDeMedida
+                    .Where(um => unidadIds.Contains(um.Id))
+                    .ToDictionaryAsync(um => um.Id, um => um.Abreviatura);
+
+                // 3b) Cargar códigos de subfamilias para los ítems involucrados
+                var subFamiliaIds = itemsDict.Values.Select(v => v.SubFamiliaId).Distinct().ToList();
+                var subFamiliasDict = await context.SubFamilia
+                    .Where(sf => subFamiliaIds.Contains(sf.Id))
+                    .ToDictionaryAsync(sf => sf.Id, sf => sf.Descripcion);
+
+                // 4) Proyectar lista final en memoria
+                var items = pedidos
+                    .Select(p =>
+                    {
+                        var info = itemsDict.TryGetValue(p.Codigo, out var val) ? val : null;
+                        var unidad = (info != null && unidadesDict.TryGetValue(info.UnidadDeMedidaId, out var abrev)) ? abrev : "";
+                        var descripcion = info?.Descripcion ?? "";
+                        var equipoCodigo = info != null && subFamiliasDict.TryGetValue(info.SubFamiliaId, out var sfCodigo) ? sfCodigo : "";
+                        return new
+                        {
+                            p.NumeroPedido,
+                            p.FechaPedido,
+                            p.Codigo,
+                            Descripcion = descripcion,
+                            p.Cantidad,
+                            Unidad = unidad,
+                            EquipoCodigo = equipoCodigo,
+                            PrecioUnitarioReferencia = info?.Precio ?? 0.0
+                        };
+                    })
+                    .ToList();
+
+                var fecha = items.First().FechaPedido;
+                // Obtener usuario logueado (nombre + apellido si existen en claims)
+                var nombre = HttpContext?.User?.FindFirst(ClaimTypes.GivenName)?.Value;
+                var apellido = HttpContext?.User?.FindFirst(ClaimTypes.Surname)?.Value;
+                var solicitante = (!string.IsNullOrWhiteSpace(nombre) || !string.IsNullOrWhiteSpace(apellido))
+                    ? string.Join(" ", new[] { nombre, apellido }.Where(s => !string.IsNullOrWhiteSpace(s)))
+                    : (HttpContext?.User?.Identity?.Name ?? "");
+
+                // Cargar logo: intenta logoFiasa.png y si es inválido o falta, usa fallback logo.png. Acepta PNG/JPG.
+                byte[]? logoBytes = null;
+                try
+                {
+                    var webRoot = env.WebRootPath ?? string.Empty;
+                    var primary = Path.Combine(webRoot, "images", "logoFiasa.png");
+                    var fallback = Path.Combine(webRoot, "images", "logo.png");
+
+                    // Función local de validación básica (PNG/JPG)
+                    static bool EsImagenSoportada(byte[] bytes)
+                    {
+                        // PNG: 89 50 4E 47 0D 0A 1A 0A
+                        if (bytes.Length >= 8 && bytes[0] == 0x89 && bytes[1] == 0x50 && bytes[2] == 0x4E && bytes[3] == 0x47 &&
+                            bytes[4] == 0x0D && bytes[5] == 0x0A && bytes[6] == 0x1A && bytes[7] == 0x0A)
+                            return true;
+                        // JPG: FF D8 FF
+                        if (bytes.Length >= 3 && bytes[0] == 0xFF && bytes[1] == 0xD8 && bytes[2] == 0xFF)
+                            return true;
+                        return false;
+                    }
+
+                    if (!string.IsNullOrEmpty(webRoot) && System.IO.File.Exists(primary))
+                    {
+                        var bytes = System.IO.File.ReadAllBytes(primary);
+                        if (EsImagenSoportada(bytes))
+                            logoBytes = bytes;
+                    }
+                    // Si el primario no es válido o no cargó, probar fallback
+                    if (logoBytes == null && !string.IsNullOrEmpty(webRoot) && System.IO.File.Exists(fallback))
+                    {
+                        var bytes = System.IO.File.ReadAllBytes(fallback);
+                        if (EsImagenSoportada(bytes))
+                            logoBytes = bytes;
+                    }
+                }
+                catch { /* sin bloqueo si falla el logo */ }
+
+                // Construir documento PDF
+                var document = Document.Create(container =>
+                {
+                    container.Page(page =>
+                    {
+                        page.Margin(30);
+                        page.Size(PageSizes.A4);
+
+                        page.Header().Row(row =>
+                        {
+                            if (logoBytes != null)
+                            {
+                                // Reducir tamaño del contenedor del logo a la mitad
+                                row.ConstantItem(35).Image(logoBytes);
+                            }
+                            // Título centrado, levemente desplazado a la derecha
+                            row.RelativeItem().PaddingLeft(150).Column(col =>
+                            {
+                                col.Item().AlignCenter().Text("Nota de Pedido").FontSize(14).Bold();
+                            });
+                            // Bloque a la derecha con referencias
+                            row.RelativeItem().Column(colRight =>
+                            {
+                                colRight.Item().AlignRight().Text("Ref.: P-COM-01").FontSize(10);
+                                colRight.Item().AlignRight().Text("Rev. 03 Form. 91").FontSize(10);
+                            });
+                        });
+
+                        page.Content().Column(col =>
+                        {
+                            col.Spacing(10);
+                            // Espacio equivalente a ~3 líneas
+                            col.Item().Height(36);
+                            // Fila con Fecha de Pedido (izquierda), Solicito (centro) y N° Pedido (derecha)
+                            col.Item().Row(r =>
+                            {
+                                r.RelativeItem().Text(txt =>
+                                {
+                                    txt.Span("Fecha de Pedido: ").Underline().Bold().FontSize(10);
+                                    txt.Span($"{fecha:dd/MM/yyyy}").FontSize(10);
+                                });
+                                r.RelativeItem().AlignCenter().Text(txt =>
+                                {
+                                    txt.Span("Solicitó: ").Underline().Bold().FontSize(10);
+                                    txt.Span(solicitante).FontSize(10);
+                                });
+                                r.RelativeItem().AlignRight().Text(txt =>
+                                {
+                                    txt.Span("N° Pedido: ").Underline().Bold().FontSize(10);
+                                    txt.Span(numeroPedido.ToString()).FontSize(10);
+                                });
+                            });
+                            // Agregar 3 filas (espacios) adicionales antes de la tabla
+                            col.Item().Height(12);
+                            col.Item().Height(12);
+                            col.Item().Border(0.8f).BorderColor("#bfbfbf").Table(table =>
+                            {
+                                table.ColumnsDefinition(columns =>
+                                {
+                                    columns.RelativeColumn(5);    // Descripción
+                                    columns.ConstantColumn(60);   // Unidad de Medida
+                                    columns.ConstantColumn(60);   // Cantidad
+                                    columns.ConstantColumn(90);   // Equipo-Código
+                                });
+
+                                // Encabezado
+                                table.Header(header =>
+                                {
+                                    header.Cell().Element(CellHeader).AlignCenter().Text("Descripción");
+                                    header.Cell().Element(CellHeader).AlignCenter().Text("Unidad de Medida");
+                                    header.Cell().Element(CellHeader).AlignCenter().Text("Cantidad");
+                                    header.Cell().Element(CellHeader).AlignCenter().Text("Equipo-Código");
+
+                                    static IContainer CellHeader(IContainer container)
+                                        => container
+                                            .DefaultTextStyle(x => x.SemiBold().FontSize(10))
+                                            .Padding(5)
+                                            .Background("#eeeeee")
+                                            .BorderLeft(0.6f)
+                                            .BorderRight(0.6f)
+                                            .BorderColor("#c8c8c8");
+                                });
+
+                                // Filas
+                                foreach (var it in items)
+                                {
+                                    table.Cell().Element(Cell).Text(it.Descripcion);
+                                    table.Cell().Element(Cell).AlignCenter().Text(it.Unidad);
+                                    table.Cell().Element(Cell).AlignCenter().Text(it.Cantidad.ToString());
+                                    table.Cell().Element(Cell).AlignCenter().Text(it.EquipoCodigo);
+                                }
+
+                                static IContainer Cell(IContainer container)
+                                    => container
+                                        .DefaultTextStyle(x => x.FontSize(9))
+                                        .Padding(5)
+                                        .BorderLeft(0.5f)
+                                        .BorderRight(0.5f)
+                                        .BorderColor("#d0d0d0");
+                            });
+                        });
+
+                        page.Footer().AlignRight().Text(txt =>
+                        {
+                            txt.Span("Generado: ").FontSize(9);
+                            txt.Span(DateTime.Now.ToString("dd/MM/yyyy HH:mm")).FontSize(9);
+                        });
+                    });
+                });
+
+                var pdfBytes = document.GeneratePdf();
+                var fileName = $"Pedido_{numeroPedido}.pdf";
+                return File(pdfBytes, "application/pdf", fileName);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new
+                {
+                    message = "Error al generar PDF del pedido: " + ex.Message
+                });
+            }
         }
 
         [HttpGet("item-por-codigo")]
