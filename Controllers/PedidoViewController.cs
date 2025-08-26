@@ -6,6 +6,7 @@ namespace Gestion_Compras.Controllers
     [Authorize]
     public class PedidoViewController : Controller
     {
+        [Authorize(Roles = "Administrador")]
         public IActionResult Index()
         {
             return View("~/Views/Pedido/Index.cshtml");

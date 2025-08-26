@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.EntityFrameworkCore;
 using Gestion_Compras.Models;
 using Microsoft.OpenApi.Models;
+using Microsoft.AspNetCore.Authorization;
 using Gestion_Compras.Filters;
 using Newtonsoft.Json.Converters;
 using System.Diagnostics;
@@ -65,6 +66,11 @@ builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy("Administrador", policy => policy.RequireRole("Administrador"));
     options.AddPolicy("Pañolero", policy => policy.RequireRole("Pañolero"));
+
+    // Exigir autenticación por defecto en todas las rutas salvo [AllowAnonymous]
+    options.FallbackPolicy = new AuthorizationPolicyBuilder()
+        .RequireAuthenticatedUser()
+        .Build();
 });
 
 // Configuración de logging
