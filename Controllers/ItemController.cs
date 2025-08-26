@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Gestion_Compras.Models;
 using Microsoft.EntityFrameworkCore;
 using Gestion_Compras.ViewModels;
+using System.Collections.Generic;
 
 namespace Gestion_Compras.Controllers
 {
@@ -36,7 +37,7 @@ namespace Gestion_Compras.Controllers
 
 
         [HttpGet("BuscarItems")]
-        public async Task<ActionResult<IEnumerable<object>>> BuscarItems(string codigo = null, int? familiaId = null, int? subFamiliaId = null, string descripcion = null)
+        public async Task<ActionResult<IEnumerable<object>>> BuscarItems(string codigo = null, [FromQuery] List<int> familiaIds = null, [FromQuery] List<int> subFamiliaIds = null, string descripcion = null)
         {
             var query = context.Item.Where(i => i.Activo).AsQueryable();
 
@@ -45,14 +46,14 @@ namespace Gestion_Compras.Controllers
                 query = query.Where(i => i.Codigo == codigo);
             }
 
-            if (familiaId.HasValue)
+            if (familiaIds != null && familiaIds.Count > 0)
             {
-                query = query.Where(i => i.SubFamilia.FamiliaId == familiaId.Value);
+                query = query.Where(i => familiaIds.Contains(i.SubFamilia.FamiliaId));
             }
 
-            if (subFamiliaId.HasValue)
+            if (subFamiliaIds != null && subFamiliaIds.Count > 0)
             {
-                query = query.Where(i => i.SubFamiliaId == subFamiliaId.Value);
+                query = query.Where(i => subFamiliaIds.Contains(i.SubFamiliaId));
             }
 
             if (!string.IsNullOrEmpty(descripcion))
@@ -83,6 +84,98 @@ namespace Gestion_Compras.Controllers
                 .ToListAsync();
 
             return Ok(items);
+        }
+
+
+        [HttpGet("Exportar")]
+        public async Task<IActionResult> Exportar(string codigo = null, [FromQuery] List<int> familiaIds = null, [FromQuery] List<int> subFamiliaIds = null, string descripcion = null)
+        {
+            var query = context.Item.Where(i => i.Activo).AsQueryable();
+
+            if (!string.IsNullOrEmpty(codigo))
+            {
+                query = query.Where(i => i.Codigo == codigo);
+            }
+
+            if (familiaIds != null && familiaIds.Count > 0)
+            {
+                query = query.Where(i => familiaIds.Contains(i.SubFamilia.FamiliaId));
+            }
+
+            if (subFamiliaIds != null && subFamiliaIds.Count > 0)
+            {
+                query = query.Where(i => subFamiliaIds.Contains(i.SubFamiliaId));
+            }
+
+            if (!string.IsNullOrEmpty(descripcion))
+            {
+                query = query.Where(i => i.Descripcion.Contains(descripcion));
+            }
+
+            var items = await query
+                .Select(i => new
+                {
+                    i.Codigo,
+                    FamiliaDescripcion = i.SubFamilia.Familia.Descripcion,
+                    SubFamiliaDescripcion = i.SubFamilia.Descripcion,
+                    DescripcionItem = i.Descripcion,
+                    i.Stock,
+                    i.PuntoDePedido,
+                    CantidadEnPedidos = i.CantidadEnPedidos,
+                    UnidadDeMedidaAbreviatura = i.UnidadDeMedida.Abreviatura,
+                    i.Precio,
+                    i.Critico
+                })
+                .ToListAsync();
+
+            // Construir CSV con BOM para Excel
+            var sb = new System.Text.StringBuilder();
+            string[] headers = new[] {
+                "Codigo","Familia","Subfamilia","Descripcion Items","Stock","Punto de Pedido","Cant. Pedidos","Unidad de Medida","Precio","Critico","Comprar"
+            };
+            sb.AppendLine(string.Join(';', headers));
+
+            foreach (var it in items)
+            {
+                double stock = it.Stock;
+                double pp = it.PuntoDePedido;
+                int cantPed = it.CantidadEnPedidos;
+                bool necesitaComprar = (stock < pp) && ((stock + cantPed) < pp);
+
+                string CriticoStr = it.Critico ? "SI" : "NO";
+                string ComprarStr = necesitaComprar ? "SI" : "NO";
+
+                var cols = new List<string>
+                {
+                    EscaparCsv(it.Codigo),
+                    EscaparCsv(it.FamiliaDescripcion),
+                    EscaparCsv(it.SubFamiliaDescripcion),
+                    EscaparCsv(it.DescripcionItem),
+                    it.Stock.ToString(),
+                    it.PuntoDePedido.ToString(),
+                    it.CantidadEnPedidos.ToString(),
+                    EscaparCsv(it.UnidadDeMedidaAbreviatura),
+                    it.Precio.ToString(),
+                    CriticoStr,
+                    ComprarStr
+                };
+
+                sb.AppendLine(string.Join(';', cols));
+            }
+
+            var bytes = System.Text.Encoding.UTF8.GetPreamble()
+                .Concat(System.Text.Encoding.UTF8.GetBytes(sb.ToString()))
+                .ToArray();
+            var fileName = $"items_export_{DateTime.Now:yyyy-MM-dd_HH-mm-ss}.csv";
+            return File(bytes, "text/csv; charset=utf-8", fileName);
+        }
+
+        private static string EscaparCsv(string? input)
+        {
+            if (string.IsNullOrEmpty(input)) return string.Empty;
+            bool requiere = input.Contains('"') || input.Contains(';') || input.Contains('\n') || input.Contains('\r');
+            var texto = input.Replace("\"", "\"\"");
+            return requiere ? $"\"{texto}\"" : texto;
         }
 
 

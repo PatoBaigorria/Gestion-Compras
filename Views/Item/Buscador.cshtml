@@ -17,8 +17,7 @@
         </div>
         <div class="col-md-4 col-lg-2">
             <label for="familiaSelect" class="form-label">Familia</label>
-            <select id="familiaSelect" name="FamiliaId" class="form-select">
-                <option value=""</option>
+            <select id="familiaSelect" name="familiaIds" class="form-select" multiple>
                 @foreach (var familia in Model.FamiliaList)
                 {
                     <option value="@familia.Id">@familia.Descripcion</option>
@@ -27,16 +26,21 @@
         </div>
         <div class="col-md-4 col-lg-2">
             <label for="subfamiliaSelect" class="form-label">Subfamilia</label>
-            <select id="subfamiliaSelect" name="SubFamiliaId" class="form-select">
-                <option value=""</option>
+            <select id="subfamiliaSelect" name="subFamiliaIds" class="form-select" multiple>
             </select>
         </div>
         <div class="col-md-8 col-lg-4"> 
             <label for="descripcionItem" class="form-label">Descripción Item</label> 
             <div class="input-group"> 
                 <input type="text" id="descripcionItem" name="Descripcion" class="form-control"/> 
-                <button type="button" class="btn btn-primary" id="buscarItemsBtn"> 
+                <button type="button" class="btn btn-primary" id="buscarItemsBtn" title="Buscar"> 
                     <i class="fas fa-search"></i> 
+                </button> 
+                <button type="button" class="btn btn-success" id="exportarBtn" title="Exportar"> 
+                    <i class="fas fa-file-excel"></i> 
+                </button> 
+                <button type="button" class="btn btn-outline-secondary" id="imprimirBtn" title="Imprimir"> 
+                    <i class="fas fa-print"></i> 
                 </button> 
             </div> 
         </div>
@@ -111,54 +115,148 @@
     .table-sm th { 
         font-size: 0.9em; 
     }
+    /* SweetAlert2: versión compacta y más ancha */
+    .swal2-popup.swal-compact { 
+        padding-top: 1.1rem; /* despegar contenido del borde superior */
+    }
+    .swal2-popup.swal-compact .swal2-icon {
+        width: 2.8rem;            /* icono más grande */
+        height: 2.8rem;
+        margin: 0.6rem auto 0.5rem auto; /* más espacio desde arriba */
+        font-size: 1.4rem;        /* contenido del icono más visible */
+        border-width: 0.25rem;    /* aro más grueso */
+    }
+    .swal2-popup.swal-compact .swal2-icon .swal2-icon-content {
+        font-size: 1.35rem;       /* acompaña al nuevo tamaño */
+        font-weight: 800;         /* exclamación más "negrita" */
+        line-height: 2.6rem;      /* centra dentro de 2.8rem */
+        display: inline-block;
+    }
+    .swal2-popup.swal-compact .swal2-title {
+        font-size: 1.05rem;
+        line-height: 1.2;
+        margin: 0.25rem 0 0.25rem 0;
+    }
+    .swal2-popup.swal-compact .swal2-html-container {
+        font-size: 0.98rem;
+        line-height: 1.25;
+        margin: 0 0 0.5rem 0;
+    }
+    .swal2-popup.swal-compact .swal2-actions .swal2-styled {
+        padding: 0.4rem 0.8rem;
+        font-size: 0.9rem;
+    }
 </style>
 
 @section Scripts {
     <script>
         $(document).ready(function () {
-            // Inicializar Select2 para los elementos de selección
-            $('#familiaSelect').select2();
-            
-
-            $('#subfamiliaSelect').select2();
-
-            // Cargar subfamilias al seleccionar una familia
-            $('#familiaSelect').change(function () {
-                const familiaId = $(this).val();
-                if (familiaId) {
-                    $.ajax({
-                        url: '/FamiliaSubFamilia/ObtenerSubfamilias/' + familiaId,
-                        type: 'GET',
-                        success: function (response) {
-                            $('#subfamiliaSelect').empty().append('<option value=""</option>');
-                            $.each(response, function (index, subfamilia) {
-                                $('#subfamiliaSelect').append(`<option value="${subfamilia.id}">${subfamilia.descripcion}</option>`);
-                            });
-                            $('#subfamiliaSelect').select2(); // Re-inicializar Select2
-                        },
-                        error: function (xhr, status, errorThrown) {
-                            console.error('Error al obtener subfamilias:', xhr.responseText);
-                        }
-                    });
-                } else {
-                    $('#subfamiliaSelect').empty().append('<option value=""</option>').select2(); // Re-inicializar Select2
-                }
+            // Utilidad: debounce para no disparar demasiadas llamadas
+            function debounce(fn, delay) {
+                let t;
+                return function(...args) {
+                    clearTimeout(t);
+                    t = setTimeout(() => fn.apply(this, args), delay);
+                };
+            }
+            // Cargar SweetAlert2 dinámicamente si no está presente
+            function ensureSwal() {
+                return new Promise((resolve) => {
+                    if (typeof Swal !== 'undefined') {
+                        return resolve();
+                    }
+                    // Agregar CSS
+                    const existingCss = document.querySelector('link[data-swal]');
+                    if (!existingCss) {
+                        const link = document.createElement('link');
+                        link.rel = 'stylesheet';
+                        link.href = 'https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css';
+                        link.setAttribute('data-swal', '1');
+                        document.head.appendChild(link);
+                    }
+                    // Agregar script
+                    const script = document.createElement('script');
+                    script.src = 'https://cdn.jsdelivr.net/npm/sweetalert2@11';
+                    script.onload = () => resolve();
+                    document.head.appendChild(script);
+                });
+            }
+            // Inicializar Select2 para los elementos de selección en modo múltiple
+            $('#familiaSelect').select2({
+                placeholder: 'Seleccionar familias',
+                closeOnSelect: false,
+                width: '100%'
             });
+
+            $('#subfamiliaSelect').select2({
+                placeholder: 'Seleccionar subfamilias',
+                closeOnSelect: false,
+                width: '100%'
+            });
+
+            // Cargar subfamilias al cambiar selección de familias (pueden ser varias)
+            $('#familiaSelect').change(function () {
+                const familiasSeleccionadas = $(this).val() || [];
+                cargarSubfamiliasParaFamilias(familiasSeleccionadas);
+            });
+
+            // Cargar subfamilias para múltiples familias y unificar sin duplicados
+            function cargarSubfamiliasParaFamilias(familiaIds) {
+                const $sub = $('#subfamiliaSelect');
+                const seleccionPrev = $sub.val() || [];
+
+                if (!familiaIds.length) {
+                    $sub.empty();
+                    $sub.trigger('change');
+                    return;
+                }
+
+                // Realizar múltiples requests en paralelo y unir resultados
+                const requests = familiaIds.map(fid => $.ajax({
+                    url: '/FamiliaSubFamilia/ObtenerSubfamilias/' + fid,
+                    type: 'GET'
+                }));
+
+                Promise.all(requests)
+                    .then(responses => {
+                        // Unificar subfamilias por Id para evitar duplicados
+                        const mapa = new Map();
+                        responses.flat().forEach(sf => {
+                            if (!mapa.has(sf.id)) {
+                                mapa.set(sf.id, sf);
+                            }
+                        });
+
+                        $sub.empty();
+                        Array.from(mapa.values()).forEach(sf => {
+                            $sub.append(`<option value="${sf.id}">${sf.descripcion}</option>`);
+                        });
+
+                        // Restaurar selección previa que siga disponible
+                        const restaurar = seleccionPrev.filter(v => mapa.has(parseInt(v)));
+                        $sub.val(restaurar).trigger('change.select2');
+                    })
+                    .catch(err => {
+                        console.error('Error al obtener subfamilias:', err);
+                        $sub.empty();
+                    });
+            }
 
             // Función para buscar items (reutilizable)
             function buscarItems() {
                 const codigo = $('#codigoItem').val() || '';
-                const familiaId = $('#familiaSelect').val() || '';
-                const subFamiliaId = $('#subfamiliaSelect').val() || '';
+                const familiaIds = $('#familiaSelect').val() || [];
+                const subFamiliaIds = $('#subfamiliaSelect').val() || [];
                 const descripcion = $('#descripcionItem').val() || '';
 
                 $.ajax({
                     url: '/Item/BuscarItems',
                     type: 'GET',
+                    traditional: true, // asegurar serialización de arrays como claves repetidas
                     data: {
                         codigo: codigo,
-                        familiaId: familiaId,
-                        subFamiliaId: subFamiliaId,
+                        familiaIds: familiaIds,
+                        subFamiliaIds: subFamiliaIds,
                         descripcion: descripcion
                     },
                     success: function (response) {
@@ -232,6 +330,54 @@
                 buscarItems();
             });
 
+            // Exportar: si hay filtros aplicados, exportar lo visible; si no hay filtros, preguntar con SweetAlert2 exportar todo
+            $('#exportarBtn').click(function () {
+                if (tieneFiltrosAplicados()) {
+                    exportarTablaVisibleCSV();
+                } else {
+                    ensureSwal().then(() => {
+                        const swalWideSmallIcon = Swal.mixin({ width: '34rem', customClass: { popup: 'swal-compact' } });
+                        swalWideSmallIcon.fire({
+                            title: 'Exportar Lista Completa',
+                            html: 'No hay filtros aplicados. ¿Desea exportar <b>TODA</b> la lista completa?',
+                            icon: 'warning',
+                            iconColor: '#ffc107',
+                            showCancelButton: true,
+                            confirmButtonText: 'Sí, exportar',
+                            cancelButtonText: 'Cancelar'
+                        }).then((result) => {
+                            if (result.isConfirmed) {
+                                exportarDesdeServidor();
+                            }
+                        });
+                    });
+                }
+            });
+
+            // Imprimir: si hay filtros, imprimir lo visible; si no hay filtros, preguntar con SweetAlert2 imprimir todo
+            $('#imprimirBtn').click(function () {
+                if (tieneFiltrosAplicados()) {
+                    imprimirTablaVisible();
+                } else {
+                    ensureSwal().then(() => {
+                        const swalWideSmallIcon = Swal.mixin({ width: '34rem', customClass: { popup: 'swal-compact' } });
+                        swalWideSmallIcon.fire({
+                            title: 'Imprimir Lista Completa',
+                            html: 'No hay filtros aplicados. ¿Desea imprimir <b>TODA</b> la lista completa?',
+                            icon: 'warning',
+                            iconColor: '#ffc107',
+                            showCancelButton: true,
+                            confirmButtonText: 'Sí, imprimir',
+                            cancelButtonText: 'Cancelar'
+                        }).then((result) => {
+                            if (result.isConfirmed) {
+                                imprimirTodoDesdeServidor();
+                            }
+                        });
+                    });
+                }
+            });
+
             // Manejar los filtros
             $('#filtroComprar').change(function () {
                 aplicarFiltros();
@@ -240,6 +386,23 @@
             $('#filtroCritico').change(function () {
                 aplicarFiltros();
             });
+
+            // Cuando los filtros quedan vacíos, recargar toda la lista automáticamente
+            function onFiltrosCambiados() {
+                if (tieneFiltrosAplicados()) {
+                    aplicarFiltros();
+                } else {
+                    // Sin filtros: traer todo
+                    buscarItems();
+                }
+            }
+
+            // Inputs de texto con debounce
+            $('#codigoItem, #descripcionItem').on('input', debounce(onFiltrosCambiados, 400));
+            // Selects (Select2 ya dispara change)
+            $('#familiaSelect, #subfamiliaSelect').on('change', onFiltrosCambiados);
+            // Checkboxes
+            $('#filtroComprar, #filtroCritico').on('change', onFiltrosCambiados);
 
             // Función para refrescar automáticamente el buscador
             function refrescarBuscador() {
@@ -263,6 +426,185 @@
                     refrescarBuscador();
                 }
             }, 2000);
+
+            // Utilidades de exportación e impresión
+            function tieneFiltrosAplicados() {
+                const codigo = $('#codigoItem').val();
+                const familiaIds = $('#familiaSelect').val() || [];
+                const subFamiliaIds = $('#subfamiliaSelect').val() || [];
+                const descripcion = $('#descripcionItem').val();
+                const comprar = $('#filtroComprar').is(':checked');
+                const critico = $('#filtroCritico').is(':checked');
+                return (
+                    (codigo && codigo.trim() !== '') ||
+                    familiaIds.length > 0 ||
+                    subFamiliaIds.length > 0 ||
+                    (descripcion && descripcion.trim() !== '') ||
+                    comprar ||
+                    critico
+                );
+            }
+
+            function exportarTablaVisibleCSV() {
+                const $rows = $('#resultadosBusqueda tr:visible');
+                if ($rows.length === 0) {
+                    alert('No hay datos para exportar.');
+                    return;
+                }
+
+                const headers = [
+                    'Codigo','Familia','Subfamilia','Descripcion Items','Stock','Punto de Pedido','Cant. Pedidos','Unidad de Medida','Precio','Critico','Comprar'
+                ];
+                const lines = [];
+                lines.push(headers.join(';'));
+
+                $rows.each(function () {
+                    const $tds = $(this).find('td');
+                    const row = [];
+                    $tds.each(function (idx) {
+                        let text = $(this).text().trim();
+                        // Escapar separador y comillas
+                        if (text.includes(';') || text.includes('"')) {
+                            text = '"' + text.replace(/"/g, '""') + '"';
+                        }
+                        row.push(text);
+                    });
+                    lines.push(row.join(';'));
+                });
+
+                const blob = new Blob(["\uFEFF" + lines.join('\n')], { type: 'text/csv;charset=utf-8;' }); // BOM para Excel
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `items_export_${new Date().toISOString().slice(0,19).replace(/[:T]/g,'-')}.csv`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            }
+
+            function exportarDesdeServidor() {
+                const params = new URLSearchParams();
+                const codigo = $('#codigoItem').val();
+                const familiaIds = $('#familiaSelect').val() || [];
+                const subFamiliaIds = $('#subfamiliaSelect').val() || [];
+                const descripcion = $('#descripcionItem').val();
+                if (codigo) params.append('codigo', codigo);
+                familiaIds.forEach(v => params.append('familiaIds', v));
+                subFamiliaIds.forEach(v => params.append('subFamiliaIds', v));
+                if (descripcion) params.append('descripcion', descripcion);
+                const url = '/Item/Exportar' + (params.toString() ? ('?' + params.toString()) : '');
+                window.open(url, '_blank');
+            }
+
+            function imprimirTablaVisible() {
+                const tableHtml = `<!DOCTYPE html>
+                <html lang="es"><head><meta charset="utf-8">
+                <title>Imprimir Items</title>
+                <style>
+                    body { font-family: Arial, sans-serif; }
+                    table { border-collapse: collapse; width: 100%; }
+                    th, td { border: 1px solid #ccc; padding: 6px; font-size: 12px; }
+                    th { background: #f0f0f0; }
+                </style>
+                </head><body>
+                <h3>Listado de Ítems</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Código</th>
+                            <th>Familia</th>
+                            <th>Subfamilia</th>
+                            <th>Descripción Items</th>
+                            <th>Stock</th>
+                            <th>Punto de Pedido</th>
+                            <th>Cant. Pedidos</th>
+                            <th>Unidad de Medida</th>
+                            <th>Precio</th>
+                            <th>Crítico</th>
+                            <th>Comprar</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${Array.from($('#resultadosBusqueda tr:visible')).map(tr => `<tr>${Array.from($(tr).find('td')).map(td => `<td>${$(td).text().trim()}</td>`).join('')}</tr>`).join('')}
+                    </tbody>
+                </table>
+                <script>window.onload = function(){ window.print(); setTimeout(()=>window.close(), 300); }<\/script>
+                </body></html>`;
+
+                const w = window.open('', '_blank');
+                w.document.open();
+                w.document.write(tableHtml);
+                w.document.close();
+            }
+
+            function imprimirTodoDesdeServidor() {
+                $.ajax({
+                    url: '/Item/BuscarItems',
+                    type: 'GET',
+                    success: function (response) {
+                        const filas = response.map(item => {
+                            const stockTotal = item.stock + item.cantidadEnPedidos;
+                            const necesitaComprar = (item.stock < item.puntoDePedido) && (stockTotal < item.puntoDePedido);
+                            return `<tr>
+                                <td>${item.codigo || ''}</td>
+                                <td>${item.familiaDescripcion || ''}</td>
+                                <td>${item.subFamiliaDescripcion || ''}</td>
+                                <td style="text-align: left">${item.descripcionItem || ''}</td>
+                                <td>${item.stock !== null ? item.stock : ''}</td>
+                                <td>${item.puntoDePedido !== null ? item.puntoDePedido : ''}</td>
+                                <td>${item.cantidadEnPedidos !== null ? item.cantidadEnPedidos : '0'}</td>
+                                <td>${item.unidadDeMedidaAbreviatura || ''}</td>
+                                <td>${item.precio !== null ? item.precio : ''}</td>
+                                <td>${item.critico ? 'SI' : 'NO'}</td>
+                                <td>${necesitaComprar ? 'SI' : 'NO'}</td>
+                            </tr>`;
+                        }).join('');
+
+                        const tableHtml = `<!DOCTYPE html>
+                        <html lang="es"><head><meta charset="utf-8">
+                        <title>Imprimir Items</title>
+                        <style>
+                            body { font-family: Arial, sans-serif; }
+                            table { border-collapse: collapse; width: 100%; }
+                            th, td { border: 1px solid #ccc; padding: 6px; font-size: 12px; }
+                            th { background: #f0f0f0; }
+                        </style>
+                        </head><body>
+                        <h3>Listado de Ítems (Completo)</h3>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Código</th>
+                                    <th>Familia</th>
+                                    <th>Subfamilia</th>
+                                    <th>Descripción Items</th>
+                                    <th>Stock</th>
+                                    <th>Punto de Pedido</th>
+                                    <th>Cant. Pedidos</th>
+                                    <th>Unidad de Medida</th>
+                                    <th>Precio</th>
+                                    <th>Crítico</th>
+                                    <th>Comprar</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${filas}
+                            </tbody>
+                        </table>
+                        <script>window.onload = function(){ window.print(); setTimeout(()=>window.close(), 300); }<\/script>
+                        </body></html>`;
+
+                        const w = window.open('', '_blank');
+                        w.document.open();
+                        w.document.write(tableHtml);
+                        w.document.close();
+                    },
+                    error: function(xhr){
+                        console.error('Error al cargar items para imprimir:', xhr.responseText);
+                    }
+                });
+            }
         });
     </script>
 }
