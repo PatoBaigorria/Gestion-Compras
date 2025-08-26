@@ -1,9 +1,11 @@
 using Microsoft.AspNetCore.Mvc;
 using Gestion_Compras.Models;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authorization;
 
 namespace Gestion_Compras.Controllers
 {
+    [Authorize(Roles = "Administrador")]
     public class AjusteController : Controller
     {
         private readonly DataContext context;

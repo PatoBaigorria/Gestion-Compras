@@ -27,11 +27,22 @@
 <section class="container mt-5">
     <div class="row text-center">
         <div class="col-md-4 mb-4">
-            <div class="card p-4 shadow">
-                <h5 class="card-title">Familias, Subfamilias e Items</h5>
-                <p>Organiza y gestiona tus productos en familias, subfamilias e items con información relevante.</p>
-                <a href="/FamiliaSubFamilia/Index" class="btn btn-primary">Gestionar</a>
-            </div>
+            @if (User.IsInRole("Administrador"))
+            {
+                <div class="card p-4 shadow">
+                    <h5 class="card-title">Familias, Subfamilias e Items</h5>
+                    <p>Organiza y gestiona tus productos en familias, subfamilias e items con información relevante.</p>
+                    <a href="/FamiliaSubFamilia/Index" class="btn btn-primary">Gestionar</a>
+                </div>
+            }
+            else
+            {
+                <div class="card p-4 shadow">
+                    <h5 class="card-title">Pedidos</h5>
+                    <p>Consulta los pedidos y su estado. Acceso de solo consulta para Pañolero.</p>
+                    <a href="/Pedido/Lista" class="btn btn-primary">Ver Pedidos</a>
+                </div>
+            }
         </div>
         <div class="col-md-4 mb-4">
             <div class="card p-4 shadow">

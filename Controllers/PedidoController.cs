@@ -5,6 +5,7 @@ using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Authorization;
 using System.IO;
 using System.Linq;
 using System.Security.Claims;
@@ -82,6 +83,7 @@ namespace Gestion_Compras.Controllers
             return Ok(ultimoNumeroPedido + 1);
         }
 
+        [Authorize(Roles = "Administrador")]
         [HttpPost]
         public async Task<ActionResult<Pedido>> PostPedido(Pedido pedido)
         {
@@ -151,6 +153,7 @@ namespace Gestion_Compras.Controllers
             return Ok(new { message = "Pedido actualizado exitosamente" });
         }
 
+        [Authorize(Roles = "Administrador")]
         [HttpPut("{id}/cambiar-estado")]
         public async Task<IActionResult> CambiarEstado(int id, [FromBody] string nuevoEstado)
         {
@@ -172,6 +175,7 @@ namespace Gestion_Compras.Controllers
             return Ok(new { message = "Estado actualizado exitosamente" });
         }
 
+        [Authorize(Roles = "Administrador")]
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeletePedido(int id)
         {
@@ -217,6 +221,7 @@ namespace Gestion_Compras.Controllers
             }
         }
 
+        [Authorize(Roles = "Administrador")]
         [HttpPut("anular-item/{itemId}")]
         public async Task<IActionResult> AnularItemIndividual(int itemId)
         {
@@ -269,6 +274,7 @@ namespace Gestion_Compras.Controllers
             }
         }
 
+        [Authorize(Roles = "Administrador")]
         [HttpPut("anular/{numeroPedido}")]
         public async Task<IActionResult> AnularPedido(int numeroPedido)
         {
@@ -651,6 +657,7 @@ namespace Gestion_Compras.Controllers
             return Ok(new { success = true, item = item });
         }
 
+        [Authorize(Roles = "Administrador")]
         [HttpPost("generar-pedido")]
         public async Task<ActionResult> GenerarPedido([FromBody] GenerarPedidoRequest request)
         {
