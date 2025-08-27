@@ -7,11 +7,29 @@
 
 <h3>Lista de Proveedores</h3>
 
+<!-- Contenedor para los mensajes -->
+<div id="messageContainer" class="mb-3">
+    <div id="successMessage" class="alert alert-success" style="display: none;" role="alert">
+        <i class="fas fa-check-circle me-2"></i>
+        <span id="successMessageText">Proveedor eliminado exitosamente.</span>
+    </div>
+    <div id="errorMessage" class="alert alert-danger" style="display: none;" role="alert">
+        <i class="fas fa-exclamation-circle me-2"></i>
+        <span id="errorMessageText"></span>
+    </div>
+</div>
+
+<!-- Botón de Agregar Proveedor arriba de la tabla -->
+<a href="/Proveedor/Alta" class="btn btn-primary mb-3">Agregar Proveedor</a>
+
 <table class="table table-striped table-bordered">
     <thead>
         <tr>
-            <th>ID</th>
-            <th>Razón Social</th>
+            <th style="text-align: center;">ID</th>
+            <th style="text-align: center;">Razón Social</th>
+            <th style="text-align: center;">Nombre Comercial</th>
+            <th style="text-align: center;">CUIT</th>
+            <th style="text-align: center;">Acciones</th>
         </tr>
     </thead>
     <tbody>
@@ -20,9 +38,147 @@
             <tr>
                 <td>@proveedor.Id</td>
                 <td>@proveedor.RazonSocial</td>
+                <td>@proveedor.NombreComercial</td>
+                <td>@proveedor.CUIT</td>
+                <td>
+                    <div class="d-flex justify-content-center gap-2">
+                        <a href="/Proveedor/Editar/@proveedor.Id" class="btn btn-primary btn-sm" title="Editar Proveedor">
+                            <i class="fas fa-edit"></i>
+                        </a>
+                        <button class="btn btn-danger btn-sm" title="Eliminar Proveedor"
+                            onclick="confirmDelete(@proveedor.Id, '@proveedor.RazonSocial')">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
+                    </div>
+                </td>
             </tr>
         }
     </tbody>
 </table>
 
-<a href="/Proveedor/Alta" class="btn btn-primary">Agregar Proveedor</a>
+<style>
+    .table-responsive {
+        position: relative;
+    }
+
+    .table-header {
+        position: sticky;
+        top: 0;
+        z-index: 1020;
+        background-color: white;
+        /* Asegúrate de que el fondo sea blanco */
+    }
+    /* Reducir el tamaño de la letra en la tabla */ 
+    .table-sm td, 
+    .table-sm th { 
+        font-size: 0.9em; 
+    }
+</style>
+<!-- Modal para Confirmación de Eliminación -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteModalLabel">Confirmar Eliminación</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                ¿Estás seguro de que deseas eliminar este registro de proveedor?
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-danger" id="confirmDeleteButton">Eliminar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/5.1.3/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        var deleteId = 0;
+
+        function confirmDelete(id, nombre) {
+            deleteId = id;
+            document.querySelector('.modal-body').textContent = `¿Estás seguro de que deseas eliminar el proveedor "${nombre}"? Esta acción no se puede deshacer.`;
+            var deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'), {
+                keyboard: false
+            });
+            deleteModal.show();
+        }
+
+        document.getElementById('confirmDeleteButton').addEventListener('click', function () {
+            $.ajax({
+                url: '/Proveedor/Delete/' + deleteId,
+                type: 'DELETE',
+                success: function (response) {
+                    $('#deleteModal').modal('hide');
+                    showSuccessMessage(response.message);
+                    setTimeout(function () {
+                        location.reload();
+                    }, 1000); // Recargar la página después de 1 segundo
+                },
+                error: function (xhr, status, errorThrown) {
+                    console.error('Error al eliminar proveedor:', xhr.responseText);
+                    var errorMessage = 'Ocurrió un error al intentar eliminar el proveedor.';
+                    try {
+                        var response = JSON.parse(xhr.responseText);
+                        if (response && response.error) {
+                            errorMessage = response.error;
+                            if (response.detalles) {
+                                errorMessage += ' ' + response.detalles;
+                            }
+                        }
+                    } catch (e) {
+                        console.error('Error al procesar la respuesta de error:', e);
+                    }
+                    showErrorMessage(errorMessage);
+                }
+            });
+        });
+
+        function showSuccessMessage(message) {
+            // Ocultar cualquier mensaje de error visible
+            document.getElementById('errorMessage').style.display = 'none';
+            
+            // Mostrar mensaje de éxito
+            var successMessage = document.getElementById('successMessage');
+            document.getElementById('successMessageText').textContent = message;
+            successMessage.style.display = 'block';
+            
+            // Desplazarse suavemente al mensaje
+            $('html, body').animate({
+                scrollTop: $('#messageContainer').offset().top - 20
+            }, 500);
+            
+            // Ocultar después de 5 segundos
+            setTimeout(function () {
+                successMessage.style.display = 'none';
+            }, 5000);
+        }
+        
+        function showErrorMessage(message) {
+            // Ocultar mensaje de éxito si está visible
+            document.getElementById('successMessage').style.display = 'none';
+            
+            // Mostrar mensaje de error
+            var errorMessage = document.getElementById('errorMessage');
+            document.getElementById('errorMessageText').textContent = message;
+            errorMessage.style.display = 'block';
+            
+            // Desplazarse suavemente al mensaje
+            $('html, body').animate({
+                scrollTop: $('#messageContainer').offset().top - 20
+            }, 500);
+            
+            // Ocultar después de 10 segundos (más tiempo para mensajes de error)
+            setTimeout(function () {
+                errorMessage.style.display = 'none';
+            }, 10000);
+        }
+    </script>
+}
+

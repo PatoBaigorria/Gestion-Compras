@@ -1,0 +1,141 @@
+@model Gestion_Compras.Models.Proveedor
+
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    ViewData["Title"] = "Editar Proveedor";
+}
+
+<h3>Editar Proveedor</h3>
+
+<form id="editarProveedorForm">
+    @Html.AntiForgeryToken()
+    <input type="hidden" asp-for="Id" id="proveedorId" value="@Model?.Id" />
+    <div class="mb-3">
+        <div class="col-md-6 col-lg-3">
+            <label for="razonSocial" class="form-label">Razón Social</label>
+            <input asp-for="RazonSocial" class="form-control" id="razonSocial" value="@Model?.RazonSocial" />
+            <span asp-validation-for="RazonSocial" class="text-danger"></span>
+        </div>
+        <div class="col-md-6 col-lg-3">
+            <label for="nombreComercial" class="form-label">Nombre Comercial</label>
+            <input asp-for="NombreComercial" class="form-control" id="nombreComercial" value="@Model?.NombreComercial" />
+            <span asp-validation-for="NombreComercial" class="text-danger"></span>
+        </div>
+        <div class="col-md-6 col-lg-3">
+            <label for="cuit" class="form-label">CUIT</label>
+            <input asp-for="CUIT" class="form-control" id="cuit" value="@Model?.CUIT" />
+            <span asp-validation-for="CUIT" class="text-danger"></span>
+        </div>
+    </div>
+    <button type="submit" class="btn btn-primary">Actualizar</button>
+    <a href="/Proveedor" class="btn btn-secondary">Cancelar</a>
+</form>
+
+<!-- Modal para Mensaje de Éxito -->
+<div class="modal fade" id="successModal" tabindex="-1" aria-labelledby="successModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title" id="successModalLabel">Proveedor Actualizado</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body bg-light">
+                Proveedor actualizado exitosamente.
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" onclick="window.location.href='/Proveedor'">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Mensaje de Error -->
+<div class="modal fade" id="errorModal" tabindex="-1" aria-labelledby="errorModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="errorModalLabel">Error</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body bg-light" id="errorMessage">
+                <!-- Mensaje de error se insertará aquí -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // Manejar el envío del formulario
+            $('#editarProveedorForm').on('submit', function(e) {
+                e.preventDefault();
+                
+                const formData = {
+                    Id: $('#proveedorId').val(),
+                    RazonSocial: $('#razonSocial').val(),
+                    NombreComercial: $('#nombreComercial').val(),
+                    CUIT: $('#cuit').val()
+                };
+
+                // Validaciones básicas del lado del cliente
+                if (!formData.RazonSocial || formData.RazonSocial.trim() === '') {
+                    showError('La razón social es requerida');
+                    return;
+                }
+
+                if (!formData.CUIT || formData.CUIT.trim() === '') {
+                    showError('El CUIT es requerido');
+                    return;
+                }
+
+                // Validar formato de CUIT (XX-XXXXXXXX-X)
+                const cuitRegex = /^\d{2}-\d{8}-\d{1}$/;
+                if (!cuitRegex.test(formData.CUIT)) {
+                    showError('El formato del CUIT no es válido. Debe tener el formato XX-XXXXXXXX-X');
+                    return;
+                }
+
+                // Obtener el token antifalsificación
+                const token = $('input[name="__RequestVerificationToken"]').val();
+
+                // Enviar la solicitud PUT
+                $.ajax({
+                    url: '/Proveedor/Editar/' + formData.Id,
+                    type: 'PUT',
+                    contentType: 'application/json',
+                    headers: {
+                        'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
+                    },
+                    data: JSON.stringify(formData),
+                    success: function(response) {
+                        if (response.message) {
+                            // Mostrar modal de éxito
+                            const successModal = new bootstrap.Modal(document.getElementById('successModal'));
+                            successModal.show();
+                        }
+                    },
+                    error: function(xhr) {
+                        let errorMessage = 'Error al actualizar el proveedor';
+                        if (xhr.responseJSON && xhr.responseJSON.error) {
+                            errorMessage = xhr.responseJSON.error;
+                        } else if (xhr.status === 0) {
+                            errorMessage = 'No se pudo conectar con el servidor. Verifique su conexión a internet.';
+                        }
+                        showError(errorMessage);
+                    }
+                });
+            });
+
+            // Función para mostrar errores en el modal
+            function showError(message) {
+                $('#errorMessage').text(message);
+                const errorModal = new bootstrap.Modal(document.getElementById('errorModal'));
+                errorModal.show();
+            }
+        });
+    </script>
+}
