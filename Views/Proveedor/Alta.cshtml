@@ -15,6 +15,16 @@
             <input asp-for="RazonSocial" class="form-control" id="razonSocial" />
             <span asp-validation-for="RazonSocial" class="text-danger"></span>
         </div>
+        <div class="col-md-6 col-lg-3">
+            <label for="nombreComercial" class="form-label">Nombre Comercial</label>
+            <input asp-for="NombreComercial" class="form-control" id="nombreComercial" />
+            <span asp-validation-for="NombreComercial" class="text-danger"></span>
+        </div>
+        <div class="col-md-6 col-lg-3">
+            <label for="cuit" class="form-label">CUIT</label>
+            <input asp-for="CUIT" class="form-control" id="cuit" />
+            <span asp-validation-for="CUIT" class="text-danger"></span>
+        </div>
     </div>
     <button type="submit" class="btn btn-success">Guardar</button>
     <a href="/Proveedor" class="btn btn-secondary">Cancelar</a>
@@ -49,7 +59,9 @@
                 e.preventDefault();
 
                 var proveedorData = {
-                    RazonSocial: $("#razonSocial").val()
+                    RazonSocial: $("#razonSocial").val(),
+                    NombreComercial: $("#nombreComercial").val(),
+                    CUIT: $("#cuit").val()
                 };
 
                 $.ajax({

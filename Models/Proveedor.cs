@@ -12,6 +12,11 @@ namespace Gestion_Compras.Models
 
 		[Required]
 		public string RazonSocial { get; set; }
+
+		public string NombreComercial { get; set; }
+
+		[Required]
+		public string CUIT { get; set; }
 		
 	}
 }
