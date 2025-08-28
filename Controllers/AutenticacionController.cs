@@ -134,18 +134,48 @@ namespace Gestion_Compras.Controllers
         }
 
         [HttpPost("CambiarPassword/{id}")]
-        public async Task<IActionResult> CambiarPassword(int id, string newPassword)
+        public async Task<IActionResult> CambiarPassword(int id, string currentPassword, string newPassword)
         {
-            var usuario = context.Usuario.Find(id);
-            if (usuario != null)
+            var usuario = await context.Usuario.FindAsync(id);
+            if (usuario == null)
+            {
+                ModelState.AddModelError("", "Usuario no encontrado");
+                return View(usuario);
+            }
+
+            // Verificar contraseña actual
+            if (!VerificarPassword(currentPassword, usuario.Password))
+            {
+                ModelState.AddModelError("currentPassword", "La contraseña actual es incorrecta");
+                return View(usuario);
+            }
+
+            // Validar que la nueva contraseña sea diferente a la actual
+            if (VerificarPassword(newPassword, usuario.Password))
+            {
+                ModelState.AddModelError("newPassword", "La nueva contraseña debe ser diferente a la actual");
+                return View(usuario);
+            }
+
+            try
             {
                 usuario.Password = BCrypt.Net.BCrypt.HashPassword(newPassword);
                 usuario.ActivarLogin = false; // Cambiar a false después de cambiar la contraseña
                 context.Update(usuario);
                 await context.SaveChangesAsync();
+                
+                // Cerrar la sesión actual
+                await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+                
+                // Redirigir al login con mensaje de éxito
+                TempData["MensajeExito"] = "Contraseña cambiada exitosamente. Por favor inicie sesión nuevamente.";
                 return RedirectToAction("Login", "Autenticacion");
             }
-            return View(usuario);
+            catch (Exception ex)
+            {
+                ModelState.AddModelError("", "Ocurrió un error al cambiar la contraseña: " + ex.Message);
+                return View(usuario);
+            }
         }
 
         // Método auxiliar para verificar contraseñas con manejo de errores
