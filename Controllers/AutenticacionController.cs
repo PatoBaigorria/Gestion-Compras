@@ -41,16 +41,62 @@ namespace Gestion_Compras.Controllers
                 Console.WriteLine($"Password en BD: {usuario.Password}");
                 Console.WriteLine($"Password ingresada: {password}");
                 
+                // Verificar si el usuario está activo para login
+                // Si no está activo pero es su primer inicio, permitir el cambio de contraseña
+                if (!usuario.ActivarLogin && usuario.PrimeraVezLogin != 1)
+                {
+                    Console.WriteLine("Error: El usuario no está activo para iniciar sesión");
+                    ModelState.AddModelError("", "El usuario no está activo. Contacte al administrador.");
+                    return View("Login");
+                }
+                
+                // Verificar la contraseña
+                Console.WriteLine("Verificando contraseña...");
                 bool passwordValida = VerificarPassword(password, usuario.Password);
-                Console.WriteLine($"Password válida: {passwordValida}");
+                Console.WriteLine($"Resultado verificación: {passwordValida}");
+                
+                if (!passwordValida)
+                {
+                    Console.WriteLine("Error: Contraseña incorrecta");
+                    ModelState.AddModelError("", "Usuario o contraseña incorrectos");
+                    return View("Login");
+                }
                 
                 if (passwordValida)
                 {
-                if (usuario.ActivarLogin)
-                {
-                    // Redirigir al usuario a la página de cambio de contraseña
-                    return RedirectToAction("CambiarPassword", new { id = usuario.Id });
-                }
+                    // Si es la primera vez que inicia sesión, redirigir a cambio de contraseña
+                    if (usuario.PrimeraVezLogin == 1)
+                    {
+                        Console.WriteLine($"Redirigiendo a cambio de contraseña. ID: {usuario.Id}, PrimeraVez: {usuario.PrimeraVezLogin}");
+                        
+                        // Autenticar al usuario primero
+                        var userClaims = new List<Claim>
+                        {
+                            new Claim(ClaimTypes.Name, usuario.UsuarioLogin),
+                            new Claim(ClaimTypes.GivenName, usuario.Nombre ?? string.Empty),
+                            new Claim(ClaimTypes.Surname, usuario.Apellido ?? string.Empty),
+                            new Claim(ClaimTypes.Role, usuario.RolNombre ?? "Usuario"),
+                            new Claim(ClaimTypes.NameIdentifier, usuario.Id.ToString()),
+                        };
+
+                        var userClaimsIdentity = new ClaimsIdentity(userClaims, CookieAuthenticationDefaults.AuthenticationScheme);
+                        await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(userClaimsIdentity));
+                        
+                        // Generar URL absoluta para asegurar que la redirección funcione
+                        var url = Url.Action("CambiarPassword", "Autenticacion", 
+                            new { id = usuario.Id, primeraVez = 1 });
+                            
+                        Console.WriteLine($"URL de redirección: {url}");
+                        return Redirect(url);
+                    }
+                    
+                    // Si el usuario no está activo, no permitir el acceso
+                    if (!usuario.ActivarLogin)
+                    {
+                        Console.WriteLine("Error: El usuario no está activo");
+                        ModelState.AddModelError("", "El usuario no está activo. Contacte al administrador.");
+                        return View("Login");
+                    }
 
                 var claims = new List<Claim>
                 {
@@ -58,6 +104,7 @@ namespace Gestion_Compras.Controllers
                     new Claim(ClaimTypes.GivenName, usuario.Nombre),
                     new Claim(ClaimTypes.Surname, usuario.Apellido),
                     new Claim(ClaimTypes.Role, usuario.RolNombre),
+                    new Claim(ClaimTypes.NameIdentifier, usuario.Id.ToString()),
                 };
 
                 var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
@@ -122,20 +169,34 @@ namespace Gestion_Compras.Controllers
             return View();
         }
 
-        [HttpGet("CambiarPassword/{id}")]
-        public IActionResult CambiarPassword(int id)
+        [AllowAnonymous]
+        [HttpGet("CambiarPassword")]
+        public IActionResult CambiarPassword(int? id, int primeraVez = 0)
         {
-            var usuario = context.Usuario.Find(id);
+            Console.WriteLine($"GET CambiarPassword - ID: {id}, PrimeraVez: {primeraVez}");
+            if (!id.HasValue)
+            {
+                Console.WriteLine("Error: No se proporcionó ID de usuario");
+                return RedirectToAction("Login");
+            }
+            
+            var usuario = context.Usuario.Find(id.Value);
             if (usuario == null)
             {
-                return NotFound();
+                Console.WriteLine($"Error: No se encontró usuario con ID {id}");
+                return RedirectToAction("Login");
             }
+            
+            // Si es la primera vez, no pedir la contraseña actual
+            ViewBag.EsPrimeraVez = (primeraVez == 1);
             return View(usuario);
         }
 
-        [HttpPost("CambiarPassword/{id}")]
-        public async Task<IActionResult> CambiarPassword(int id, string currentPassword, string newPassword)
+        [AllowAnonymous]
+        [HttpPost("CambiarPassword")]
+        public async Task<IActionResult> CambiarPassword(int id, string currentPassword, string newPassword, int primeraVez = 0)
         {
+            Console.WriteLine($"POST CambiarPassword - ID: {id}, PrimeraVez: {primeraVez}");
             var usuario = await context.Usuario.FindAsync(id);
             if (usuario == null)
             {
@@ -159,8 +220,17 @@ namespace Gestion_Compras.Controllers
 
             try
             {
+                // Si no es la primera vez, verificar la contraseña actual
+                if (primeraVez != 1 && !VerificarPassword(currentPassword, usuario.Password))
+                {
+                    ModelState.AddModelError("currentPassword", "La contraseña actual es incorrecta");
+                    ViewBag.EsPrimeraVez = false; // Mostrar campo de contraseña actual
+                    return View(usuario);
+                }
+
                 usuario.Password = BCrypt.Net.BCrypt.HashPassword(newPassword);
-                usuario.ActivarLogin = false; // Cambiar a false después de cambiar la contraseña
+                usuario.ActivarLogin = false;
+                usuario.PrimeraVezLogin = 0; // 0 = false
                 context.Update(usuario);
                 await context.SaveChangesAsync();
                 
@@ -183,41 +253,36 @@ namespace Gestion_Compras.Controllers
         {
             try
             {
-                // Verificar si es un hash BCrypt (comienza con $2a$, $2b$, etc.)
-                if (hash.StartsWith("$2"))
+                if (string.IsNullOrEmpty(password) || string.IsNullOrEmpty(hash))
                 {
-                    return BCrypt.Net.BCrypt.Verify(password, hash);
+                    Console.WriteLine("Error: Contraseña o hash vacío");
+                    return false;
+                }
+
+                Console.WriteLine($"Hash a verificar: {hash}");
+                Console.WriteLine($"Longitud del hash: {hash?.Length}");
+                Console.WriteLine($"¿El hash comienza con $2a$?: {hash?.StartsWith("$2a$")}");
+                
+                Console.WriteLine("Verificando contraseña con BCrypt...");
+                bool esValida = BCrypt.Net.BCrypt.Verify(password, hash);
+                
+                // Si falla, intentar con un hash generado con la misma contraseña para comparar
+                if (!esValida)
+                {
+                    Console.WriteLine("La verificación falló, generando un nuevo hash para comparar...");
+                    string nuevoHash = BCrypt.Net.BCrypt.HashPassword(password);
+                    Console.WriteLine($"Nuevo hash generado: {nuevoHash}");
+                    Console.WriteLine($"¿Los hashes son iguales?: {hash == nuevoHash}");
                 }
                 
-                // Si parece ser Base64, intentar decodificar y comparar
-                if (hash.Length > 20 && !hash.Contains(" "))
-                {
-                    try
-                    {
-                        byte[] hashBytes = Convert.FromBase64String(hash);
-                        string decodedHash = System.Text.Encoding.UTF8.GetString(hashBytes);
-                        Console.WriteLine($"Hash decodificado de Base64: {decodedHash}");
-                        return password == decodedHash;
-                    }
-                    catch
-                    {
-                        // Si no es Base64 válido, comparar directamente
-                        Console.WriteLine("No es Base64 válido, comparando directamente");
-                        return password == hash;
-                    }
-                }
-                
-                // Comparación directa para contraseñas sin hashear
-                return password == hash;
-            }
-            catch (BCrypt.Net.SaltParseException)
-            {
-                // Si el hash está corrupto o en formato incorrecto, comparar directamente
-                return password == hash;
+                Console.WriteLine($"Resultado de verificación BCrypt: {esValida}");
+                return esValida;
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error en verificación de password: {ex.Message}");
+                Console.WriteLine($"Error al verificar contraseña: {ex.Message}");
+                Console.WriteLine($"Tipo de excepción: {ex.GetType().FullName}");
+                Console.WriteLine($"Stack Trace: {ex.StackTrace}");
                 return false;
             }
         }
