@@ -99,51 +99,16 @@ else
     app.UseHsts();
 }
 
-app.MapControllerRoute(
-    name: "proveedor",
-    pattern: "Proveedor/{action=Index}/{id?}",
-    defaults: new { controller = "Proveedor", action = "Index" }
-);
-
-app.MapControllerRoute(
-    name: "familiaSubfamilia",
-    pattern: "FamiliaSubfamilia/{action=Index}/{id?}",
-    defaults: new { controller = "FamiliaSubfamilia", action = "Index" }
-);
-
-app.MapControllerRoute(
-    name: "autenticacion",
-    pattern: "Autenticacion/{action=Login}/{id?}",
-    defaults: new { controller = "Autenticacion", action = "Login" }
-);
-
+// Ruta por defecto
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}"
 );
 
+// Ruta específica para autenticación
 app.MapControllerRoute(
-    name: "salida",
-    pattern: "Salida/{action=AltaSalidas}",
-    defaults: new { controller = "Salida", action = "AltaSalidas" }
-);
-
-app.MapControllerRoute(
-    name: "ingreso",
-    pattern: "Ingreso/{action=AltaIngresos}",
-    defaults: new { controller = "Ingreso", action = "AltaIngresos" }
-);
-
-app.MapControllerRoute(
-    name: "ingreso",
-    pattern: "Ingreso/{action=Index}",
-    defaults: new { controller = "Ingreso", action = "Index" }
-);
-
-app.MapControllerRoute(
-    name: "pedido",
-    pattern: "Pedido/{action=Lista}/{id?}",
-    defaults: new { controller = "PedidoView", action = "Lista" }
+    name: "autenticacion",
+    pattern: "Autenticacion/{action=Login}/{id?}"
 );
 
 app.MapControllerRoute(

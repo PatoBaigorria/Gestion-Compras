@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Cryptography.KeyDerivation;
+using Microsoft.AspNetCore.Cryptography.KeyDerivation;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using System;
@@ -34,7 +34,10 @@ namespace Gestion_Compras.Models
 		public int Rol { get; set; }
         [Display(Name = "Rol")]
         public string RolNombre => Rol > 0 ? ((enRoles)Rol).ToString() : "";
-		public bool ActivarLogin { get; set; } = true;
+		public bool ActivarLogin { get; set; } = false; 
+        // Propiedades para control de primer inicio de sesión
+        // Usamos int para compatibilidad con MySQL (0 = false, 1 = true)
+        public int PrimeraVezLogin { get; set; } = 1;
 
 		public override string ToString()
         {
