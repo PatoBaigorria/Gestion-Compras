@@ -112,6 +112,12 @@ app.MapControllerRoute(
 );
 
 app.MapControllerRoute(
+    name: "autenticacion",
+    pattern: "Autenticacion/{action=Login}/{id?}",
+    defaults: new { controller = "Autenticacion", action = "Login" }
+);
+
+app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}"
 );
