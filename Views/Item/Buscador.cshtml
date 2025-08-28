@@ -151,6 +151,8 @@
 @section Scripts {
     <script>
         $(document).ready(function () {
+            // Cargar automáticamente la lista completa de ítems al iniciar
+            buscarItems();
             // Utilidad: debounce para no disparar demasiadas llamadas
             function debounce(fn, delay) {
                 let t;
