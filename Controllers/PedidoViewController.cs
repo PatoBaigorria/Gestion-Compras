@@ -6,8 +6,8 @@ namespace Gestion_Compras.Controllers
     [Authorize]
     public class PedidoViewController : Controller
     {
-        [Authorize(Roles = "Administrador")]
-        public IActionResult Index()
+        [Authorize(Roles = "Administrador,Pañolero")]
+        public IActionResult Nuevo()
         {
             return View("~/Views/Pedido/Index.cshtml");
         }

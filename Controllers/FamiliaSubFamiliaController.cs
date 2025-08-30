@@ -10,7 +10,7 @@ namespace Gestion_Compras.Controllers
 {
     [Route("[controller]")]
     [ApiController]
-    [Authorize(Roles = "Administrador")]
+    [Authorize]
     public class FamiliaSubFamiliaController : Controller
     {
         private readonly DataContext context;
