@@ -216,7 +216,10 @@
                 // Realizar múltiples requests en paralelo y unir resultados
                 const requests = familiaIds.map(fid => $.ajax({
                     url: '/FamiliaSubFamilia/ObtenerSubfamilias/' + fid,
-                    type: 'GET'
+                    type: 'GET',
+                    xhrFields: {
+                        withCredentials: true // Incluir credenciales en la petición
+                    }
                 }));
 
                 Promise.all(requests)
@@ -254,6 +257,9 @@
                 $.ajax({
                     url: '/Item/BuscarItems',
                     type: 'GET',
+                    xhrFields: {
+                        withCredentials: true // Incluir credenciales en la petición
+                    },
                     traditional: true, // asegurar serialización de arrays como claves repetidas
                     data: {
                         codigo: codigo,
@@ -544,6 +550,9 @@
                 $.ajax({
                     url: '/Item/BuscarItems',
                     type: 'GET',
+                    xhrFields: {
+                        withCredentials: true // Incluir credenciales en la petición
+                    },
                     success: function (response) {
                         const filas = response.map(item => {
                             const stockTotal = item.stock + item.cantidadEnPedidos;

@@ -111,10 +111,17 @@ app.MapControllerRoute(
     pattern: "Autenticacion/{action=Login}/{id?}"
 );
 
+// Rutas específicas para PedidoViewController
 app.MapControllerRoute(
     name: "pedidoNuevo",
     pattern: "Pedido/Nuevo",
-    defaults: new { controller = "PedidoView", action = "Index" }
+    defaults: new { controller = "PedidoView", action = "Nuevo" }
+);
+
+app.MapControllerRoute(
+    name: "pedidoLista",
+    pattern: "Pedido/Lista",
+    defaults: new { controller = "PedidoView", action = "Lista" }
 );
 
 app.MapControllers(); // Mapea los controladores restantes
