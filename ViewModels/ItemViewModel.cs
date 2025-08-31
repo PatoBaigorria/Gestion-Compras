@@ -17,17 +17,17 @@ namespace Gestion_Compras.ViewModels
         [Required(ErrorMessage = "La unidad de medida es requerida")]
         public int UnidadDeMedidaId { get; set; }
         
-        [Required(ErrorMessage = "El punto de pedido es requerido")]
         [Range(0, double.MaxValue, ErrorMessage = "El punto de pedido no puede ser negativo")]
-        public double PuntoDePedido { get; set; }
+        public double? PuntoDePedido { get; set; }
         
-        [Required(ErrorMessage = "El precio es requerido")]
         [Range(0, double.MaxValue, ErrorMessage = "El precio no puede ser negativo")]
-        public double Precio { get; set; }
+        public double? Precio { get; set; }
         
         public bool Critico { get; set; }
         
         [Required(ErrorMessage = "La subfamilia es requerida")]
         public int SubFamiliaId { get; set; }
+        
+        public bool Activo { get; set; } = true;
     }
 }

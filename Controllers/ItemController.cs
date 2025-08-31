@@ -17,6 +17,25 @@ namespace Gestion_Compras.Controllers
             this.context = context;
         }
 
+        [HttpGet("ObtenerUnidadesDeMedida")]
+        public async Task<IActionResult> ObtenerUnidadesDeMedida()
+        {
+            try
+            {
+                var unidades = await context.UnidadDeMedida
+                    .Select(um => new { id = um.Id, descripcion = um.Abreviatura })
+                    .OrderBy(um => um.descripcion)
+                    .ToListAsync();
+
+                return Ok(unidades);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error al obtener unidades de medida: {ex.Message}");
+                return StatusCode(500, new { success = false, message = "Error al obtener las unidades de medida" });
+            }
+        }
+
 
         // Acción para mostrar la vista del buscador de items
         [HttpGet("Buscador")]
@@ -224,9 +243,12 @@ namespace Gestion_Compras.Controllers
                     puntoDePedido = item.PuntoDePedido,
                     precio = item.Precio,
                     critico = item.Critico,
+                    activo = item.Activo,
                     familiaId = item.SubFamilia?.FamiliaId ?? 0,
                     subFamiliaId = item.SubFamiliaId
                 };
+
+                Console.WriteLine($"Datos del ítem {id}: UnidadDeMedidaId={item.UnidadDeMedidaId}, Activo={item.Activo}");
 
                 return Ok(result);
             }
@@ -263,10 +285,14 @@ namespace Gestion_Compras.Controllers
                 item.Codigo = modelo.Codigo;
                 item.Descripcion = modelo.Descripcion;
                 item.UnidadDeMedidaId = modelo.UnidadDeMedidaId;
-                item.PuntoDePedido = modelo.PuntoDePedido;
-                item.Precio = modelo.Precio;
+                
+                // Manejar valores nulos para campos numéricos
+                item.PuntoDePedido = modelo.PuntoDePedido ?? 0; // Si es null, se establece a 0
+                item.Precio = modelo.Precio ?? 0; // Si es null, se establece a 0
+                
                 item.Critico = modelo.Critico;
                 item.SubFamiliaId = modelo.SubFamiliaId;
+                item.Activo = modelo.Activo;
 
                 context.Update(item);
                 await context.SaveChangesAsync();
