@@ -46,7 +46,8 @@ namespace Gestion_Compras.Controllers
                 if (!usuario.ActivarLogin && usuario.PrimeraVezLogin != 1)
                 {
                     Console.WriteLine("Error: El usuario no está activo para iniciar sesión");
-                    ModelState.AddModelError("", "El usuario no está activo. Contacte al administrador.");
+                    TempData["ErrorType"] = "Cuenta inactiva";
+                    TempData["ErrorMessage"] = "Tu cuenta no está activa. Por favor, contacta al administrador del sistema.";
                     return View("Login");
                 }
                 
@@ -58,7 +59,8 @@ namespace Gestion_Compras.Controllers
                 if (!passwordValida)
                 {
                     Console.WriteLine("Error: Contraseña incorrecta");
-                    ModelState.AddModelError("", "Usuario o contraseña incorrectos");
+                    TempData["ErrorType"] = "Credenciales inválidas";
+                    TempData["ErrorMessage"] = "El usuario o la contraseña son incorrectos. Por favor, verifica e intenta nuevamente.";
                     return View("Login");
                 }
                 
@@ -94,7 +96,8 @@ namespace Gestion_Compras.Controllers
                     if (!usuario.ActivarLogin)
                     {
                         Console.WriteLine("Error: El usuario no está activo");
-                        ModelState.AddModelError("", "El usuario no está activo. Contacte al administrador.");
+                        TempData["ErrorType"] = "Cuenta inactiva";
+                        TempData["ErrorMessage"] = "Tu cuenta no está activa. Por favor, contacta al administrador del sistema.";
                         return View("Login");
                     }
 

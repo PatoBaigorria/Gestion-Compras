@@ -16,6 +16,64 @@
         .menu-container {
             display: none;
         }
+        
+        .login-form {
+            background: white;
+            padding: 2rem;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+            max-width: 400px;
+            width: 100%;
+            margin: 0 auto;
+        }
+        
+        .form-control {
+            border-radius: 5px;
+            padding: 10px 15px;
+            margin-bottom: 1rem;
+            border: 1px solid #ddd;
+        }
+        
+        .btn-primary {
+            width: 100%;
+            padding: 10px;
+            border-radius: 5px;
+            font-weight: 600;
+        }
+        
+        .alert {
+            border-radius: 5px;
+            margin-bottom: 1rem;
+            padding: 0.5rem 1rem;
+            font-size: 0.9rem;
+        }
+        
+        .alert-danger {
+            background-color: #f8d7da;
+            border-color: #f5c6cb;
+            color: #721c24;
+        }
+        
+        .alert-heading {
+            font-size: 1rem;
+            margin-bottom: 0.25rem;
+            font-weight: 600;
+        }
+        
+        .btn-close {
+            padding: 0.5rem;
+            margin: -0.5rem -0.5rem -0.5rem auto;
+        }
+        
+        .logo-container {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        
+        .logo {
+            max-width: 200px;
+            height: auto;
+        }
     </style>
     
     <div class="logo-container">
@@ -24,9 +82,13 @@
     <div class="container">
         <div class="login-form">
             <h2>Iniciar Sesión</h2>
-            @if (ViewBag.ErrorMessage != null)
+            @if (TempData["ErrorMessage"] != null)
             {
-                <p class="text-danger">@ViewBag.ErrorMessage</p>
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <h5 class="alert-heading">@TempData["ErrorType"]</h5>
+                    <p>@TempData["ErrorMessage"]</p>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+                </div>
             }
             <form asp-action="Login" method="post">
                 <div class="form-group">
