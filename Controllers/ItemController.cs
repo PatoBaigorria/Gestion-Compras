@@ -26,9 +26,14 @@ namespace Gestion_Compras.Controllers
                 .Select(f => new Familia { Id = f.Id, Codigo = f.Codigo, Descripcion = f.Descripcion })
                 .ToListAsync();
 
+            var unidadesMedida = await context.UnidadDeMedida
+                .Select(um => new UnidadDeMedida { Id = um.Id, Abreviatura = um.Abreviatura })
+                .ToListAsync();
+
             var modelo = new FamiliaSubFamiliaViewModel
             {
-                FamiliaList = familias
+                FamiliaList = familias,
+                UnidadDeMedidaList = unidadesMedida
             };
 
             return View(modelo);
@@ -178,6 +183,101 @@ namespace Gestion_Compras.Controllers
             return requiere ? $"\"{texto}\"" : texto;
         }
 
+
+        [HttpGet("GetItemById")]
+        public async Task<IActionResult> GetItemById(int id)
+        {
+            try
+            {
+                Console.WriteLine($"Obteniendo ítem con ID: {id}");
+                
+                var item = await context.Item
+                    .Include(i => i.SubFamilia)
+                    .ThenInclude(sf => sf.Familia)
+                    .FirstOrDefaultAsync(i => i.Id == id);
+
+                if (item == null)
+                {
+                    Console.WriteLine($"No se encontró el ítem con ID: {id}");
+                    return NotFound(new { success = false, message = $"No se encontró el ítem con ID: {id}" });
+                }
+
+                Console.WriteLine($"Datos del ítem {id}: UnidadDeMedidaId={item.UnidadDeMedidaId}");
+
+                // Validar que la unidad de medida exista
+                if (item.UnidadDeMedidaId > 0)
+                {
+                    var unidadExiste = await context.UnidadDeMedida.AnyAsync(um => um.Id == item.UnidadDeMedidaId);
+                    if (!unidadExiste)
+                    {
+                        Console.WriteLine($"ADVERTENCIA: No existe la unidad de medida con ID: {item.UnidadDeMedidaId}");
+                        // No fallamos, solo registramos la advertencia
+                    }
+                }
+
+                var result = new 
+                {
+                    id = item.Id,
+                    codigo = item.Codigo,
+                    descripcionItem = item.Descripcion,
+                    unidadDeMedidaId = item.UnidadDeMedidaId,
+                    puntoDePedido = item.PuntoDePedido,
+                    precio = item.Precio,
+                    critico = item.Critico,
+                    familiaId = item.SubFamilia?.FamiliaId ?? 0,
+                    subFamiliaId = item.SubFamiliaId
+                };
+
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"ERROR en GetItemById: {ex.Message}");
+                return StatusCode(500, new { success = false, message = ex.Message });
+            }
+        }
+
+        [HttpPost("ActualizarItem")]
+        public async Task<IActionResult> ActualizarItem([FromBody] ItemViewModel modelo)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            try
+            {
+                var item = await context.Item.FindAsync(modelo.Id);
+                if (item == null)
+                {
+                    return NotFound(new { success = false, message = "Ítem no encontrado" });
+                }
+
+                // Validar que el código no esté duplicado (excepto para el mismo ítem)
+                if (await context.Item.AnyAsync(i => i.Codigo == modelo.Codigo && i.Id != modelo.Id))
+                {
+                    return BadRequest(new { success = false, message = "Ya existe un ítem con este código" });
+                }
+
+                // Actualizar propiedades
+                item.Codigo = modelo.Codigo;
+                item.Descripcion = modelo.Descripcion;
+                item.UnidadDeMedidaId = modelo.UnidadDeMedidaId;
+                item.PuntoDePedido = modelo.PuntoDePedido;
+                item.Precio = modelo.Precio;
+                item.Critico = modelo.Critico;
+                item.SubFamiliaId = modelo.SubFamiliaId;
+
+                context.Update(item);
+                await context.SaveChangesAsync();
+
+                return Ok(new { success = true });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { success = false, message = ex.Message });
+            }
+        }
 
         [HttpPost("PostItem")]
         public async Task<ActionResult<Item>> PostItem(Item item)

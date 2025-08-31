@@ -24,6 +24,13 @@ namespace Gestion_Compras.Models
 			{
 				entity.Property(e => e.PedidoId).HasColumnName("PedidoId");
 			});
+
+			// Configuración de la relación entre Item y UnidadDeMedida
+			modelBuilder.Entity<Item>()
+				.HasOne(i => i.UnidadDeMedida)
+				.WithMany()
+				.HasForeignKey(i => i.UnidadDeMedidaId)
+				.OnDelete(DeleteBehavior.Restrict);
 		}
 		public DbSet<Familia> Familia { get; set; }
 
