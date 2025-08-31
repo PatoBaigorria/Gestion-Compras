@@ -84,6 +84,28 @@ namespace Gestion_Compras.Controllers
             return Ok(subfamilias);
         }
 
+        [HttpGet("GetSubFamiliasByFamiliaId")]
+        public async Task<IActionResult> GetSubFamiliasByFamiliaId(int familiaId)
+        {
+            try
+            {
+                var subFamilias = await context.SubFamilia
+                    .Where(sf => sf.FamiliaId == familiaId)
+                    .OrderBy(sf => sf.Descripcion)
+                    .Select(sf => new { 
+                        id = sf.Id, 
+                        descripcion = sf.Descripcion 
+                    })
+                    .ToListAsync();
+
+                return Ok(subFamilias);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { error = "Error al cargar las subfamilias: " + ex.Message });
+            }
+        }
+
 
         // Acción para crear solo una familia
         [HttpPost("CrearFamilia")]
