@@ -44,7 +44,7 @@ namespace Gestion_Compras.Controllers
         [HttpGet("BuscarItems")]
         public async Task<ActionResult<IEnumerable<object>>> BuscarItems(string codigo = null, [FromQuery] List<int> familiaIds = null, [FromQuery] List<int> subFamiliaIds = null, string descripcion = null)
         {
-            var query = context.Item.Where(i => i.Activo).AsQueryable();
+            var query = context.Item.AsQueryable();
 
             if (!string.IsNullOrEmpty(codigo))
             {
@@ -95,7 +95,7 @@ namespace Gestion_Compras.Controllers
         [HttpGet("Exportar")]
         public async Task<IActionResult> Exportar(string codigo = null, [FromQuery] List<int> familiaIds = null, [FromQuery] List<int> subFamiliaIds = null, string descripcion = null)
         {
-            var query = context.Item.Where(i => i.Activo).AsQueryable();
+            var query = context.Item.AsQueryable();
 
             if (!string.IsNullOrEmpty(codigo))
             {
