@@ -90,7 +90,7 @@ namespace Gestion_Compras.Controllers
                 {
                     i.Id,
                     i.Codigo,
-                    i.Descripcion,
+                    Descripcion = i.Descripcion,
                     i.Stock,
                     i.PuntoDePedido,
                     i.Precio,
@@ -99,7 +99,6 @@ namespace Gestion_Compras.Controllers
                     FamiliaDescripcion = i.SubFamilia.Familia.Descripcion,
                     SubFamiliaDescripcion = i.SubFamilia.Descripcion,
                     UnidadDeMedidaAbreviatura = i.UnidadDeMedida.Abreviatura,
-                    DescripcionItem = i.Descripcion,
                     CantidadEnPedidos = i.CantidadEnPedidos,
                     CantidadEnPedidosPendientes = context.Pedido
                         .Where(p => p.ItemCodigo == i.Codigo && p.Estado == "PENDIENTE")
@@ -209,7 +208,7 @@ namespace Gestion_Compras.Controllers
             try
             {
                 Console.WriteLine($"Obteniendo ítem con ID: {id}");
-                
+
                 var item = await context.Item
                     .Include(i => i.SubFamilia)
                     .ThenInclude(sf => sf.Familia)
@@ -234,7 +233,7 @@ namespace Gestion_Compras.Controllers
                     }
                 }
 
-                var result = new 
+                var result = new
                 {
                     id = item.Id,
                     codigo = item.Codigo,
@@ -285,11 +284,11 @@ namespace Gestion_Compras.Controllers
                 item.Codigo = modelo.Codigo;
                 item.Descripcion = modelo.Descripcion;
                 item.UnidadDeMedidaId = modelo.UnidadDeMedidaId;
-                
+
                 // Manejar valores nulos para campos numéricos
                 item.PuntoDePedido = modelo.PuntoDePedido ?? 0; // Si es null, se establece a 0
                 item.Precio = modelo.Precio ?? 0; // Si es null, se establece a 0
-                
+
                 item.Critico = modelo.Critico;
                 item.SubFamiliaId = modelo.SubFamiliaId;
                 item.Activo = modelo.Activo;

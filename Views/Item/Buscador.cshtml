@@ -243,6 +243,7 @@
         $(document).ready(function () {
             // Cargar automáticamente la lista completa de ítems al iniciar
             buscarItems();
+            
             // Utilidad: debounce para no disparar demasiadas llamadas
             function debounce(fn, delay) {
                 let t;
@@ -251,6 +252,7 @@
                     t = setTimeout(() => fn.apply(this, args), delay);
                 };
             }
+            
             // Cargar SweetAlert2 dinámicamente si no está presente
             function ensureSwal() {
                 return new Promise((resolve) => {
@@ -273,18 +275,23 @@
                     document.head.appendChild(script);
                 });
             }
-            // Inicializar Select2 para los elementos de selección en modo múltiple
-            $('#familiaSelect').select2({
-                placeholder: 'Seleccionar familias',
-                closeOnSelect: false,
-                width: '100%'
-            });
 
-            $('#subfamiliaSelect').select2({
-                placeholder: 'Seleccionar subfamilias',
-                closeOnSelect: false,
-                width: '100%'
-            });
+            // Inicializar Select2 para los elementos de selección en modo múltiple
+            if (!$('#familiaSelect').hasClass('select2-hidden-accessible')) {
+                $('#familiaSelect').select2({
+                    placeholder: 'Seleccionar familias',
+                    closeOnSelect: false,
+                    width: '100%'
+                });
+            }
+
+            if (!$('#subfamiliaSelect').hasClass('select2-hidden-accessible')) {
+                $('#subfamiliaSelect').select2({
+                    placeholder: 'Seleccionar subfamilias',
+                    closeOnSelect: false,
+                    width: '100%'
+                });
+            }
 
             // Cargar subfamilias al cambiar selección de familias (pueden ser varias)
             $('#familiaSelect').change(function () {
@@ -308,7 +315,7 @@
                     url: '/FamiliaSubFamilia/ObtenerSubfamilias/' + fid,
                     type: 'GET',
                     xhrFields: {
-                        withCredentials: true // Incluir credenciales en la petición
+                        withCredentials: true
                     }
                 }));
 
@@ -348,9 +355,9 @@
                     url: '/Item/BuscarItems',
                     type: 'GET',
                     xhrFields: {
-                        withCredentials: true // Incluir credenciales en la petición
+                        withCredentials: true
                     },
-                    traditional: true, // asegurar serialización de arrays como claves repetidas
+                    traditional: true,
                     data: {
                         codigo: codigo,
                         familiaIds: familiaIds,
@@ -362,7 +369,6 @@
                         resultados.empty();
 
                         $.each(response, function (index, item) {
-                            // Lógica corregida: Stock < PuntoPedido Y (stock + cantidadEnPedidos) < puntoPedido
                             const stockTotal = item.stock + item.cantidadEnPedidos;
                             const necesitaComprar = (item.stock < item.puntoDePedido) && (stockTotal < item.puntoDePedido);
                             const comprarHtml = necesitaComprar ? 
@@ -374,7 +380,7 @@
                                     <td>${item.codigo}</td> 
                                     <td>${item.familiaDescripcion || ''}</td> 
                                     <td>${item.subFamiliaDescripcion || ''}</td> 
-                                    <td style="text-align: left">${item.descripcionItem}</td> 
+                                    <td style="text-align: left">${item.descripcion || ''}</td> 
                                     <td>${item.stock !== null ? item.stock : ''}</td> 
                                     <td>${item.puntoDePedido !== null ? item.puntoDePedido : ''}</td>
                                     <td>${item.cantidadEnPedidos !== null ? item.cantidadEnPedidos : '0'}</td>
@@ -410,20 +416,17 @@
                 $('#resultadosBusqueda tr').each(function() {
                     const necesitaComprar = $(this).data('necesita-comprar');
                     const esCritico = $(this).data('critico');
-                    const estaActivo = $(this).data('activo') !== false; // Por defecto true si no está definido
+                    const estaActivo = $(this).data('activo') !== false;
                     let mostrar = true;
                     
-                    // Aplicar filtro de comprar si está activo
                     if (filtroComprarActivo && !necesitaComprar) {
                         mostrar = false;
                     }
                     
-                    // Aplicar filtro de crítico si está activo
                     if (filtroCriticoActivo && !esCritico) {
                         mostrar = false;
                     }
                     
-                    // Aplicar filtro de activo si está activo
                     if (filtroActivoActivo && !estaActivo) {
                         mostrar = false;
                     }
@@ -498,12 +501,15 @@
                 aplicarFiltros();
             });
 
+            $('#filtroActivo').change(function () {
+                aplicarFiltros();
+            });
+
             // Cuando los filtros quedan vacíos, recargar toda la lista automáticamente
             function onFiltrosCambiados() {
                 if (tieneFiltrosAplicados()) {
                     aplicarFiltros();
                 } else {
-                    // Sin filtros: traer todo
                     buscarItems();
                 }
             }
@@ -517,7 +523,6 @@
 
             // Función para refrescar automáticamente el buscador
             function refrescarBuscador() {
-                // Solo refrescar si hay resultados mostrados
                 if ($('#resultadosBusqueda tr').length > 0) {
                     buscarItems();
                 }
@@ -529,11 +534,6 @@
                 cargarDatosItem(itemId);
             });
 
-            // Función para formatear números, convierte null/undefined a cadena vacía
-            const formatNumber = (value) => {
-                return (value === null || value === undefined || isNaN(value)) ? '' : value.toString();
-            };
-
             // Cargar datos del ítem a editar
             function cargarDatosItem(itemId) {
                 $.ajax({
@@ -544,16 +544,14 @@
                             throw new Error(item?.message || 'Error al cargar el ítem');
                         }
                         
-                        console.log('Datos del ítem recibidos:', item);
-                        
                         // Llenar el formulario con los datos del ítem
                         $('#itemId').val(item.id);
                         $('#editCodigo').val(item.codigo || '');
                         $('#editDescripcion').val(item.descripcionItem || '');
                         
                         // Manejar valores numéricos
-                        $('#editPrecio').val(formatNumber(item.precio || item.Precio));
-                        $('#editPuntoPedido').val(formatNumber(item.puntoDePedido));
+                        $('#editPrecio').val(item.precio !== null ? item.precio : '');
+                        $('#editPuntoPedido').val(item.puntoDePedido !== null ? item.puntoDePedido : '');
                         
                         // Manejar checkboxes
                         $('#editCritico').prop('checked', Boolean(item.critico));
@@ -561,13 +559,12 @@
                         
                         // Cargar subfamilias y seleccionar la correcta
                         if (item.familiaId) {
+                            $('#editFamilia').val(item.familiaId).trigger('change');
                             cargarSubfamiliasParaEdicion(item.familiaId, item.subFamiliaId || 0);
                         }
                         
                         // Cargar unidades de medida
-                        if (item.unidadDeMedidaId) {
-                            cargarUnidadesDeMedida(item.unidadDeMedidaId);
-                        }
+                        cargarUnidadesDeMedida(item.unidadDeMedidaId);
                         
                         // Mostrar el modal
                         const modal = new bootstrap.Modal(document.getElementById('editarItemModal'));
@@ -583,7 +580,7 @@
             // Cargar subfamilias para el formulario de edición
             function cargarSubfamiliasParaEdicion(familiaId, subFamiliaId) {
                 if (!familiaId) {
-                    $('#editSubfamilia').empty();
+                    $('#editSubfamilia').empty().append('<option value="">Seleccione subfamilia</option>');
                     return;
                 }
                 
@@ -594,12 +591,18 @@
                         const $select = $('#editSubfamilia');
                         $select.empty();
                         
-                        subfamilias.forEach(function(sf) {
-                            $select.append(new Option(sf.descripcion, sf.id, false, sf.id === subFamiliaId));
-                        });
+                        // Agregar opción por defecto
+                        $select.append(new Option('Seleccione subfamilia', '', true, !subFamiliaId));
+                        
+                        if (subfamilias && subfamilias.length > 0) {
+                            subfamilias.forEach(function(sf) {
+                                $select.append(new Option(sf.descripcion, sf.id, false, sf.id === subFamiliaId));
+                            });
+                        }
                     },
                     error: function(xhr) {
                         console.error('Error al cargar subfamilias:', xhr.responseText);
+                        $('#editSubfamilia').empty().append('<option value="">Error cargando subfamilias</option>');
                     }
                 });
             }
@@ -617,14 +620,15 @@
                         $select.append(new Option('Seleccione una unidad', '', true, !unidadMedidaIdSeleccionada));
                         
                         // Agregar las unidades de medida
-                        unidades.forEach(function(um) {
-                            const selected = unidadMedidaIdSeleccionada ? um.id === unidadMedidaIdSeleccionada : false;
-                            $select.append(new Option(um.descripcion, um.id, false, selected));
-                        });
+                        if (unidades && unidades.length > 0) {
+                            unidades.forEach(function(um) {
+                                const selected = unidadMedidaIdSeleccionada ? um.id === unidadMedidaIdSeleccionada : false;
+                                $select.append(new Option(um.descripcion, um.id, false, selected));
+                            });
+                        }
                     },
                     error: function(xhr) {
                         console.error('Error al cargar unidades de medida:', xhr.responseText);
-                        // Asegurarse de que el select tenga al menos la opción vacía
                         const $select = $('#editUnidadMedida');
                         if ($select.find('option').length === 0) {
                             $select.append(new Option('Error cargando unidades', ''));
@@ -639,46 +643,38 @@
                 if (familiaId) {
                     cargarSubfamiliasParaEdicion(familiaId, null);
                 } else {
-                    $('#editSubfamilia').empty();
+                    $('#editSubfamilia').empty().append('<option value="">Seleccione subfamilia</option>');
                 }
             });
 
             // Manejar envío del formulario de edición
             $('#btnGuardarCambios').click(function() {
-                // Función auxiliar para parsear números, devuelve null si es inválido
-                const parseNumber = (value) => {
-                    const num = parseFloat(value);
-                    return isNaN(num) ? null : num;
-                };
-
-                const formData = {
-                    Id: parseInt($('#itemId').val()),
-                    Codigo: $('#editCodigo').val(),
-                    Descripcion: $('#editDescripcion').val(),
-                    SubFamiliaId: parseInt($('#editSubfamilia').val()),
-                    Precio: parseNumber($('#editPrecio').val()),
-                    PuntoDePedido: parseNumber($('#editPuntoPedido').val()),
-                    UnidadDeMedidaId: parseInt($('#editUnidadMedida').val()),
-                    Critico: $('#editCritico').is(':checked'),
-                    Activo: $('#editActivo').is(':checked')
-                };
-
-                // Validar campos requeridos
-                if (!formData.Codigo || !formData.Descripcion || formData.SubFamiliaId <= 0 || formData.UnidadDeMedidaId <= 0) {
+                // Validar campos requeridos primero
+                if (!$('#editCodigo').val() || !$('#editDescripcion').val() || 
+                    !$('#editSubfamilia').val() || !$('#editUnidadMedida').val()) {
                     ensureSwal().then(() => {
                         Swal.fire({
                             icon: 'warning',
                             title: 'Campos requeridos',
                             text: 'Por favor complete todos los campos requeridos',
                             confirmButtonText: 'Entendido',
-                            confirmButtonColor: '#3085d6',
-                            customClass: {
-                                popup: 'swal-compact'
-                            }
+                            confirmButtonColor: '#3085d6'
                         });
                     });
                     return;
                 }
+
+                const formData = {
+                    Id: parseInt($('#itemId').val()),
+                    Codigo: $('#editCodigo').val(),
+                    Descripcion: $('#editDescripcion').val(),
+                    SubFamiliaId: parseInt($('#editSubfamilia').val()),
+                    Precio: parseFloat($('#editPrecio').val()) || 0,
+                    PuntoDePedido: parseFloat($('#editPuntoPedido').val()) || 0,
+                    UnidadDeMedidaId: parseInt($('#editUnidadMedida').val()),
+                    Critico: $('#editCritico').is(':checked'),
+                    Activo: $('#editActivo').is(':checked')
+                };
 
                 $.ajax({
                     url: '/Item/ActualizarItem',
@@ -713,7 +709,6 @@
 
             // Verificar si hay cambios en el inventario cada 2 segundos
             setInterval(function() {
-                // Verificar si hay cambios en localStorage que indiquen nuevos movimientos
                 const ultimoMovimiento = localStorage.getItem('ultimoMovimientoKardex');
                 const ultimoCheckBuscador = localStorage.getItem('ultimoCheckBuscador') || '0';
                 
@@ -731,7 +726,8 @@
                 const descripcion = $('#descripcionItem').val();
                 const comprar = $('#filtroComprar').is(':checked');
                 const critico = $('#filtroCritico').is(':checked');
-                const activo = !$('#filtroActivo').is(':checked'); // Solo cuenta si está desactivado (para mostrar inactivos)
+                const activoFiltrado = !$('#filtroActivo').is(':checked');
+                
                 return (
                     (codigo && codigo.trim() !== '') ||
                     familiaIds.length > 0 ||
@@ -739,7 +735,7 @@
                     (descripcion && descripcion.trim() !== '') ||
                     comprar ||
                     critico ||
-                    activo
+                    activoFiltrado
                 );
             }
 
@@ -760,8 +756,8 @@
                     const $tds = $(this).find('td');
                     const row = [];
                     $tds.each(function (idx) {
+                        if (idx === 12) return; // Saltar columna de acciones
                         let text = $(this).text().trim();
-                        // Escapar separador y comillas
                         if (text.includes(';') || text.includes('"')) {
                             text = '"' + text.replace(/"/g, '""') + '"';
                         }
@@ -770,7 +766,7 @@
                     lines.push(row.join(';'));
                 });
 
-                const blob = new Blob(["\uFEFF" + lines.join('\n')], { type: 'text/csv;charset=utf-8;' }); // BOM para Excel
+                const blob = new Blob(["\uFEFF" + lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;
@@ -821,11 +817,13 @@
                             <th>Precio</th>
                             <th>Crítico</th>
                             <th>Comprar</th>
-                            <th style="width: 80px;">Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
-                        ${Array.from($('#resultadosBusqueda tr:visible')).map(tr => `<tr>${Array.from($(tr).find('td')).map(td => `<td>${$(td).text().trim()}</td>`).join('')}</tr>`).join('')}
+                        ${Array.from($('#resultadosBusqueda tr:visible')).map(tr => {
+                            const $tds = $(tr).find('td');
+                            return `<tr>${Array.from($tds).slice(0, -1).map(td => `<td>${$(td).text().trim()}</td>`).join('')}</tr>`;
+                        }).join('')}
                     </tbody>
                 </table>
                 <script>window.onload = function(){ window.print(); setTimeout(()=>window.close(), 300); }<\/script>
@@ -842,7 +840,7 @@
                     url: '/Item/BuscarItems',
                     type: 'GET',
                     xhrFields: {
-                        withCredentials: true // Incluir credenciales en la petición
+                        withCredentials: true
                     },
                     success: function (response) {
                         const filas = response.map(item => {
@@ -852,7 +850,7 @@
                                 <td>${item.codigo || ''}</td>
                                 <td>${item.familiaDescripcion || ''}</td>
                                 <td>${item.subFamiliaDescripcion || ''}</td>
-                                <td style="text-align: left">${item.descripcionItem || ''}</td>
+                                <td style="text-align: left">${item.Descripcion || ''}</td>
                                 <td>${item.stock !== null ? item.stock : ''}</td>
                                 <td>${item.puntoDePedido !== null ? item.puntoDePedido : ''}</td>
                                 <td>${item.cantidadEnPedidos !== null ? item.cantidadEnPedidos : '0'}</td>
@@ -888,7 +886,6 @@
                                     <th>Precio</th>
                                     <th>Crítico</th>
                                     <th>Comprar</th>
-                                    <th style="width: 100px;">Acciones</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -911,6 +908,3 @@
         });
     </script>
 }
-
-
-
