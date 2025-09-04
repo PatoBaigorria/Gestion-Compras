@@ -10,9 +10,9 @@
     <!-- Filtros de Búsqueda -->
     <div class="row mb-3">
         <div class="col-md-4 col-lg-2">
-            <label for="codigoItem" class="form-label">Código</label> 
-            <div class="input-group"> 
-                <input type="text" id="codigoItem" name="Codigo" class="form-control" maxlength="10"/> 
+            <label for="codigoItem" class="form-label">Código</label>
+            <div class="input-group">
+                <input type="text" id="codigoItem" name="Codigo" class="form-control" maxlength="10" />
             </div>
         </div>
         <div class="col-md-4 col-lg-2">
@@ -29,20 +29,20 @@
             <select id="subfamiliaSelect" name="subFamiliaIds" class="form-select" multiple>
             </select>
         </div>
-        <div class="col-md-8 col-lg-4"> 
-            <label for="descripcionItem" class="form-label">Descripción Item</label> 
-            <div class="input-group"> 
-                <input type="text" id="descripcionItem" name="Descripcion" class="form-control"/> 
-                <button type="button" class="btn btn-primary" id="buscarItemsBtn" title="Buscar"> 
-                    <i class="fas fa-search"></i> 
-                </button> 
-                <button type="button" class="btn btn-success" id="exportarBtn" title="Exportar"> 
-                    <i class="fas fa-file-excel"></i> 
-                </button> 
-                <button type="button" class="btn btn-outline-secondary" id="imprimirBtn" title="Imprimir"> 
-                    <i class="fas fa-print"></i> 
-                </button> 
-            </div> 
+        <div class="col-md-8 col-lg-4">
+            <label for="descripcionItem" class="form-label">Descripción Item</label>
+            <div class="input-group">
+                <input type="text" id="descripcionItem" name="Descripcion" class="form-control" />
+                <button type="button" class="btn btn-primary" id="buscarItemsBtn" title="Buscar">
+                    <i class="fas fa-search"></i>
+                </button>
+                <button type="button" class="btn btn-success" id="exportarBtn" title="Exportar">
+                    <i class="fas fa-file-excel"></i>
+                </button>
+                <button type="button" class="btn btn-outline-secondary" id="imprimirBtn" title="Imprimir">
+                    <i class="fas fa-print"></i>
+                </button>
+            </div>
         </div>
         <div class="col-md-4 col-lg-2">
             <label for="filtroComprar" class="form-label">Filtrar</label>
@@ -68,33 +68,33 @@
     </div>
 
     <!-- Resultados de la Búsqueda -->
-    <div class="row"> 
-        <div class="col"> 
+    <div class="row">
+        <div class="col">
             <div class="table-responsive" style="height: 600px; overflow-y: auto;">
-                <table class="table table-striped table-bordered table-hover text-center table-sm"> 
-                    <thead class="table-light sticky-top"> 
-                        <tr> 
-                            <th style="width: 80px;">Código</th> 
-                            <th style="width: 12%;">Familia</th> 
-                            <th style="width: 15%;">Subfamilia</th> 
-                            <th style="width: 32%;">Descripción Items</th> 
-                            <th style="width: 80px;">Stock</th> 
+                <table class="table table-striped table-bordered table-hover text-center table-sm">
+                    <thead class="table-light sticky-top">
+                        <tr>
+                            <th style="width: 80px;">Código</th>
+                            <th style="width: 12%;">Familia</th>
+                            <th style="width: 15%;">Subfamilia</th>
+                            <th style="width: 32%;">Descripción Items</th>
+                            <th style="width: 80px;">Stock</th>
                             <th style="width: 150px;">Punto de Pedido</th>
                             <th style="width: 80px;">Cant. Pedidos</th>
-                            <th style="width: 180px;">Unidad de Medida</th> 
+                            <th style="width: 180px;">Unidad de Medida</th>
                             <th style="width: 90px;">Precio</th>
                             <th style="width: 70px;">Crítico</th>
                             <th style="width: 70px;">Activo</th>
                             <th style="width: 100px;">Comprar</th>
                             <th style="width: 80px;">Acciones</th>
-                        </tr> 
+                        </tr>
                     </thead>
-                    <tbody id="resultadosBusqueda"> 
-                        <!-- Resultados irán aquí --> 
-                    </tbody> 
-                </table> 
+                    <tbody id="resultadosBusqueda">
+                        <!-- Resultados irán aquí -->
+                    </tbody>
+                </table>
             </div>
-        </div> 
+        </div>
     </div>
 </div>
 
@@ -139,11 +139,13 @@
                     <div class="row mb-3">
                         <div class="col-md-4">
                             <label for="editPrecio" class="form-label">Precio</label>
-                            <input type="number" step="0.01" class="form-control" id="editPrecio" name="Precio" required />
+                            <input type="number" step="0.01" class="form-control" id="editPrecio" name="Precio"
+                                required />
                         </div>
                         <div class="col-md-4">
                             <label for="editPuntoPedido" class="form-label">Punto de Pedido</label>
-                            <input type="number" class="form-control" id="editPuntoPedido" name="PuntoDePedido" required />
+                            <input type="number" class="form-control" id="editPuntoPedido" name="PuntoDePedido"
+                                required />
                         </div>
                         <div class="col-md-4">
                             <label for="editUnidadMedida" class="form-label">Unidad de Medida</label>
@@ -186,7 +188,8 @@
         padding-left: 15px;
         margin-right: auto;
         margin-left: auto;
-        max-width: 1400px; /* Un poco más ancho que el container estándar (1200px) */
+        max-width: 1400px;
+        /* Un poco más ancho que el container estándar (1200px) */
     }
 
     .table-responsive {
@@ -200,38 +203,53 @@
         background-color: white;
         /* Asegúrate de que el fondo sea blanco */
     }
-    /* Reducir el tamaño de la letra en la tabla */ 
-    .table-sm td, 
-    .table-sm th { 
-        font-size: 0.9em; 
+
+    /* Reducir el tamaño de la letra en la tabla */
+    .table-sm td,
+    .table-sm th {
+        font-size: 0.9em;
     }
+
     /* SweetAlert2: versión compacta y más ancha */
-    .swal2-popup.swal-compact { 
-        padding-top: 1.1rem; /* despegar contenido del borde superior */
+    .swal2-popup.swal-compact {
+        padding-top: 1.1rem;
+        /* despegar contenido del borde superior */
     }
+
     .swal2-popup.swal-compact .swal2-icon {
-        width: 2.8rem;            /* icono más grande */
+        width: 2.8rem;
+        /* icono más grande */
         height: 2.8rem;
-        margin: 0.6rem auto 0.5rem auto; /* más espacio desde arriba */
-        font-size: 1.4rem;        /* contenido del icono más visible */
-        border-width: 0.25rem;    /* aro más grueso */
+        margin: 0.6rem auto 0.5rem auto;
+        /* más espacio desde arriba */
+        font-size: 1.4rem;
+        /* contenido del icono más visible */
+        border-width: 0.25rem;
+        /* aro más grueso */
     }
+
     .swal2-popup.swal-compact .swal2-icon .swal2-icon-content {
-        font-size: 1.35rem;       /* acompaña al nuevo tamaño */
-        font-weight: 800;         /* exclamación más "negrita" */
-        line-height: 2.6rem;      /* centra dentro de 2.8rem */
+        font-size: 1.35rem;
+        /* acompaña al nuevo tamaño */
+        font-weight: 800;
+        /* exclamación más "negrita" */
+        line-height: 2.6rem;
+        /* centra dentro de 2.8rem */
         display: inline-block;
     }
+
     .swal2-popup.swal-compact .swal2-title {
         font-size: 1.05rem;
         line-height: 1.2;
         margin: 0.25rem 0 0.25rem 0;
     }
+
     .swal2-popup.swal-compact .swal2-html-container {
         font-size: 0.98rem;
         line-height: 1.25;
         margin: 0 0 0.5rem 0;
     }
+
     .swal2-popup.swal-compact .swal2-actions .swal2-styled {
         padding: 0.4rem 0.8rem;
         font-size: 0.9rem;
@@ -243,16 +261,16 @@
         $(document).ready(function () {
             // Cargar automáticamente la lista completa de ítems al iniciar
             buscarItems();
-            
+
             // Utilidad: debounce para no disparar demasiadas llamadas
             function debounce(fn, delay) {
                 let t;
-                return function(...args) {
+                return function (...args) {
                     clearTimeout(t);
                     t = setTimeout(() => fn.apply(this, args), delay);
                 };
             }
-            
+
             // Cargar SweetAlert2 dinámicamente si no está presente
             function ensureSwal() {
                 return new Promise((resolve) => {
@@ -347,64 +365,81 @@
             // Función para buscar items (reutilizable)
             function buscarItems() {
                 const codigo = $('#codigoItem').val() || '';
+
+                // OBTENER LOS VALORES CORRECTAMENTE de Select2
                 const familiaIds = $('#familiaSelect').val() || [];
                 const subFamiliaIds = $('#subfamiliaSelect').val() || [];
                 const descripcion = $('#descripcionItem').val() || '';
 
-                $.ajax({
-                    url: '/Item/BuscarItems',
-                    type: 'GET',
-                    xhrFields: {
-                        withCredentials: true
-                    },
-                    traditional: true,
-                    data: {
-                        codigo: codigo,
-                        familiaIds: familiaIds,
-                        subFamiliaIds: subFamiliaIds,
-                        descripcion: descripcion
-                    },
-                    success: function (response) {
-                        const resultados = $('#resultadosBusqueda');
-                        resultados.empty();
+                // Mostrar loading
+                $('#resultadosBusqueda').html('<tr><td colspan="13" class="text-center">Cargando...</td></tr>');
 
-                        $.each(response, function (index, item) {
-                            const stockTotal = item.stock + item.cantidadEnPedidos;
-                            const necesitaComprar = (item.stock < item.puntoDePedido) && (stockTotal < item.puntoDePedido);
-                            const comprarHtml = necesitaComprar ? 
-                                '<i class="fas fa-shopping-cart text-danger" title="Necesita comprar"></i>' : 
-                                '<span class="text-muted">-</span>';
-                            
-                            resultados.append(
-                                `<tr data-necesita-comprar="${necesitaComprar}" data-critico="${item.critico}" data-activo="${item.activo}">
-                                    <td>${item.codigo}</td> 
-                                    <td>${item.familiaDescripcion || ''}</td> 
-                                    <td>${item.subFamiliaDescripcion || ''}</td> 
-                                    <td style="text-align: left">${item.descripcion || ''}</td> 
-                                    <td>${item.stock !== null ? item.stock : ''}</td> 
-                                    <td>${item.puntoDePedido !== null ? item.puntoDePedido : ''}</td>
-                                    <td>${item.cantidadEnPedidos !== null ? item.cantidadEnPedidos : '0'}</td>
-                                    <td>${item.unidadDeMedidaAbreviatura || ''}</td>
-                                    <td>${item.precio !== null ? item.precio : ''}</td>
-                                    <td><input type="checkbox" ${item.critico ? 'checked' : ''} disabled></td>
-                                    <td><input type="checkbox" ${item.activo ? 'checked' : ''} disabled></td>
-                                    <td>${comprarHtml}</td>
-                                    <td class="text-center">
-                                        <button class="btn btn-sm btn-primary btn-editar" data-id="${item.id}" title="Editar ítem">
-                                            <i class="fas fa-edit"></i>
-                                        </button>
-                                    </td>
-                                </tr>`
-                            );
-                        });
-                        
-                        // Aplicar filtros si están activos
-                        aplicarFiltros();
+                // Convertir arrays a strings para la URL
+                const params = new URLSearchParams();
+                if (codigo) params.append('codigo', codigo);
+                familiaIds.forEach(id => params.append('familiaIds', id));
+                subFamiliaIds.forEach(id => params.append('subFamiliaIds', id));
+                if (descripcion) params.append('descripcion', descripcion);
+
+                $.ajax({
+                    url: '/Item/BuscarItems?' + params.toString(),
+                    type: 'GET',
+                    success: function (response) {
+                        renderizarResultados(response);
+                        aplicarFiltros(); // Aplicar filtros de checkboxes
                     },
-                    error: function (xhr, status, errorThrown) {
-                        console.error('Error al buscar items:', xhr.responseText);
+                    error: function (xhr) {
+                        console.error('Error:', xhr.responseText);
+                        $('#resultadosBusqueda').html('<tr><td colspan="13" class="text-center text-danger">Error al cargar</td></tr>');
                     }
                 });
+            }
+
+            // Función separada para renderizar rápido
+            function renderizarResultados(items) {
+                const resultados = $('#resultadosBusqueda');
+                resultados.empty();
+
+                if (items.length === 0) {
+                    resultados.html('<tr><td colspan="13" class="text-center">No se encontraron resultados</td></tr>');
+                    return;
+                }
+
+                const fragment = document.createDocumentFragment();
+
+                items.forEach(item => {
+                    const stockTotal = item.stock + item.cantidadEnPedidos;
+                    const necesitaComprar = (item.stock < item.puntoDePedido) && (stockTotal < item.puntoDePedido);
+
+                    const tr = document.createElement('tr');
+                    tr.setAttribute('data-necesita-comprar', necesitaComprar);
+                    tr.setAttribute('data-critico', item.critico);
+                    tr.setAttribute('data-activo', item.activo);
+
+                    tr.innerHTML = `
+                                            <td>${item.codigo || ''}</td> 
+                                            <td>${item.familiaDescripcion || ''}</td> 
+                                            <td>${item.subFamiliaDescripcion || ''}</td> 
+                                            <td style="text-align: left">${item.descripcion || ''}</td> 
+                                            <td>${item.stock !== null ? item.stock : ''}</td> 
+                                            <td>${item.puntoDePedido !== null ? item.puntoDePedido : ''}</td>
+                                            <td>${item.cantidadEnPedidos !== null ? item.cantidadEnPedidos : '0'}</td>
+                                            <td>${item.unidadDeMedidaAbreviatura || ''}</td>
+                                            <td>${item.precio !== null ? item.precio : ''}</td>
+                                            <td><input type="checkbox" ${item.critico ? 'checked' : ''} disabled></td>
+                                            <td><input type="checkbox" ${item.activo ? 'checked' : ''} disabled></td>
+                                            <td>${necesitaComprar ? '<i class="fas fa-shopping-cart text-danger" title="Necesita comprar"></i>' : '<span class="text-muted">-</span>'}</td>
+                                            <td class="text-center">
+                                                <button class="btn btn-sm btn-primary btn-editar" data-id="${item.id}" title="Editar ítem">
+                                                    <i class="fas fa-edit"></i>
+                                                </button>
+                                            </td>
+                                        `;
+
+                    fragment.appendChild(tr);
+                });
+
+                resultados.append(fragment);
             }
 
             // Función para aplicar todos los filtros
@@ -412,25 +447,25 @@
                 const filtroComprarActivo = $('#filtroComprar').is(':checked');
                 const filtroCriticoActivo = $('#filtroCritico').is(':checked');
                 const filtroActivoActivo = $('#filtroActivo').is(':checked');
-                
-                $('#resultadosBusqueda tr').each(function() {
+
+                $('#resultadosBusqueda tr').each(function () {
                     const necesitaComprar = $(this).data('necesita-comprar');
                     const esCritico = $(this).data('critico');
                     const estaActivo = $(this).data('activo') !== false;
                     let mostrar = true;
-                    
+
                     if (filtroComprarActivo && !necesitaComprar) {
                         mostrar = false;
                     }
-                    
+
                     if (filtroCriticoActivo && !esCritico) {
                         mostrar = false;
                     }
-                    
+
                     if (filtroActivoActivo && !estaActivo) {
                         mostrar = false;
                     }
-                    
+
                     if (mostrar) {
                         $(this).show();
                     } else {
@@ -446,11 +481,24 @@
 
             // Exportar: si hay filtros aplicados, exportar lo visible; si no hay filtros, preguntar con SweetAlert2 exportar todo
             $('#exportarBtn').click(function () {
-                if (tieneFiltrosAplicados()) {
-                    exportarTablaVisibleCSV();
-                } else {
-                    ensureSwal().then(() => {
-                        const swalWideSmallIcon = Swal.mixin({ width: '34rem', customClass: { popup: 'swal-compact' } });
+                // Siempre exportar desde servidor para obtener datos frescos
+                ensureSwal().then(() => {
+                    const swalWideSmallIcon = Swal.mixin({ width: '34rem', customClass: { popup: 'swal-compact' } });
+
+                    if (tieneFiltrosAplicados()) {
+                        swalWideSmallIcon.fire({
+                            title: 'Exportar con Filtros',
+                            html: '¿Desea exportar los resultados filtrados?',
+                            icon: 'question',
+                            showCancelButton: true,
+                            confirmButtonText: 'Sí, exportar',
+                            cancelButtonText: 'Cancelar'
+                        }).then((result) => {
+                            if (result.isConfirmed) {
+                                exportarDesdeServidor();
+                            }
+                        });
+                    } else {
                         swalWideSmallIcon.fire({
                             title: 'Exportar Lista Completa',
                             html: 'No hay filtros aplicados. ¿Desea exportar <b>TODA</b> la lista completa?',
@@ -464,8 +512,8 @@
                                 exportarDesdeServidor();
                             }
                         });
-                    });
-                }
+                    }
+                });
             });
 
             // Imprimir: si hay filtros, imprimir lo visible; si no hay filtros, preguntar con SweetAlert2 imprimir todo
@@ -485,7 +533,9 @@
                             cancelButtonText: 'Cancelar'
                         }).then((result) => {
                             if (result.isConfirmed) {
-                                imprimirTodoDesdeServidor();
+                                // Usar imprimirTablaVisible en lugar de imprimirTodoDesdeServidor
+                                // porque ahora los filtros son instantáneos
+                                imprimirTablaVisible();
                             }
                         });
                     });
@@ -493,33 +543,20 @@
             });
 
             // Manejar los filtros
-            $('#filtroComprar').change(function () {
-                aplicarFiltros();
-            });
-
-            $('#filtroCritico').change(function () {
-                aplicarFiltros();
-            });
-
-            $('#filtroActivo').change(function () {
-                aplicarFiltros();
-            });
-
-            // Cuando los filtros quedan vacíos, recargar toda la lista automáticamente
-            function onFiltrosCambiados() {
-                if (tieneFiltrosAplicados()) {
-                    aplicarFiltros();
-                } else {
-                    buscarItems();
-                }
-            }
-
             // Inputs de texto con debounce
-            $('#codigoItem, #descripcionItem').on('input', debounce(onFiltrosCambiados, 400));
+            $('#codigoItem, #descripcionItem').on('input', debounce(buscarItems, 400));
+
             // Selects (Select2 ya dispara change)
-            $('#familiaSelect, #subfamiliaSelect').on('change', onFiltrosCambiados);
-            // Checkboxes
-            $('#filtroComprar, #filtroCritico, #filtroActivo').on('change', onFiltrosCambiados);
+            $('#familiaSelect, #subfamiliaSelect').on('change', buscarItems);
+
+            // Checkboxes de filtro - estos son locales, no requieren llamada al servidor
+            $('#filtroComprar, #filtroCritico, #filtroActivo').on('change', aplicarFiltros);
+
+
+            // Checkboxes de filtro
+            $('#filtroComprar, #filtroCritico, #filtroActivo').on('change', function () {
+                aplicarFiltros(); // Solo aplicar filtros, no recargar desde servidor
+            });
 
             // Función para refrescar automáticamente el buscador
             function refrescarBuscador() {
@@ -529,7 +566,7 @@
             }
 
             // Manejar clic en botón editar
-            $(document).on('click', '.btn-editar', function() {
+            $(document).on('click', '.btn-editar', function () {
                 const itemId = $(this).data('id');
                 cargarDatosItem(itemId);
             });
@@ -539,38 +576,38 @@
                 $.ajax({
                     url: '/Item/GetItemById?id=' + itemId,
                     type: 'GET',
-                    success: function(item) {
+                    success: function (item) {
                         if (!item || item.success === false) {
                             throw new Error(item?.message || 'Error al cargar el ítem');
                         }
-                        
+
                         // Llenar el formulario con los datos del ítem
                         $('#itemId').val(item.id);
                         $('#editCodigo').val(item.codigo || '');
                         $('#editDescripcion').val(item.descripcionItem || '');
-                        
+
                         // Manejar valores numéricos
                         $('#editPrecio').val(item.precio !== null ? item.precio : '');
                         $('#editPuntoPedido').val(item.puntoDePedido !== null ? item.puntoDePedido : '');
-                        
+
                         // Manejar checkboxes
                         $('#editCritico').prop('checked', Boolean(item.critico));
                         $('#editActivo').prop('checked', item.activo !== false);
-                        
+
                         // Cargar subfamilias y seleccionar la correcta
                         if (item.familiaId) {
                             $('#editFamilia').val(item.familiaId).trigger('change');
                             cargarSubfamiliasParaEdicion(item.familiaId, item.subFamiliaId || 0);
                         }
-                        
+
                         // Cargar unidades de medida
                         cargarUnidadesDeMedida(item.unidadDeMedidaId);
-                        
+
                         // Mostrar el modal
                         const modal = new bootstrap.Modal(document.getElementById('editarItemModal'));
                         modal.show();
                     },
-                    error: function(xhr) {
+                    error: function (xhr) {
                         console.error('Error al cargar el ítem:', xhr.responseText);
                         alert('Error al cargar los datos del ítem: ' + (xhr.responseJSON?.message || 'Error desconocido'));
                     }
@@ -583,24 +620,24 @@
                     $('#editSubfamilia').empty().append('<option value="">Seleccione subfamilia</option>');
                     return;
                 }
-                
+
                 $.ajax({
                     url: '/FamiliaSubFamilia/ObtenerSubfamilias/' + familiaId,
                     type: 'GET',
-                    success: function(subfamilias) {
+                    success: function (subfamilias) {
                         const $select = $('#editSubfamilia');
                         $select.empty();
-                        
+
                         // Agregar opción por defecto
                         $select.append(new Option('Seleccione subfamilia', '', true, !subFamiliaId));
-                        
+
                         if (subfamilias && subfamilias.length > 0) {
-                            subfamilias.forEach(function(sf) {
+                            subfamilias.forEach(function (sf) {
                                 $select.append(new Option(sf.descripcion, sf.id, false, sf.id === subFamiliaId));
                             });
                         }
                     },
-                    error: function(xhr) {
+                    error: function (xhr) {
                         console.error('Error al cargar subfamilias:', xhr.responseText);
                         $('#editSubfamilia').empty().append('<option value="">Error cargando subfamilias</option>');
                     }
@@ -612,22 +649,22 @@
                 $.ajax({
                     url: '/Item/ObtenerUnidadesDeMedida',
                     type: 'GET',
-                    success: function(unidades) {
+                    success: function (unidades) {
                         const $select = $('#editUnidadMedida');
                         $select.empty();
-                        
+
                         // Agregar opción vacía por defecto
                         $select.append(new Option('Seleccione una unidad', '', true, !unidadMedidaIdSeleccionada));
-                        
+
                         // Agregar las unidades de medida
                         if (unidades && unidades.length > 0) {
-                            unidades.forEach(function(um) {
+                            unidades.forEach(function (um) {
                                 const selected = unidadMedidaIdSeleccionada ? um.id === unidadMedidaIdSeleccionada : false;
                                 $select.append(new Option(um.descripcion, um.id, false, selected));
                             });
                         }
                     },
-                    error: function(xhr) {
+                    error: function (xhr) {
                         console.error('Error al cargar unidades de medida:', xhr.responseText);
                         const $select = $('#editUnidadMedida');
                         if ($select.find('option').length === 0) {
@@ -638,7 +675,7 @@
             }
 
             // Manejar cambio de familia en el formulario de edición
-            $('#editFamilia').change(function() {
+            $('#editFamilia').change(function () {
                 const familiaId = $(this).val();
                 if (familiaId) {
                     cargarSubfamiliasParaEdicion(familiaId, null);
@@ -648,9 +685,9 @@
             });
 
             // Manejar envío del formulario de edición
-            $('#btnGuardarCambios').click(function() {
+            $('#btnGuardarCambios').click(function () {
                 // Validar campos requeridos primero
-                if (!$('#editCodigo').val() || !$('#editDescripcion').val() || 
+                if (!$('#editCodigo').val() || !$('#editDescripcion').val() ||
                     !$('#editSubfamilia').val() || !$('#editUnidadMedida').val()) {
                     ensureSwal().then(() => {
                         Swal.fire({
@@ -681,25 +718,40 @@
                     type: 'POST',
                     contentType: 'application/json',
                     data: JSON.stringify(formData),
-                    success: function(response) {
+                    success: function (response) {
                         if (!response || response.success === false) {
                             throw new Error(response?.message || 'Error al actualizar el ítem');
                         }
-                        
+
                         // Cerrar el modal
                         const modal = bootstrap.Modal.getInstance(document.getElementById('editarItemModal'));
                         modal.hide();
-                        
-                        // Mostrar mensaje de éxito
-                        alert('Ítem actualizado correctamente');
-                        
+
+                        // Mostrar mensaje de éxito con SweetAlert
+                        ensureSwal().then(() => {
+                            Swal.fire({
+                                icon: 'success',
+                                title: '¡Éxito!',
+                                text: 'Ítem actualizado correctamente',
+                                confirmButtonText: 'Aceptar'
+                            });
+                        });
+
                         // Actualizar la lista de ítems
                         buscarItems();
                     },
-                    error: function(xhr) {
+                    error: function (xhr) {
                         console.error('Error al actualizar el ítem:', xhr.responseText);
                         const errorMsg = xhr.responseJSON?.message || xhr.statusText || 'Error desconocido';
-                        alert('Error al actualizar el ítem: ' + errorMsg);
+
+                        ensureSwal().then(() => {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Error',
+                                text: 'Error al actualizar el ítem: ' + errorMsg,
+                                confirmButtonText: 'Aceptar'
+                            });
+                        });
                     }
                 });
             });
@@ -707,16 +759,16 @@
             // Exponer la función globalmente para que otras ventanas puedan llamarla
             window.refrescarBuscador = refrescarBuscador;
 
-            // Verificar si hay cambios en el inventario cada 2 segundos
-            setInterval(function() {
+            // Verificar si hay cambios en el inventario cada 5 segundos (aumentado de 2 a 5)
+            setInterval(function () {
                 const ultimoMovimiento = localStorage.getItem('ultimoMovimientoKardex');
                 const ultimoCheckBuscador = localStorage.getItem('ultimoCheckBuscador') || '0';
-                
+
                 if (ultimoMovimiento && ultimoMovimiento !== ultimoCheckBuscador) {
                     localStorage.setItem('ultimoCheckBuscador', ultimoMovimiento);
                     refrescarBuscador();
                 }
-            }, 2000);
+            }, 5000);
 
             // Utilidades de exportación e impresión
             function tieneFiltrosAplicados() {
@@ -727,7 +779,7 @@
                 const comprar = $('#filtroComprar').is(':checked');
                 const critico = $('#filtroCritico').is(':checked');
                 const activoFiltrado = !$('#filtroActivo').is(':checked');
-                
+
                 return (
                     (codigo && codigo.trim() !== '') ||
                     familiaIds.length > 0 ||
@@ -740,41 +792,8 @@
             }
 
             function exportarTablaVisibleCSV() {
-                const $rows = $('#resultadosBusqueda tr:visible');
-                if ($rows.length === 0) {
-                    alert('No hay datos para exportar.');
-                    return;
-                }
-
-                const headers = [
-                    'Codigo','Familia','Subfamilia','Descripcion Items','Stock','Punto de Pedido','Cant. Pedidos','Unidad de Medida','Precio','Critico','Comprar'
-                ];
-                const lines = [];
-                lines.push(headers.join(';'));
-
-                $rows.each(function () {
-                    const $tds = $(this).find('td');
-                    const row = [];
-                    $tds.each(function (idx) {
-                        if (idx === 12) return; // Saltar columna de acciones
-                        let text = $(this).text().trim();
-                        if (text.includes(';') || text.includes('"')) {
-                            text = '"' + text.replace(/"/g, '""') + '"';
-                        }
-                        row.push(text);
-                    });
-                    lines.push(row.join(';'));
-                });
-
-                const blob = new Blob(["\uFEFF" + lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `items_export_${new Date().toISOString().slice(0,19).replace(/[:T]/g,'-')}.csv`;
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                URL.revokeObjectURL(url);
+                // Esta función ya no es necesaria ya que exportamos desde servidor
+                exportarDesdeServidor();
             }
 
             function exportarDesdeServidor() {
@@ -783,127 +802,85 @@
                 const familiaIds = $('#familiaSelect').val() || [];
                 const subFamiliaIds = $('#subfamiliaSelect').val() || [];
                 const descripcion = $('#descripcionItem').val();
+
                 if (codigo) params.append('codigo', codigo);
                 familiaIds.forEach(v => params.append('familiaIds', v));
                 subFamiliaIds.forEach(v => params.append('subFamiliaIds', v));
                 if (descripcion) params.append('descripcion', descripcion);
+
                 const url = '/Item/Exportar' + (params.toString() ? ('?' + params.toString()) : '');
                 window.open(url, '_blank');
             }
 
             function imprimirTablaVisible() {
                 const tableHtml = `<!DOCTYPE html>
-                <html lang="es"><head><meta charset="utf-8">
-                <title>Imprimir Items</title>
-                <style>
-                    body { font-family: Arial, sans-serif; }
-                    table { border-collapse: collapse; width: 100%; }
-                    th, td { border: 1px solid #ccc; padding: 6px; font-size: 12px; }
-                    th { background: #f0f0f0; }
-                </style>
-                </head><body>
-                <h3>Listado de Ítems</h3>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Código</th>
-                            <th>Familia</th>
-                            <th>Subfamilia</th>
-                            <th>Descripción Items</th>
-                            <th>Stock</th>
-                            <th>Punto de Pedido</th>
-                            <th>Cant. Pedidos</th>
-                            <th>Unidad de Medida</th>
-                            <th>Precio</th>
-                            <th>Crítico</th>
-                            <th>Comprar</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${Array.from($('#resultadosBusqueda tr:visible')).map(tr => {
-                            const $tds = $(tr).find('td');
-                            return `<tr>${Array.from($tds).slice(0, -1).map(td => `<td>${$(td).text().trim()}</td>`).join('')}</tr>`;
-                        }).join('')}
-                    </tbody>
-                </table>
-                <script>window.onload = function(){ window.print(); setTimeout(()=>window.close(), 300); }<\/script>
-                </body></html>`;
+            <html lang="es"><head><meta charset="utf-8">
+            <title>Imprimir Items</title>
+            <style>
+                body { font-family: Arial, sans-serif; margin: 15px; }
+                table { border-collapse: collapse; width: 100%; font-size: 11px; }
+                th, td { border: 1px solid #ddd; padding: 6px; text-align: left; }
+                th { background-color: #f2f2f2; font-weight: bold; }
+            </style>
+            </head><body>
+            <h2 style="text-align: center; margin-bottom: 15px;">Listado de Ítems</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Código</th>
+                        <th>Familia</th>
+                        <th>Subfamilia</th>
+                        <th>Descripción</th>
+                        <th>Stock</th>
+                        <th>P. Pedido</th>
+                        <th>Pedidos</th>
+                        <th>UM</th>
+                        <th>Precio</th>
+                        <th>Crítico</th>
+                        <th>Activo</th>
+                        <th>Comprar</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${Array.from($('#resultadosBusqueda tr:visible')).map(tr => {
+                    const $tds = $(tr).find('td');
+                    let rowHTML = '';
+
+                    // Procesar solo las primeras 12 columnas (excluir la 13ª de acciones)
+                    for (let i = 0; i < 12; i++) {
+                        if (i < $tds.length) {
+                            let content = $($tds[i]).text().trim();
+
+                            if (i === 9) { // Columna Crítico
+                                content = $($tds[i]).find('input').is(':checked') ? 'SI' : 'NO';
+                            }
+                            else if (i === 10) { // Columna Activo
+                                content = $($tds[i]).find('input').is(':checked') ? 'SI' : 'NO';
+                            }
+                            else if (i === 11) { // Columna Comprar
+                                content = $($tds[i]).find('.fa-shopping-cart').length > 0 ? 'SI' : 'NO';
+                            }
+
+                            rowHTML += `<td>${content}</td>`;
+                        }
+                    }
+
+                    return `<tr>${rowHTML}</tr>`;
+                }).join('')}
+                </tbody>
+            </table>
+            <script>
+                window.onload = function() { 
+                    window.print(); 
+                    setTimeout(() => window.close(), 1000);
+                }
+            <\/script>
+            </body></html>`;
 
                 const w = window.open('', '_blank');
                 w.document.open();
                 w.document.write(tableHtml);
                 w.document.close();
-            }
-
-            function imprimirTodoDesdeServidor() {
-                $.ajax({
-                    url: '/Item/BuscarItems',
-                    type: 'GET',
-                    xhrFields: {
-                        withCredentials: true
-                    },
-                    success: function (response) {
-                        const filas = response.map(item => {
-                            const stockTotal = item.stock + item.cantidadEnPedidos;
-                            const necesitaComprar = (item.stock < item.puntoDePedido) && (stockTotal < item.puntoDePedido);
-                            return `<tr>
-                                <td>${item.codigo || ''}</td>
-                                <td>${item.familiaDescripcion || ''}</td>
-                                <td>${item.subFamiliaDescripcion || ''}</td>
-                                <td style="text-align: left">${item.Descripcion || ''}</td>
-                                <td>${item.stock !== null ? item.stock : ''}</td>
-                                <td>${item.puntoDePedido !== null ? item.puntoDePedido : ''}</td>
-                                <td>${item.cantidadEnPedidos !== null ? item.cantidadEnPedidos : '0'}</td>
-                                <td>${item.unidadDeMedidaAbreviatura || ''}</td>
-                                <td>${item.precio !== null ? item.precio : ''}</td>
-                                <td>${item.critico ? 'SI' : 'NO'}</td>
-                                <td>${necesitaComprar ? 'SI' : 'NO'}</td>
-                            </tr>`;
-                        }).join('');
-
-                        const tableHtml = `<!DOCTYPE html>
-                        <html lang="es"><head><meta charset="utf-8">
-                        <title>Imprimir Items</title>
-                        <style>
-                            body { font-family: Arial, sans-serif; }
-                            table { border-collapse: collapse; width: 100%; }
-                            th, td { border: 1px solid #ccc; padding: 6px; font-size: 12px; }
-                            th { background: #f0f0f0; }
-                        </style>
-                        </head><body>
-                        <h3>Listado de Ítems (Completo)</h3>
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>Código</th>
-                                    <th>Familia</th>
-                                    <th>Subfamilia</th>
-                                    <th>Descripción Items</th>
-                                    <th>Stock</th>
-                                    <th>Punto de Pedido</th>
-                                    <th>Cant. Pedidos</th>
-                                    <th>Unidad de Medida</th>
-                                    <th>Precio</th>
-                                    <th>Crítico</th>
-                                    <th>Comprar</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                ${filas}
-                            </tbody>
-                        </table>
-                        <script>window.onload = function(){ window.print(); setTimeout(()=>window.close(), 300); }<\/script>
-                        </body></html>`;
-
-                        const w = window.open('', '_blank');
-                        w.document.open();
-                        w.document.write(tableHtml);
-                        w.document.close();
-                    },
-                    error: function(xhr){
-                        console.error('Error al cargar items para imprimir:', xhr.responseText);
-                    }
-                });
             }
         });
     </script>

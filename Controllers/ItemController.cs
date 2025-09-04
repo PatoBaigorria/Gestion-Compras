@@ -12,9 +12,34 @@ namespace Gestion_Compras.Controllers
     {
         private readonly DataContext context;
 
+        // Para evitar problemas de concurrencia, usamos un objeto de lock
+        private static readonly object _cacheLock = new object();
+        private static List<ItemViewModel> _itemsCache = null;
+        private static DateTime _lastCacheUpdate = DateTime.MinValue;
+
         public ItemController(DataContext context)
         {
             this.context = context;
+        }
+
+        // Añade esta clase dentro del namespace o en otro archivo
+        public class ItemViewModel
+        {
+            public int Id { get; set; }
+            public string Codigo { get; set; }
+            public string Descripcion { get; set; }
+            public double Stock { get; set; }
+            public double PuntoDePedido { get; set; }
+            public double Precio { get; set; }
+            public bool Critico { get; set; }
+            public bool Activo { get; set; }
+            public string FamiliaDescripcion { get; set; }
+            public string SubFamiliaDescripcion { get; set; }
+            public string UnidadDeMedidaAbreviatura { get; set; }
+            public int CantidadEnPedidos { get; set; }
+            public int FamiliaId { get; set; }
+            public int SubFamiliaId { get; set; }
+            public int UnidadDeMedidaId { get; set; }
         }
 
         [HttpGet("ObtenerUnidadesDeMedida")]
@@ -36,8 +61,6 @@ namespace Gestion_Compras.Controllers
             }
         }
 
-
-        // Acción para mostrar la vista del buscador de items
         [HttpGet("Buscador")]
         public async Task<IActionResult> Buscador()
         {
@@ -58,71 +81,161 @@ namespace Gestion_Compras.Controllers
             return View(modelo);
         }
 
-
-
         [HttpGet("BuscarItems")]
         public async Task<ActionResult<IEnumerable<object>>> BuscarItems(string codigo = null, [FromQuery] List<int> familiaIds = null, [FromQuery] List<int> subFamiliaIds = null, string descripcion = null)
         {
-            var query = context.Item.AsQueryable();
-
-            if (!string.IsNullOrEmpty(codigo))
+            try
             {
-                query = query.Where(i => i.Codigo == codigo);
-            }
-
-            if (familiaIds != null && familiaIds.Count > 0)
-            {
-                query = query.Where(i => familiaIds.Contains(i.SubFamilia.FamiliaId));
-            }
-
-            if (subFamiliaIds != null && subFamiliaIds.Count > 0)
-            {
-                query = query.Where(i => subFamiliaIds.Contains(i.SubFamiliaId));
-            }
-
-            if (!string.IsNullOrEmpty(descripcion))
-            {
-                query = query.Where(i => i.Descripcion.Contains(descripcion));
-            }
-
-            var items = await query
-                .Select(i => new
+                // Cargar en cache si está vacío o pasaron más de 5 minutos
+                if (_itemsCache == null || (DateTime.Now - _lastCacheUpdate).TotalMinutes > 5)
                 {
-                    i.Id,
-                    i.Codigo,
+                    lock (_cacheLock)
+                    {
+                        if (_itemsCache == null || (DateTime.Now - _lastCacheUpdate).TotalMinutes > 5)
+                        {
+                            _itemsCache = context.Item
+                                .Select(i => new ItemViewModel
+                                {
+                                    Id = i.Id,
+                                    Codigo = i.Codigo,
+                                    Descripcion = i.Descripcion,
+                                    Stock = i.Stock,
+                                    PuntoDePedido = i.PuntoDePedido,
+                                    Precio = i.Precio,
+                                    Critico = i.Critico,
+                                    Activo = i.Activo,
+                                    FamiliaDescripcion = i.SubFamilia.Familia.Descripcion,
+                                    SubFamiliaDescripcion = i.SubFamilia.Descripcion,
+                                    UnidadDeMedidaAbreviatura = i.UnidadDeMedida.Abreviatura,
+                                    CantidadEnPedidos = i.CantidadEnPedidos,
+                                    FamiliaId = i.SubFamilia.FamiliaId,
+                                    SubFamiliaId = i.SubFamiliaId
+                                })
+                                .ToList(); // ToList() en lugar de ToListAsync() dentro del lock
+
+                            _lastCacheUpdate = DateTime.Now;
+                        }
+                    }
+                }
+
+                // Aplicar filtros en memoria
+                var query = _itemsCache.AsEnumerable();
+
+                if (!string.IsNullOrEmpty(codigo))
+                {
+                    query = query.Where(i => i.Codigo.Contains(codigo, StringComparison.OrdinalIgnoreCase));
+                }
+
+                if (familiaIds != null && familiaIds.Count > 0)
+                {
+                    query = query.Where(i => familiaIds.Contains(i.FamiliaId));
+                }
+
+                if (subFamiliaIds != null && subFamiliaIds.Count > 0)
+                {
+                    query = query.Where(i => subFamiliaIds.Contains(i.SubFamiliaId));
+                }
+
+                if (!string.IsNullOrEmpty(descripcion))
+                {
+                    query = query.Where(i => i.Descripcion.Contains(descripcion, StringComparison.OrdinalIgnoreCase));
+                }
+
+                return Ok(query.ToList());
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error en BuscarItems: {ex.Message}");
+                return StatusCode(500, new { success = false, message = "Error al buscar items" });
+            }
+        }
+
+        [HttpPost("RefreshCache")]
+        public async Task<IActionResult> RefreshCache(bool immediateReload = false)
+        {
+            try
+            {
+                lock (_cacheLock)
+                {
+                    _itemsCache = null;
+                    _lastCacheUpdate = DateTime.MinValue;
+                }
+
+                if (immediateReload)
+                {
+                    var reloadedItems = await CargarItemsEnMemoria();
+                    lock (_cacheLock)
+                    {
+                        _itemsCache = reloadedItems;
+                        _lastCacheUpdate = DateTime.Now;
+                    }
+
+                    return Ok(new
+                    {
+                        success = true,
+                        message = "Cache recargado inmediatamente",
+                        count = _itemsCache?.Count
+                    });
+                }
+
+                return Ok(new
+                {
+                    success = true,
+                    message = "Cache invalidado, se recargará automáticamente en la próxima búsqueda"
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new
+                {
+                    success = false,
+                    message = $"Error al refrescar cache: {ex.Message}"
+                });
+            }
+        }
+
+        private async Task<List<ItemViewModel>> CargarItemsEnMemoria()
+        {
+            return await context.Item
+                .Select(i => new ItemViewModel
+                {
+                    Id = i.Id,
+                    Codigo = i.Codigo,
                     Descripcion = i.Descripcion,
-                    i.Stock,
-                    i.PuntoDePedido,
-                    i.Precio,
-                    i.Critico,
-                    i.Activo,
+                    Stock = i.Stock,
+                    PuntoDePedido = i.PuntoDePedido,
+                    Precio = i.Precio,
+                    Critico = i.Critico,
+                    Activo = i.Activo,
                     FamiliaDescripcion = i.SubFamilia.Familia.Descripcion,
                     SubFamiliaDescripcion = i.SubFamilia.Descripcion,
                     UnidadDeMedidaAbreviatura = i.UnidadDeMedida.Abreviatura,
                     CantidadEnPedidos = i.CantidadEnPedidos,
-                    CantidadEnPedidosPendientes = context.Pedido
-                        .Where(p => p.ItemCodigo == i.Codigo && p.Estado == "PENDIENTE")
-                        .Sum(p => (int?)p.Cantidad) ?? 0
+                    FamiliaId = i.SubFamilia.FamiliaId,
+                    SubFamiliaId = i.SubFamiliaId
                 })
                 .ToListAsync();
-
-            return Ok(items);
         }
-
 
         [HttpGet("Exportar")]
         public async Task<IActionResult> Exportar(string codigo = null, [FromQuery] List<int> familiaIds = null, [FromQuery] List<int> subFamiliaIds = null, string descripcion = null)
         {
-            var query = context.Item.AsQueryable();
+            // Usar el cache para exportar también
+            if (_itemsCache == null || (DateTime.Now - _lastCacheUpdate).TotalMinutes > 5)
+            {
+                await RefreshCache(true);
+            }
+
+            var query = _itemsCache.AsEnumerable();
 
             if (!string.IsNullOrEmpty(codigo))
             {
-                query = query.Where(i => i.Codigo == codigo);
+                query = query.Where(i => i.Codigo.Contains(codigo, StringComparison.OrdinalIgnoreCase));
             }
 
             if (familiaIds != null && familiaIds.Count > 0)
             {
-                query = query.Where(i => familiaIds.Contains(i.SubFamilia.FamiliaId));
+                query = query.Where(i => familiaIds.Contains(i.FamiliaId));
             }
 
             if (subFamiliaIds != null && subFamiliaIds.Count > 0)
@@ -132,26 +245,12 @@ namespace Gestion_Compras.Controllers
 
             if (!string.IsNullOrEmpty(descripcion))
             {
-                query = query.Where(i => i.Descripcion.Contains(descripcion));
+                query = query.Where(i => i.Descripcion.Contains(descripcion, StringComparison.OrdinalIgnoreCase));
             }
 
-            var items = await query
-                .Select(i => new
-                {
-                    i.Codigo,
-                    FamiliaDescripcion = i.SubFamilia.Familia.Descripcion,
-                    SubFamiliaDescripcion = i.SubFamilia.Descripcion,
-                    DescripcionItem = i.Descripcion,
-                    i.Stock,
-                    i.PuntoDePedido,
-                    CantidadEnPedidos = i.CantidadEnPedidos,
-                    UnidadDeMedidaAbreviatura = i.UnidadDeMedida.Abreviatura,
-                    i.Precio,
-                    i.Critico
-                })
-                .ToListAsync();
+            var items = query.ToList();
 
-            // Construir CSV con BOM para Excel
+            // Construir CSV
             var sb = new System.Text.StringBuilder();
             string[] headers = new[] {
                 "Codigo","Familia","Subfamilia","Descripcion Items","Stock","Punto de Pedido","Cant. Pedidos","Unidad de Medida","Precio","Critico","Comprar"
@@ -173,7 +272,7 @@ namespace Gestion_Compras.Controllers
                     EscaparCsv(it.Codigo),
                     EscaparCsv(it.FamiliaDescripcion),
                     EscaparCsv(it.SubFamiliaDescripcion),
-                    EscaparCsv(it.DescripcionItem),
+                    EscaparCsv(it.Descripcion),
                     it.Stock.ToString(),
                     it.PuntoDePedido.ToString(),
                     it.CantidadEnPedidos.ToString(),
@@ -193,7 +292,7 @@ namespace Gestion_Compras.Controllers
             return File(bytes, "text/csv; charset=utf-8", fileName);
         }
 
-        private static string EscaparCsv(string? input)
+        private static string EscaparCsv(string input)
         {
             if (string.IsNullOrEmpty(input)) return string.Empty;
             bool requiere = input.Contains('"') || input.Contains(';') || input.Contains('\n') || input.Contains('\r');
@@ -201,14 +300,11 @@ namespace Gestion_Compras.Controllers
             return requiere ? $"\"{texto}\"" : texto;
         }
 
-
         [HttpGet("GetItemById")]
         public async Task<IActionResult> GetItemById(int id)
         {
             try
             {
-                Console.WriteLine($"Obteniendo ítem con ID: {id}");
-
                 var item = await context.Item
                     .Include(i => i.SubFamilia)
                     .ThenInclude(sf => sf.Familia)
@@ -216,21 +312,7 @@ namespace Gestion_Compras.Controllers
 
                 if (item == null)
                 {
-                    Console.WriteLine($"No se encontró el ítem con ID: {id}");
                     return NotFound(new { success = false, message = $"No se encontró el ítem con ID: {id}" });
-                }
-
-                Console.WriteLine($"Datos del ítem {id}: UnidadDeMedidaId={item.UnidadDeMedidaId}");
-
-                // Validar que la unidad de medida exista
-                if (item.UnidadDeMedidaId > 0)
-                {
-                    var unidadExiste = await context.UnidadDeMedida.AnyAsync(um => um.Id == item.UnidadDeMedidaId);
-                    if (!unidadExiste)
-                    {
-                        Console.WriteLine($"ADVERTENCIA: No existe la unidad de medida con ID: {item.UnidadDeMedidaId}");
-                        // No fallamos, solo registramos la advertencia
-                    }
                 }
 
                 var result = new
@@ -247,13 +329,10 @@ namespace Gestion_Compras.Controllers
                     subFamiliaId = item.SubFamiliaId
                 };
 
-                Console.WriteLine($"Datos del ítem {id}: UnidadDeMedidaId={item.UnidadDeMedidaId}, Activo={item.Activo}");
-
                 return Ok(result);
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"ERROR en GetItemById: {ex.Message}");
                 return StatusCode(500, new { success = false, message = ex.Message });
             }
         }
@@ -274,20 +353,18 @@ namespace Gestion_Compras.Controllers
                     return NotFound(new { success = false, message = "Ítem no encontrado" });
                 }
 
-                // Validar que el código no esté duplicado (excepto para el mismo ítem)
                 if (await context.Item.AnyAsync(i => i.Codigo == modelo.Codigo && i.Id != modelo.Id))
                 {
                     return BadRequest(new { success = false, message = "Ya existe un ítem con este código" });
                 }
 
-                // Actualizar propiedades
                 item.Codigo = modelo.Codigo;
                 item.Descripcion = modelo.Descripcion;
-                item.UnidadDeMedidaId = modelo.UnidadDeMedidaId;
+                item.UnidadDeMedidaId = modelo.UnidadDeMedidaId; // ← CORREGIDO
 
-                // Manejar valores nulos para campos numéricos
-                item.PuntoDePedido = modelo.PuntoDePedido ?? 0; // Si es null, se establece a 0
-                item.Precio = modelo.Precio ?? 0; // Si es null, se establece a 0
+                // CORREGIR LOS OPERADORES ?? - Eliminarlos ya que double no puede ser null
+                item.PuntoDePedido = modelo.PuntoDePedido; // ← QUITAR ??
+                item.Precio = modelo.Precio; // ← QUITAR ??
 
                 item.Critico = modelo.Critico;
                 item.SubFamiliaId = modelo.SubFamiliaId;
@@ -295,6 +372,13 @@ namespace Gestion_Compras.Controllers
 
                 context.Update(item);
                 await context.SaveChangesAsync();
+
+                // INVALIDAR CACHE después de modificar
+                lock (_cacheLock)
+                {
+                    _itemsCache = null;
+                    _lastCacheUpdate = DateTime.MinValue;
+                }
 
                 return Ok(new { success = true });
             }
@@ -343,10 +427,15 @@ namespace Gestion_Compras.Controllers
             context.Item.Add(item);
             await context.SaveChangesAsync();
 
-            // Devolver un mensaje de éxito
+            // INVALIDAR CACHE después de crear
+            lock (_cacheLock)
+            {
+                _itemsCache = null;
+                _lastCacheUpdate = DateTime.MinValue;
+            }
+
             return Ok(new { message = "Item creado con éxito", item });
         }
-
 
         [HttpPut("{id}")]
         public async Task<IActionResult> PutItem(int id, Item item)
@@ -361,6 +450,13 @@ namespace Gestion_Compras.Controllers
             try
             {
                 await context.SaveChangesAsync();
+
+                // INVALIDAR CACHE después de modificar
+                lock (_cacheLock)
+                {
+                    _itemsCache = null;
+                    _lastCacheUpdate = DateTime.MinValue;
+                }
             }
             catch (DbUpdateConcurrencyException)
             {
@@ -388,6 +484,13 @@ namespace Gestion_Compras.Controllers
 
             context.Item.Remove(item);
             await context.SaveChangesAsync();
+
+            // INVALIDAR CACHE después de eliminar
+            lock (_cacheLock)
+            {
+                _itemsCache = null;
+                _lastCacheUpdate = DateTime.MinValue;
+            }
 
             return NoContent();
         }
