@@ -7,11 +7,21 @@ namespace Gestion_Compras.Controllers
     public class PedidoViewController : Controller
     {
         [Authorize(Roles = "Administrador,Pañolero")]
+        [HttpGet("/Pedido")]
+        public IActionResult Index()
+        {
+            return View("~/Views/Pedido/Index.cshtml");
+        }
+
+        [Authorize(Roles = "Administrador,Pañolero")]
+        [HttpGet("/Pedido/Nuevo")]
         public IActionResult Nuevo()
         {
             return View("~/Views/Pedido/Index.cshtml");
         }
 
+        [Authorize(Roles = "Administrador,Pañolero")]
+        [HttpGet("/Pedido/Lista")]
         public IActionResult Lista()
         {
             return View("~/Views/Pedido/Lista.cshtml");

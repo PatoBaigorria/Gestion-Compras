@@ -3,11 +3,13 @@ using Gestion_Compras.Models;
 using Microsoft.EntityFrameworkCore;
 using Gestion_Compras.ViewModels;
 using System.Collections.Generic;
+using Microsoft.AspNetCore.Authorization;
 
 namespace Gestion_Compras.Controllers
 {
     [Route("[controller]")]
     [ApiController]
+    [Authorize]
     public class ItemController : Controller
     {
         private readonly DataContext context;
@@ -62,8 +64,22 @@ namespace Gestion_Compras.Controllers
         }
 
         [HttpGet("Buscador")]
+        [Authorize]
         public async Task<IActionResult> Buscador()
         {
+            // ⭐ DEBUGGING - Verificar autenticación ⭐
+            Console.WriteLine($"=== ACCESO A BUSCADOR ===");
+            Console.WriteLine($"Usuario autenticado: {User.Identity.IsAuthenticated}");
+            Console.WriteLine($"Nombre de usuario: {User.Identity.Name}");
+            Console.WriteLine($"Path: {HttpContext.Request.Path}");
+            Console.WriteLine($"=== FIN DEBUG ===");
+
+            if (!User.Identity.IsAuthenticated)
+            {
+                Console.WriteLine("🔐 USUARIO NO AUTENTICADO - Redirigiendo a login");
+                return RedirectToAction("Login", "Autenticacion");
+            }
+
             var familias = await context.Familia
                 .Select(f => new Familia { Id = f.Id, Codigo = f.Codigo, Descripcion = f.Descripcion })
                 .ToListAsync();
@@ -82,7 +98,13 @@ namespace Gestion_Compras.Controllers
         }
 
         [HttpGet("BuscarItems")]
-        public async Task<ActionResult<IEnumerable<object>>> BuscarItems(string codigo = null, [FromQuery] List<int> familiaIds = null, [FromQuery] List<int> subFamiliaIds = null, string descripcion = null)
+        public async Task<ActionResult> BuscarItems(
+    string codigo = null,
+    [FromQuery] List<int> familiaIds = null,
+    [FromQuery] List<int> subFamiliaIds = null,
+    string descripcion = null,
+    int pagina = 1,                    // ← NUEVO PARÁMETRO
+    int tamanoPagina = 100)            // ← NUEVO PARÁMETRO
         {
             try
             {
@@ -111,8 +133,7 @@ namespace Gestion_Compras.Controllers
                                     FamiliaId = i.SubFamilia.FamiliaId,
                                     SubFamiliaId = i.SubFamiliaId
                                 })
-                                .ToList(); // ToList() en lugar de ToListAsync() dentro del lock
-
+                                .ToList();
                             _lastCacheUpdate = DateTime.Now;
                         }
                     }
@@ -141,7 +162,23 @@ namespace Gestion_Compras.Controllers
                     query = query.Where(i => i.Descripcion.Contains(descripcion, StringComparison.OrdinalIgnoreCase));
                 }
 
-                return Ok(query.ToList());
+                var itemsFiltrados = query.ToList();
+                var totalItems = itemsFiltrados.Count;
+
+                // ← PAGINACIÓN - ESTO ES NUEVO
+                var itemsPagina = itemsFiltrados
+                    .Skip((pagina - 1) * tamanoPagina)
+                    .Take(tamanoPagina)
+                    .ToList();
+
+                return Ok(new
+                {
+                    items = itemsPagina,           // ← Solo 100 items en vez de todos
+                    total = totalItems,
+                    pagina,
+                    totalPaginas = (int)Math.Ceiling(totalItems / (double)tamanoPagina),
+                    tamanoPagina
+                });
             }
             catch (Exception ex)
             {
