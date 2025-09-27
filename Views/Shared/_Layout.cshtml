@@ -164,4 +164,81 @@
     <script src="/_framework/aspnetcore-browser-refresh.js"></script>
 </body>
 
+<script>
+// Variable para controlar si el usuario está navegando dentro del sitio
+let isNavigatingAway = false;
+
+// Guardar un token por pestaña en sessionStorage (se borra al cerrar la pestaña)
+if (!sessionStorage.getItem('sessionToken')) {
+    const sessionToken = 'session_' + Math.random().toString(36).substr(2);
+    sessionStorage.setItem('sessionToken', sessionToken);
+    sessionStorage.setItem('sessionStart', new Date().getTime());
+}
+
+// Función para cerrar sesión
+function forceLogout() {
+    fetch('/Autenticacion/Logout', {
+        method: 'GET',
+        credentials: 'same-origin'
+    }).then(() => {
+        sessionStorage.clear();
+        window.location.href = '/Autenticacion/Login';
+    });
+}
+
+// Verificar sesión al cargar la página
+window.addEventListener('load', function() {
+    const sessionStart = sessionStorage.getItem('sessionStart');
+    const now = new Date().getTime();
+    const sessionDuration = 8 * 60 * 60 * 1000; // 8 horas máx
+
+    // Si no hay token o la sesión expiró
+    if (!sessionStart || (now - parseInt(sessionStart)) > sessionDuration) {
+        forceLogout();
+    }
+
+    // Inactividad → cada minuto verificamos
+    setInterval(function() {
+        const lastActivity = sessionStorage.getItem('lastActivity');
+        const now = new Date().getTime();
+        const maxInactivity = 30 * 60 * 1000; // 30 minutos
+
+        if (lastActivity && (now - parseInt(lastActivity)) > maxInactivity) {
+            forceLogout();
+        }
+    }, 60000);
+});
+
+// Actualizar timestamp de actividad
+function updateActivity() {
+    sessionStorage.setItem('lastActivity', new Date().getTime());
+}
+document.addEventListener('mousemove', updateActivity);
+document.addEventListener('keypress', updateActivity);
+document.addEventListener('click', updateActivity);
+
+// Manejar cierre de pestaña
+window.addEventListener('beforeunload', function(e) {
+    if (!isNavigatingAway) {
+        // Aviso al servidor para cerrar sesión
+        navigator.sendBeacon('/Autenticacion/Logout');
+    }
+});
+
+// Detectar navegación interna
+document.addEventListener('click', function(e) {
+    if (e.target.tagName === 'A' || e.target.closest('a')) {
+        isNavigatingAway = true;
+    }
+}, true);
+
+// Formularios también cuentan como navegación
+Array.from(document.getElementsByTagName('form')).forEach(form => {
+    form.addEventListener('submit', function() {
+        isNavigatingAway = true;
+    });
+});
+</script>
+
+
 </html>

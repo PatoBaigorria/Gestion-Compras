@@ -15,15 +15,7 @@ string password = "123";
 string hashedPassword = BCrypt.Net.BCrypt.HashPassword(password); 
 Console.WriteLine($"Contraseña hasheada: {hashedPassword}");*/
 
-
-// Identity removido - usando autenticación personalizada con cookies
-
-builder.Logging.AddDebug();
-
 // Configuración de licencia QuestPDF (Community)
-QuestPDF.Settings.License = LicenseType.Community;
-
-// Configurar servicios
 builder.Services.AddControllers()
     .AddNewtonsoftJson(options =>
     {
@@ -32,31 +24,61 @@ builder.Services.AddControllers()
 
 builder.Services.AddControllersWithViews(options =>
 {
-    options.Filters.Add(new UserNameFilter()); // Registrar el filtro de acción globalmente
+    options.Filters.Add(new UserNameFilter());
 });
 
-// Configuración removida - se usa app.Urls.Add más abajo
-
-// Configuración de autenticación con cookies
+// Configuración de autenticación con cookies de sesión
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>
     {
         options.LoginPath = "/Autenticacion/Login";
         options.LogoutPath = "/Autenticacion/Logout";
         options.AccessDeniedPath = "/Autenticacion/AccessDenied";
+
+        // Configuración de la cookie
+        options.Cookie.Name = ".AspNetCore.Cookies";
+        options.Cookie.HttpOnly = true;
+        options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+        options.Cookie.SameSite = SameSiteMode.Strict;
+        options.Cookie.IsEssential = true;
+
+        // ❌ Importante: sin ExpireTimeSpan → será cookie de sesión pura
+        options.ExpireTimeSpan = TimeSpan.FromMinutes(30); // seguridad por inactividad
+        options.SlidingExpiration = false;
+        options.Cookie.Expiration = null; // al cerrar navegador/pestañas se borra
+
+        // Validar manualmente expiración
+        options.Events = new CookieAuthenticationEvents
+        {
+            OnValidatePrincipal = context =>
+            {
+                if (context.Properties?.IssuedUtc != null &&
+                    DateTimeOffset.UtcNow.Subtract(context.Properties.IssuedUtc.Value) > TimeSpan.FromMinutes(30))
+                {
+                    context.RejectPrincipal();
+                    context.HttpContext.Response.Redirect("/Autenticacion/Login");
+                }
+                return Task.CompletedTask;
+            }
+        };
+
+        options.Events.OnRedirectToLogin = context =>
+        {
+            context.Response.Redirect(context.RedirectUri);
+            return Task.CompletedTask;
+        };
     });
 
 var serverVersion = ServerVersion.AutoDetect("Server=localhost;User=root;Password=;Database=GestionComprasP;SslMode=none");
 
 builder.Services.AddDbContext<DataContext>(dbContextOptions => dbContextOptions
-    .UseMySql("Server=100.93.151.125;User=mbaigorria;Password=Ag0sM1c4;Database=GestionComprasP;SslMode=none", serverVersion)
+    .UseMySql("Server=100.93.151.125;User=mbaigorria;Password=Ag0sM1c4;Database=GestionComprasP;SslMode=none;AllowZeroDateTime=True;ConvertZeroDateTime=True", serverVersion)
     .LogTo(Console.WriteLine, LogLevel.Information)
     .EnableSensitiveDataLogging(false)
     .EnableDetailedErrors()
 );
 
 builder.Services.AddEndpointsApiExplorer();
-
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new OpenApiInfo { Title = "Gestion Compras API", Version = "v1" });
@@ -66,32 +88,22 @@ builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy("Administrador", policy => policy.RequireRole("Administrador"));
     options.AddPolicy("Pañolero", policy => policy.RequireRole("Pañolero"));
-
-    // Exigir autenticación por defecto en todas las rutas salvo [AllowAnonymous]
     options.FallbackPolicy = new AuthorizationPolicyBuilder()
         .RequireAuthenticatedUser()
         .Build();
 });
 
-// Configuración de logging
 builder.Logging.ClearProviders();
 builder.Logging.AddConsole();
 builder.Logging.SetMinimumLevel(LogLevel.Information);
 
 var app = builder.Build();
 
-
-
-app.UseHttpsRedirection();
-app.UseStaticFiles();
-app.UseCors(x => x.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
-app.UseRouting();
-app.UseAuthentication();
-app.UseAuthorization();
-
 if (app.Environment.IsDevelopment())
 {
     app.UseDeveloperExceptionPage();
+    app.UseSwagger();
+    app.UseSwaggerUI();
 }
 else
 {
@@ -99,39 +111,40 @@ else
     app.UseHsts();
 }
 
-// Ruta por defecto
+app.UseHttpsRedirection();
+app.UseStaticFiles();
+app.UseCors(x => x.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
+app.UseRouting();
+
+// Middleware para detectar si es nueva sesión de navegador
+app.Use(async (context, next) =>
+{
+    if (!context.Request.Cookies.ContainsKey("BrowserSessionStarted"))
+    {
+        // Si no existe, eliminamos cualquier cookie de auth previa
+        context.Response.Cookies.Delete(".AspNetCore.Cookies");
+        context.Response.Cookies.Append("BrowserSessionStarted", "true");
+    }
+    await next();
+});
+
+app.UseAuthentication();
+app.UseAuthorization();
+
+// Rutas
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}"
 );
 
-// Ruta específica para autenticación
-app.MapControllerRoute(
-    name: "autenticacion",
-    pattern: "Autenticacion/{action=Login}/{id?}"
-);
+app.MapControllers();
 
-// Rutas específicas para PedidoViewController
-app.MapControllerRoute(
-    name: "pedidoNuevo",
-    pattern: "Pedido/Nuevo",
-    defaults: new { controller = "PedidoView", action = "Nuevo" }
-);
-
-app.MapControllerRoute(
-    name: "pedidoLista",
-    pattern: "Pedido/Lista",
-    defaults: new { controller = "PedidoView", action = "Lista" }
-);
-
-app.MapControllers(); // Mapea los controladores restantes
-
-// Configuración para LAN - escuchar en todas las interfaces
-app.Urls.Clear(); // Limpiar URLs existentes
+// Configuración para LAN
+app.Urls.Clear();
 app.Urls.Add("http://localhost:5000");
 app.Urls.Add("http://*:5000");
 
-// Abrir la aplicación en el navegador con localhost
+// Abrir navegador automáticamente
 var url = "http://localhost:5000";
 Task.Run(() =>
 {
@@ -149,5 +162,4 @@ Task.Run(() =>
     }
 });
 
-// Ejecutar la aplicación y cerrar la consola
 app.Run();

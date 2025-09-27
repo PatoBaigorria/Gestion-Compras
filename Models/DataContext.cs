@@ -58,5 +58,7 @@ namespace Gestion_Compras.Models
 
 		public DbSet<Ajuste> Ajuste { get; set; }
 
+		public DbSet<Devolucion> Devolucion { get; set; }
+
 	}
 }

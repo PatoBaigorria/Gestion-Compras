@@ -18,5 +18,12 @@ namespace Gestion_Compras.Controllers
             return View();
         }
 
+        // Método para mantener la sesión activa
+        [HttpGet]
+        public IActionResult Ping()
+        {
+            // Simplemente devolvemos un resultado 200 OK para mantener la sesión activa
+            return Ok();
+        }
     }
 }
