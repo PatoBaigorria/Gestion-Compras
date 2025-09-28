@@ -24,6 +24,9 @@ namespace Gestion_Compras.Controllers
         {
             this.context = context;
             this.env = env;
+            
+            // Configurar licencia QuestPDF (respaldo por si no se configuró en Program.cs)
+            QuestPDF.Settings.License = LicenseType.Community;
         }
 
         // Vista principal de pedidos

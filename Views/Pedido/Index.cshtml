@@ -78,9 +78,6 @@
                 <button type="button" class="btn btn-outline-danger btn-sm" id="limpiarListaBtn">
                     <i class="fas fa-trash me-1"></i>Limpiar
                 </button>
-                <button type="button" class="btn btn-outline-secondary btn-sm" id="descargarPdfBtn" disabled>
-                    <i class="fas fa-file-pdf me-1"></i>PDF
-                </button>
                 <button type="button" class="btn btn-primary btn-sm" id="generarPedidoBtn" disabled>
                     <i class="fas fa-save me-1"></i>Generar Pedido
                 </button>
@@ -185,7 +182,6 @@
         // Variables globales
         let itemsPedido = [];
         let itemSeleccionado = null;
-        let ultimoNumeroPedidoGenerado = null;
 
         $(document).ready(function () {
             // Inicializar formulario
@@ -258,15 +254,6 @@
             // Generar pedido
             $('#generarPedidoBtn').click(generarPedido);
 
-            // Descargar PDF (si hay un número generado)
-            $('#descargarPdfBtn').click(function() {
-                if (ultimoNumeroPedidoGenerado) {
-                    const urlPdf = `/api/pedido/pdf/${ultimoNumeroPedidoGenerado}`;
-                    window.open(urlPdf, '_blank');
-                } else {
-                    mostrarToast('Primero genere y guarde el pedido', 'info');
-                }
-            });
         }
 
         // Buscar item por código
@@ -486,11 +473,8 @@
                 success: function (response) {
                     if (response.success) {
                         mostrarToast('Pedido generado exitosamente', 'success');
-                        // Guardar número y habilitar botón de descarga de PDF
+                        // Abrir automáticamente el PDF en una nueva pestaña
                         if (response.numeroPedido) {
-                            ultimoNumeroPedidoGenerado = response.numeroPedido;
-                            $('#descargarPdfBtn').prop('disabled', false);
-                            // Abrir automáticamente el PDF en una nueva pestaña
                             const urlPdf = `/api/pedido/pdf/${response.numeroPedido}`;
                             window.open(urlPdf, '_blank');
                         }
