@@ -55,27 +55,6 @@
 
 <div class="container-custom mt-3">
 
-    <!-- Contenedores para mensajes -->
-    <div id="successMessageContainer" class="mb-3"></div>
-    <div id="errorMessageContainer" class="mb-3"></div>
-
-    <!-- Modal de Error -->
-    <div class="modal fade" id="errorModal" tabindex="-1" aria-labelledby="errorModalLabel" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="errorModalLabel">Error</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body" id="errorModalBody">
-                    <!-- Mensaje de error -->
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
-                </div>
-            </div>
-        </div>
-    </div>
 
     <!-- Card de Formulario -->
     <div class="card shadow mb-3 card-formulario">
@@ -189,7 +168,8 @@
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/5.1.3/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/js/all.min.js"></script>
-    <!-- Incluir FontAwesome para los íconos -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <!-- Incluir FontAwesome para los íconos y SweetAlert2 -->
 
     <script>
         var ingresos = [];
@@ -202,20 +182,68 @@
             document.getElementById(campo + "Error").textContent = mensaje;
         }
 
+        // Función para mostrar notificaciones toast modernas
+        function mostrarToast(mensaje, tipo) {
+            // Crear el contenedor de toasts si no existe
+            if ($('#toast-container').length === 0) {
+                $('body').append('<div id="toast-container" class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 9999;"></div>');
+            }
+
+            // Definir colores según el tipo
+            let bgClass = '';
+            let iconClass = '';
+            switch(tipo) {
+                case 'success':
+                    bgClass = 'bg-success text-white';
+                    iconClass = 'fas fa-check-circle';
+                    break;
+                case 'error':
+                    bgClass = 'bg-danger text-white';
+                    iconClass = 'fas fa-exclamation-circle';
+                    break;
+                case 'warning':
+                    bgClass = 'bg-warning text-dark';
+                    iconClass = 'fas fa-exclamation-triangle';
+                    break;
+                default:
+                    bgClass = 'bg-info text-white';
+                    iconClass = 'fas fa-info-circle';
+            }
+
+            // Crear el toast
+            const toastId = 'toast-' + Date.now();
+            const toastHtml = `
+                <div id="${toastId}" class="toast ${bgClass}" role="alert" aria-live="assertive" aria-atomic="true" data-bs-delay="4000">
+                    <div class="toast-header ${bgClass} border-0">
+                        <i class="${iconClass} me-2"></i>
+                        <strong class="me-auto">Notificación</strong>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
+                    </div>
+                    <div class="toast-body">
+                        ${mensaje}
+                    </div>
+                </div>
+            `;
+
+            // Agregar el toast al contenedor
+            $('#toast-container').append(toastHtml);
+
+            // Mostrar el toast
+            const toastElement = new bootstrap.Toast(document.getElementById(toastId));
+            toastElement.show();
+
+            // Remover el toast del DOM después de que se oculte
+            document.getElementById(toastId).addEventListener('hidden.bs.toast', function () {
+                $(this).remove();
+            });
+        }
+
         function mostrarMensajeError(mensaje) {
-            var errorMessageContainer = document.getElementById("errorMessageContainer");
-            errorMessageContainer.innerHTML = `<div class="alert alert-danger">${mensaje}</div>`;
-            setTimeout(function () {
-                errorMessageContainer.innerHTML = "";
-            }, 5000); // El mensaje desaparecerá después de 5 segundos
+            mostrarToast(mensaje, 'error');
         }
 
         function mostrarMensajeExito(mensaje) {
-            var successMessageContainer = document.getElementById("successMessageContainer");
-            successMessageContainer.innerHTML = `<div class="alert alert-success">${mensaje}</div>`;
-            setTimeout(function () {
-                successMessageContainer.innerHTML = "";
-            }, 5000); // El mensaje desaparecerá después de 5 segundos
+            mostrarToast(mensaje, 'success');
         }
 
         function limpiarErrores() {
@@ -238,6 +266,28 @@
         function formatearFecha(fecha) {
             var partes = fecha.split("-");
             return `${partes[2]}/${partes[1]}/${partes[0]}`;
+        }
+
+        function validarItemEnPedido(itemCodigo, numeroPedido, cantidadIngreso, callback) {
+            console.log('DEBUG Frontend - Validando:', { itemCodigo, numeroPedido, cantidadIngreso });
+            
+            $.ajax({
+                url: '/Ingreso/ValidarItemEnPedido',
+                type: 'GET',
+                data: { 
+                    itemCodigo: itemCodigo, 
+                    numeroPedido: numeroPedido,
+                    cantidadIngreso: cantidadIngreso
+                },
+                success: function (response) {
+                    console.log('DEBUG Frontend - Respuesta del servidor:', response);
+                    callback(response.esValido, response.mensaje, response.cantidadDisponible);
+                },
+                error: function (xhr, status, errorThrown) {
+                    console.error('Error al validar item en pedido:', xhr.responseText);
+                    callback(false, 'Error al validar el item en el pedido.', 0);
+                }
+            });
         }
 
         function agregarIngreso() {
@@ -293,43 +343,91 @@
                 return;
             }
 
-            var descripcion = item ? item.descripcion : "Descripción no encontrada";
-            var proveedorText = document.getElementById("proveedorId").options[document.getElementById("proveedorId").selectedIndex].text;
-            
-            // Convertir el código a mayúsculas para guardarlo y mostrarlo
+            // Convertir el código a mayúsculas para las validaciones
             var itemCodigoMayuscula = itemCodigo.toUpperCase();
 
-            ingresos.push({
-                ItemCodigo: itemCodigoMayuscula,
-                CantidadIngreso: cantidadIngreso,
-                ProveedorId: parseInt(proveedorId),
-                Remito: remito,
-                OrdenCompra: ordenCompra,
-                Pedido: pedido,
-                FechaRemito: fecha
+            // Validar que el item pertenezca al pedido y la cantidad
+            validarItemEnPedido(itemCodigoMayuscula, pedido, cantidadIngreso, function(esValido, mensaje, cantidadDisponible) {
+                console.log('DEBUG Frontend - Callback ejecutado:', { esValido, mensaje, cantidadDisponible });
+                
+                if (!esValido) {
+                    console.log('DEBUG Frontend - Mostrando error:', mensaje);
+                    mostrarModalError(mensaje);
+                    return;
+                }
+
+                var descripcion = item ? item.descripcion : "Descripción no encontrada";
+                var proveedorText = document.getElementById("proveedorId").options[document.getElementById("proveedorId").selectedIndex].text;
+
+                ingresos.push({
+                    ItemCodigo: itemCodigoMayuscula,
+                    CantidadIngreso: cantidadIngreso,
+                    ProveedorId: parseInt(proveedorId),
+                    Remito: remito,
+                    OrdenCompra: ordenCompra,
+                    Pedido: pedido,
+                    FechaRemito: fecha
+                });
+
+                limpiarCampos();
+
+                var fechaFormateada = formatearFecha(fecha);
+
+                var listaIngresos = document.getElementById("listaIngresos");
+                var tr = document.createElement("tr");
+                tr.innerHTML = `<td>${itemCodigoMayuscula}</td><td>${descripcion}</td><td>${cantidadIngreso}</td><td>${proveedorText}</td><td>${remito}</td><td>${ordenCompra}</td><td>${pedido}</td><td>${fechaFormateada}</td><td class="text-center align-middle"><button class="btn btn-danger btn-sm" title="Borrar Fila" onclick="borrarFila(this)"><i class="fas fa-trash-alt"></i></button></td>`;
+                listaIngresos.appendChild(tr);
             });
-
-            limpiarCampos();
-
-            var fechaFormateada = formatearFecha(fecha);
-
-            var listaIngresos = document.getElementById("listaIngresos");
-            var tr = document.createElement("tr");
-            tr.innerHTML = `<td>${itemCodigoMayuscula}</td><td>${descripcion}</td><td>${cantidadIngreso}</td><td>${proveedorText}</td><td>${remito}</td><td>${ordenCompra}</td><td>${pedido}</td><td>${fechaFormateada}</td><td class="text-center align-middle"><button class="btn btn-danger btn-sm" title="Borrar Fila" onclick="borrarFila(this)"><i class="fas fa-trash-alt"></i></button></td>`;
-            listaIngresos.appendChild(tr);
         }
 
-        function borrarFila(button) {
-            var row = button.parentNode.parentNode;
-            row.parentNode.removeChild(row);
+        async function borrarFila(button) {
+            const row = button.parentNode.parentNode;
+            const itemCodigo = row.cells[0].textContent;
+            const descripcion = row.cells[1].textContent;
 
-            var itemCodigo = row.cells[0].textContent;
-            ingresos = ingresos.filter(s => s.ItemCodigo !== itemCodigo);
+            const result = await Swal.fire({
+                title: '¿Eliminar ítem?',
+                text: `${itemCodigo} - ${descripcion}`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'Eliminar',
+                cancelButtonText: 'Cancelar',
+                reverseButtons: true,
+                width: '400px',
+                padding: '1rem'
+            });
+
+            if (result.isConfirmed) {
+                row.parentNode.removeChild(row);
+                ingresos = ingresos.filter(s => s.ItemCodigo !== itemCodigo);
+                mostrarToast('Ítem eliminado de la lista', 'success');
+            }
         }
 
         async function registrarIngresos() {
             if (ingresos.length === 0) {
-                mostrarMensajeError("No hay items en la lista para registrar.");
+                mostrarToast("No hay items en la lista para registrar.", 'warning');
+                return;
+            }
+
+            // Confirmación con SweetAlert2
+            const result = await Swal.fire({
+                title: '¿Registrar Ingresos?',
+                text: `Se registrarán ${ingresos.length} item(s) en el sistema.`,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#28a745',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'Registrar',
+                cancelButtonText: 'Cancelar',
+                reverseButtons: true,
+                width: '400px',
+                padding: '1rem'
+            });
+
+            if (!result.isConfirmed) {
                 return;
             }
             const ingresosDto = ingresos.map(i => ({ 
@@ -365,18 +463,25 @@
                 },
                 error: function (xhr, status, errorThrown) {
                     console.error('Error al registrar ingresos:', xhr.responseText);
-                    alert('Error al registrar ingresos: ' + xhr.responseText);
+                    mostrarToast('Error al registrar ingresos: ' + xhr.responseText, 'error');
                 }
             });
         }
 
         function mostrarModalError(mensaje) {
-            document.getElementById("errorModalBody").innerText = mensaje;
-            var errorModal = new bootstrap.Modal(document.getElementById('errorModal'), {});
-            errorModal.show();
-
-            // Limpiar campos al cerrar el modal 
-            errorModal._element.addEventListener('hidden.bs.modal', function () {
+            Swal.fire({
+                title: 'Error de Validación',
+                text: mensaje,
+                icon: 'error',
+                confirmButtonColor: '#dc3545',
+                confirmButtonText: 'Entendido',
+                width: '400px',
+                padding: '1rem',
+                customClass: {
+                    popup: 'swal2-small'
+                }
+            }).then(() => {
+                // Limpiar campos después de cerrar el modal
                 limpiarCampos();
             });
         }

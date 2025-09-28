@@ -102,6 +102,82 @@ namespace Gestion_Compras.Controllers
             return View("~/Views/MaterialesIngreso/AltaIngresos.cshtml");
         }
 
+        // GET: /Ingreso/ValidarItemEnPedido
+        [HttpGet("ValidarItemEnPedido")]
+        public async Task<IActionResult> ValidarItemEnPedido(string itemCodigo, int numeroPedido, int cantidadIngreso)
+        {
+            try
+            {
+                // Buscar el pedido por número
+                var pedido = await context.Pedido
+                    .Where(p => p.NumeroPedido == numeroPedido)
+                    .FirstOrDefaultAsync();
+
+                if (pedido == null)
+                {
+                    return Ok(new { 
+                        esValido = false, 
+                        mensaje = $"No existe la relación entre el pedido {numeroPedido} y el item {itemCodigo}.",
+                        cantidadDisponible = 0
+                    });
+                }
+
+                // Buscar el item en ese pedido específico
+                var itemEnPedido = await context.Pedido
+                    .Where(p => p.NumeroPedido == numeroPedido && p.ItemCodigo == itemCodigo)
+                    .FirstOrDefaultAsync();
+
+                if (itemEnPedido == null)
+                {
+                    return Ok(new { 
+                        esValido = false, 
+                        mensaje = $"El item {itemCodigo} no pertenece al pedido número {numeroPedido}.",
+                        cantidadDisponible = 0
+                    });
+                }
+
+                // Calcular cuánto ya se ha recibido de este item en este pedido (columna Recibido)
+                var cantidadYaIngresada = itemEnPedido.Recibido;
+
+                var cantidadDisponible = itemEnPedido.Cantidad - cantidadYaIngresada;
+                var cantidadTotalDespuesDeIngreso = cantidadYaIngresada + cantidadIngreso;
+
+                // Debug: Log de valores para verificar cálculos
+                Console.WriteLine($"DEBUG - Item: {itemCodigo}, Pedido: {numeroPedido}");
+                Console.WriteLine($"DEBUG - Cantidad del pedido: {itemEnPedido.Cantidad}");
+                Console.WriteLine($"DEBUG - Ya ingresada: {cantidadYaIngresada}");
+                Console.WriteLine($"DEBUG - Intentando ingresar: {cantidadIngreso}");
+                Console.WriteLine($"DEBUG - Total después: {cantidadTotalDespuesDeIngreso}");
+                Console.WriteLine($"DEBUG - Disponible: {cantidadDisponible}");
+
+                // Validar que la cantidad total (ya ingresada + nueva) no exceda la cantidad original del pedido
+                if (cantidadTotalDespuesDeIngreso > itemEnPedido.Cantidad)
+                {
+                    return Ok(new { 
+                        esValido = false, 
+                        mensaje = $"ERROR: No se puede ingresar {cantidadIngreso} unidades del item {itemCodigo}.\n\n" +
+                                 $"• Cantidad del pedido: {itemEnPedido.Cantidad}\n" +
+                                 $"• Ya recibido: {cantidadYaIngresada}\n",
+                        cantidadDisponible = cantidadDisponible
+                    });
+                }
+
+                return Ok(new { 
+                    esValido = true, 
+                    mensaje = "Validación exitosa.",
+                    cantidadDisponible = cantidadDisponible
+                });
+            }
+            catch (Exception ex)
+            {
+                return Ok(new { 
+                    esValido = false, 
+                    mensaje = $"Error al validar: {ex.Message}",
+                    cantidadDisponible = 0
+                });
+            }
+        }
+
         // POST: /Ingreso/Create
         [HttpPost("Create")]
         public async Task<IActionResult> Create([FromBody] List<Ingreso> ingresos)

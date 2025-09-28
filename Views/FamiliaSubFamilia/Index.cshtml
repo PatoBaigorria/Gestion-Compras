@@ -151,19 +151,9 @@
                 
                 <!-- Primera fila de campos -->
                 <div class="col-md-3">
-                    <label for="stockItem" class="form-label">Stock Inicial</label>
-                    <input type="number" id="stockItem" name="Stock" class="form-control form-control-sm" 
-                           min="0" step="0.01" placeholder="0" required />
-                </div>
-                <div class="col-md-3">
                     <label for="puntoDePedidoItem" class="form-label">Punto de Pedido</label>
                     <input type="number" id="puntoDePedidoItem" name="PuntoDePedido" class="form-control form-control-sm" 
-                           min="0" step="0.01" placeholder="0" required />
-                </div>
-                <div class="col-md-3">
-                    <label for="precioItem" class="form-label">Precio</label>
-                    <input type="number" id="precioItem" name="Precio" class="form-control form-control-sm" 
-                           min="0" step="0.01" placeholder="0.00" required />
+                           min="0" step="0.01" required />
                 </div>
                 <div class="col-md-3">
                     <label for="unidadDeMedidaSelect" class="form-label">Unidad de Medida</label>
@@ -176,21 +166,22 @@
                     </select>
                 </div>
                 
-                <!-- Segunda fila - Checkboxes -->
+                <!-- Checkboxes alineados -->
                 <div class="col-md-6">
-                    <div class="form-check">
-                        <input type="checkbox" id="criticoItem" name="Critico" class="form-check-input" checked />
-                        <label for="criticoItem" class="form-check-label">
-                            <i class="fas fa-exclamation-triangle text-warning me-1"></i>Item Crítico
-                        </label>
-                    </div>
-                </div>
-                <div class="col-md-6">
-                    <div class="form-check">
-                        <input type="checkbox" id="activoItem" name="Activo" class="form-check-input" checked />
-                        <label for="activoItem" class="form-check-label">
-                            <i class="fas fa-check-circle text-success me-1"></i>Item Activo
-                        </label>
+                    <label class="form-label ms-3">Configuración del Item</label>
+                    <div class="d-flex gap-5 ms-3">
+                        <div class="form-check">
+                            <input type="checkbox" id="criticoItem" name="Critico" class="form-check-input" checked />
+                            <label for="criticoItem" class="form-check-label">
+                                <i class="fas fa-exclamation-triangle text-warning me-1"></i>Item Crítico
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input type="checkbox" id="activoItem" name="Activo" class="form-check-input" checked />
+                            <label for="activoItem" class="form-check-label">
+                                <i class="fas fa-check-circle text-success me-1"></i>Item Activo
+                            </label>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -352,9 +343,9 @@
                 // Crear el objeto basado en los campos del formulario
                 const nuevoItem = {
                     Descripcion: $("#descripcionItem").val(),
-                    Stock: $("#stockItem").val(),
+                    Stock: 0, // Valor por defecto
                     PuntoDePedido: $("#puntoDePedidoItem").val(),
-                    Precio: $("#precioItem").val(), 
+                    Precio: 0, // Valor por defecto
                     Critico: $("#criticoItem").is(':checked'), 
                     Activo: $("#activoItem").is(':checked'),
                     UnidadDeMedidaId: $("#unidadDeMedidaSelect").val(),
@@ -371,9 +362,7 @@
 
                         // Limpiar el formulario del item
                         $("#descripcionItem").val('');
-                        $("#stockItem").val('');
                         $("#puntoDePedidoItem").val('');
-                        $("#precioItem").val(''); 
                         $("#criticoItem").prop('checked', true); 
                         $("#activoItem").prop('checked', true);
                         $("#unidadDeMedidaSelect").val('');
