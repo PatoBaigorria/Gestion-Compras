@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Gestion_Compras.Models;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 
 namespace Gestion_Compras.Controllers
 {
@@ -56,6 +57,13 @@ namespace Gestion_Compras.Controllers
         {
             try
             {
+                // Obtener usuario logueado (Id)
+                int? usuarioId = null;
+                if (User?.Identity?.IsAuthenticated == true)
+                {
+                    if (int.TryParse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value, out var uid))
+                        usuarioId = uid;
+                }
                 foreach (var ingreso in ingresos)
                 {
                     Console.WriteLine($"Validando ingreso - ItemCodigo: {ingreso.ItemCodigo}, PedidoId: {ingreso.PedidoId}");
@@ -119,7 +127,8 @@ namespace Gestion_Compras.Controllers
                         Cantidad = ingreso.CantidadIngreso, // Usar Cantidad en lugar de CantMov
                         StockIni = stockAnterior, // Usar StockIni en lugar de StockAnterior
                         FechaMov = ingreso.FechaRemito,
-                        FechaRegistro = DateTime.Now
+                        FechaRegistro = DateTime.Now,
+                        UsuarioId = usuarioId
                     };
 
                     // Actualizar entidades

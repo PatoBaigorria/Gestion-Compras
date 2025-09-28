@@ -41,6 +41,7 @@ namespace Gestion_Compras.Controllers
                 .Join(context.Item, p => p.ItemCodigo, i => i.Codigo, (p, i) => new { p, i })
                 .Join(context.SubFamilia, pi => pi.i.SubFamiliaId, sf => sf.Id, (pi, sf) => new { pi.p, pi.i, sf })
                 .Join(context.UnidadDeMedida, pis => pis.i.UnidadDeMedidaId, um => um.Id, (pis, um) => new { pis.p, pis.i, pis.sf, um })
+                .GroupJoin(context.Usuario, x => x.p.UsuarioId, u => u.Id, (x, usuarios) => new { x.p, x.i, x.sf, x.um, usuario = usuarios.FirstOrDefault() })
                 .Select(result => new
                 {
                     result.p.Id,
@@ -52,7 +53,8 @@ namespace Gestion_Compras.Controllers
                     SubFamilia = result.sf.Descripcion,
                     UnidadMedida = result.um.Abreviatura,
                     result.p.Recibido,
-                    result.p.Estado
+                    result.p.Estado,
+                    Usuario = result.usuario != null ? (result.usuario.Apellido + " " + result.usuario.Nombre) : ""
                 })
                 .OrderByDescending(p => p.Id)
                 .ToListAsync();
@@ -108,6 +110,11 @@ namespace Gestion_Compras.Controllers
             pedido.ItemCodigo = item.Codigo;
             pedido.UnidadDeMedidaId = item.UnidadDeMedidaId;
             pedido.SubFamiliaId = item.SubFamiliaId;
+            // Auditoría: usuario
+            if (int.TryParse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value, out var uidPost))
+            {
+                pedido.UsuarioId = uidPost;
+            }
 
             context.Pedido.Add(pedido);
             await context.SaveChangesAsync();
@@ -693,7 +700,8 @@ namespace Gestion_Compras.Controllers
                         SubFamiliaId = item.SubFamiliaId,
                         Cantidad = itemRequest.Cantidad,
                         Recibido = 0,
-                        Estado = "PENDIENTE"
+                        Estado = "PENDIENTE",
+                        UsuarioId = int.TryParse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value, out var uidGen) ? uidGen : null
                     };
 
                     // Actualizar CantidadEnPedidos del item

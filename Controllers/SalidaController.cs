@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Gestion_Compras.Models;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 
 namespace Gestion_Compras.Controllers
 {
@@ -62,6 +63,13 @@ namespace Gestion_Compras.Controllers
         [HttpPost("Create")]
         public async Task<IActionResult> Create([FromBody] List<Salida> salidas)
         {
+            // Obtener usuario logueado (Id)
+            int? usuarioId = null;
+            if (User?.Identity?.IsAuthenticated == true)
+            {
+                if (int.TryParse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value, out var uid))
+                    usuarioId = uid;
+            }
             foreach (var salida in salidas)
             {
                 var item = await context.Item.FirstOrDefaultAsync(i => i.Codigo == salida.ItemCodigo);
@@ -92,7 +100,8 @@ namespace Gestion_Compras.Controllers
                     Cantidad = salida.Cantidad,
                     TipoDeMov = "Salida",
                     FechaRegistro = DateTime.Now,
-                    FechaMov = salida.FechaVale
+                    FechaMov = salida.FechaVale,
+                    UsuarioId = usuarioId
                 };
 
                 // Añadir la salida y el registro de Kardex a la base de datos

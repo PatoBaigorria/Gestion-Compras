@@ -1,0 +1,40 @@
+@model IEnumerable<Gestion_Compras.Models.Devolucion>
+
+<div class="table-responsive">
+    <table class="table table-striped table-bordered table-hover text-center table-sm">
+        <thead class="table-light table-header">
+            <tr>
+                <th style="width: 80px;">Código</th>
+                <th style="width: 350px;">Descripción</th>
+                <th style="width: 80px;">Cantidad</th>
+                <th style="width: 150px;">Personal</th>
+                <th style="width: 260px;">Observaciones</th>
+                <th style="width: 150px;">Fecha</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (Model != null && Model.Any())
+            {
+                foreach (var d in Model)
+                {
+                    <tr>
+                        <td>@(d.Item?.Codigo?.ToUpper() ?? "")</td>
+                        <td style="text-align: center;">@(d.Item?.Descripcion ?? "")</td>
+                        <td>@d.Cantidad</td>
+                        <td style="text-align: center;">@(d.Personal?.NombreYApellido ?? "")</td>
+                        <td style="text-align: center;">@(d.Observaciones ?? "")</td>
+                        <td>@d.FechaDevolucion.ToString("dd/MM/yyyy")</td>
+                    </tr>
+                }
+            }
+            else
+            {
+                <tr>
+                    <td colspan="6" class="text-center text-muted">
+                        <i class="fas fa-info-circle"></i> No se encontraron devoluciones
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>

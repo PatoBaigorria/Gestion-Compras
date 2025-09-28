@@ -27,5 +27,10 @@ namespace Gestion_Compras.Models
         public string Estado { get; set; } = string.Empty;
 
         public DateOnly FechaPedido { get; set; }
+
+        // Auditoría: usuario que generó el pedido
+        [ForeignKey(nameof(UsuarioId))]
+        public Usuario? Usuario { get; set; }
+        public int? UsuarioId { get; set; }
 	}
 }

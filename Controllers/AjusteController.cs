@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Gestion_Compras.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
 
 namespace Gestion_Compras.Controllers
 {
@@ -96,6 +97,13 @@ namespace Gestion_Compras.Controllers
         {
             try
             {
+                // Obtener usuario logueado (Id)
+                int? usuarioId = null;
+                if (User?.Identity?.IsAuthenticated == true)
+                {
+                    if (int.TryParse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value, out var uid))
+                        usuarioId = uid;
+                }
                 string itemCodigo = ajusteData.ItemCodigo;
                 int stockIni = ajusteData.StockIni;
                 int stockReal = ajusteData.StockReal;
@@ -134,7 +142,8 @@ namespace Gestion_Compras.Controllers
                     Cantidad = stockReal - stockIni,
                     TipoDeMov = "Ajuste",
                     FechaRegistro = DateTime.Now,
-                    FechaMov = DateOnly.FromDateTime(DateTime.Now)
+                    FechaMov = DateOnly.FromDateTime(DateTime.Now),
+                    UsuarioId = usuarioId
                 };
                 context.Kardex.Add(kardex);
 

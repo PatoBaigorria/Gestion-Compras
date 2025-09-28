@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Gestion_Compras.Models;
+using System.Linq;
 
 namespace Gestion_Compras.Controllers
 {
@@ -70,17 +71,19 @@ namespace Gestion_Compras.Controllers
                 .Where(k => k.FechaRegistro != DateTime.MinValue) // Filtrar registros con fechas válidas
                 .OrderBy(k => k.FechaRegistro) // Ordenar ascendente para calcular correctamente
                 .ThenBy(k => k.FechaMov)
-                .Select(k => new
+                .GroupJoin(context.Usuario, k => k.UsuarioId, u => u.Id, (k, usuarios) => new { k, usuario = usuarios.FirstOrDefault() })
+                .Select(x => new
                 {
-                    id = k.Id,
-                    fechaRegistro = k.FechaRegistro,
-                    fechaVale = k.FechaMov,
-                    codigo = k.Item.Codigo,
-                    descripcion = k.Item.Descripcion,
-                    tipoMovimiento = k.TipoDeMov,
-                    stockInicial = k.StockIni,
-                    cantidad = k.Cantidad,
-                    itemId = k.ItemId
+                    id = x.k.Id,
+                    fechaRegistro = x.k.FechaRegistro,
+                    fechaVale = x.k.FechaMov,
+                    codigo = x.k.Item.Codigo,
+                    descripcion = x.k.Item.Descripcion,
+                    tipoMovimiento = x.k.TipoDeMov,
+                    stockInicial = x.k.StockIni,
+                    cantidad = x.k.Cantidad,
+                    itemId = x.k.ItemId,
+                    usuario = x.usuario != null ? (x.usuario.Apellido + " " + x.usuario.Nombre) : ""
                 })
                 .ToListAsync();
 
@@ -102,6 +105,9 @@ namespace Gestion_Compras.Controllers
                         break;
                     case "ajuste":
                         // Para ajustes, el stock final es directamente la cantidad ajustada
+                        stockFinal = mov.stockInicial + mov.cantidad;
+                        break;
+                    case "devolucion":
                         stockFinal = mov.stockInicial + mov.cantidad;
                         break;
                 }
@@ -130,7 +136,8 @@ namespace Gestion_Compras.Controllers
                     tipoMovimiento = mov.tipoMovimiento,
                     stockInicial = mov.stockInicial,
                     cantidadMovimiento = cantidadMostrar,
-                    stockFinal = stockFinal
+                    stockFinal = stockFinal,
+                    usuario = mov.usuario
                 });
             }
 

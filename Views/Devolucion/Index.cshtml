@@ -1,0 +1,258 @@
+@model IEnumerable<Gestion_Compras.Models.Devolucion>
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    ViewData["Title"] = "Devoluciones";
+}
+
+<div class="container-custom mt-5">
+    <h3>Lista de Devoluciones</h3>
+
+    <div class="row mb-3">
+        <div class="col-md-8">
+            <div class="input-group">
+                <input type="text" id="searchInput" class="form-control" placeholder="Buscar por código, descripción, observaciones, personal o fecha...">
+                <button type="button" class="btn btn-primary" id="buscarBtn">
+                    <i class="fas fa-search"></i> Buscar
+                </button>
+            </div>
+        </div>
+        <div class="col-md-4 text-end">
+            <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#nuevaDevolucionModal">
+                <i class="fas fa-plus"></i> Nueva Devolución
+            </button>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col">
+            <div id="devolucionesContainer">
+                @await Html.PartialAsync("_DevolucionesTable", Model)
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Nueva Devolución -->
+<div class="modal fade" id="nuevaDevolucionModal" tabindex="-1" aria-labelledby="nuevaDevolucionModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-md">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="nuevaDevolucionModalLabel">Nueva Devolución</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="nuevaDevolucionForm">
+
+                    <div class="mb-3">
+                        <label for="fechaDevolucion" class="form-label">Fecha de Devolución</label>
+                        <input type="date" id="fechaDevolucion" name="FechaDevolucion" class="form-control" required />
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="itemCodigo" class="form-label">Código del Item</label>
+                        <input type="text" id="itemCodigo" name="ItemCodigo" class="form-control" placeholder="Ingrese el código del item" required />
+                    </div>
+
+                    <div id="itemInfo" style="display: none;">
+                        <div class="alert alert-info">
+                            <h6 id="itemDescripcion">Descripción del Item</h6>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="cantidad" class="form-label">Cantidad a Devolver</label>
+                        <input type="number" id="cantidad" name="Cantidad" class="form-control" min="1" placeholder="Ingrese la cantidad" required />
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="personalId" class="form-label">Personal</label>
+                        <select id="personalId" name="PersonalId" class="form-select" required>
+                            <option value="">Seleccione personal...</option>
+                            @if (ViewBag.PersonalList != null)
+                            {
+                                foreach (var p in ViewBag.PersonalList)
+                                {
+                                    <option value="@p.Id">@p.NombreYApellido</option>
+                                }
+                            }
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="observaciones" class="form-label">Observaciones</label>
+                        <textarea id="observaciones" name="Observaciones" class="form-control" rows="3" placeholder="Ingrese observaciones (opcional)"></textarea>
+                    </div>
+
+                    <input type="hidden" id="itemId" name="ItemId" />
+
+                    <button type="submit" class="btn btn-primary">Guardar Devolución</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .container-custom {
+        width: 100%;
+        padding-right: 15px;
+        padding-left: 15px;
+        margin-right: auto;
+        margin-left: auto;
+        max-width: 1400px;
+    }
+
+    .table-responsive {
+        position: relative;
+        height: 600px;
+        overflow-y: auto;
+    }
+
+    .table-header {
+        position: sticky;
+        top: 0;
+        z-index: 1020;
+        background-color: white;
+    }
+</style>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            function buscar() {
+                const searchTerm = $('#searchInput').val();
+                $.ajax({
+                    url: '@Url.Action("Buscar", "Devolucion")',
+                    type: 'GET',
+                    data: { searchTerm: searchTerm },
+                    success: function (response) {
+                        $('#devolucionesContainer').html(response);
+                    },
+                    error: function (xhr) {
+                        console.error('Error al buscar devoluciones:', xhr.responseText);
+                    }
+                });
+            }
+
+            $('#buscarBtn').click(buscar);
+            $('#searchInput').on('keypress', function (e) { if (e.which === 13) buscar(); });
+            let searchTimeout; $('#searchInput').on('input', function () { clearTimeout(searchTimeout); searchTimeout = setTimeout(buscar, 500); });
+
+            $('#nuevaDevolucionModal').on('show.bs.modal', function () {
+                $('#nuevaDevolucionForm')[0].reset();
+                $('#itemInfo').hide();
+                $('#itemId').val('');
+                // Inicializar fecha con la fecha actual (yyyy-MM-dd) para input type="date"
+                const now = new Date();
+                const pad = (n) => n.toString().padStart(2, '0');
+                const localDate = now.getFullYear() + '-' + pad(now.getMonth() + 1) + '-' + pad(now.getDate());
+                $('#fechaDevolucion').val(localDate);
+            });
+
+            // Búsqueda automática como en vista Pedido: al tener 7 caracteres
+            $('#itemCodigo').on('input', function () {
+                const input = this;
+                const cursorPos = input.selectionStart;
+                let value = $(input).val().toString().toUpperCase();
+                $(input).val(value);
+                input.setSelectionRange(cursorPos, cursorPos);
+
+                if (value.length === 7) {
+                    // Buscar automáticamente
+                    $.ajax({
+                        url: '@Url.Action("ObtenerItemPorCodigo", "Devolucion")',
+                        type: 'GET',
+                        data: { codigo: value },
+                        success: function (response) {
+                            if (response.success) {
+                                $('#itemDescripcion').text(response.item.descripcion);
+                                $('#itemId').val(response.item.id);
+                                $('#itemInfo').show();
+                                $('#cantidad').focus();
+                            } else {
+                                mostrarToast(response.message || 'Item no encontrado', 'warning');
+                                $('#itemDescripcion').text('');
+                                $('#itemId').val('');
+                                $('#itemInfo').hide();
+                            }
+                        },
+                        error: function (xhr) {
+                            console.error('Error al buscar item:', xhr.responseText);
+                            mostrarToast('Error al buscar item', 'error');
+                            $('#itemDescripcion').text('');
+                            $('#itemId').val('');
+                            $('#itemInfo').hide();
+                        }
+                    });
+                } else if (value.length < 7) {
+                    // Limpiar info si aún no se completan 7 caracteres
+                    $('#itemDescripcion').text('');
+                    $('#itemId').val('');
+                    $('#itemInfo').hide();
+                }
+            });
+
+            $('#nuevaDevolucionForm').submit(function (e) {
+                e.preventDefault();
+                const data = {
+                    FechaDevolucion: $('#fechaDevolucion').val(),
+                    ItemCodigo: $('#itemCodigo').val(),
+                    Cantidad: parseInt($('#cantidad').val()),
+                    PersonalId: parseInt($('#personalId').val()),
+                    Observaciones: $('#observaciones').val()
+                };
+                $.ajax({
+                    url: '@Url.Action("Guardar", "Devolucion")',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify(data),
+                    success: function (response) {
+                        if (response.success) {
+                            mostrarToast('Devolución registrada exitosamente', 'success');
+                            $('#nuevaDevolucionModal').modal('hide');
+                            $('#nuevaDevolucionForm')[0].reset();
+                            $('#itemInfo').hide();
+                            buscar();
+                            localStorage.setItem('ultimoMovimientoKardex', Date.now().toString());
+                        } else {
+                            mostrarToast('Error: ' + response.message, 'error');
+                        }
+                    },
+                    error: function (xhr) {
+                        console.error('Error al guardar devolución:', xhr.responseText);
+                        mostrarToast('Error al guardar devolución', 'error');
+                    }
+                });
+            });
+
+            function mostrarToast(mensaje, tipo) {
+                if ($('#toast-container').length === 0) {
+                    $('body').append('<div id="toast-container" class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 9999;"></div>');
+                }
+                let bgClass = ''; let iconClass = '';
+                switch (tipo) {
+                    case 'success': bgClass = 'bg-success text-white'; iconClass = 'fas fa-check-circle'; break;
+                    case 'error': bgClass = 'bg-danger text-white'; iconClass = 'fas fa-exclamation-circle'; break;
+                    case 'warning': bgClass = 'bg-warning text-dark'; iconClass = 'fas fa-exclamation-triangle'; break;
+                    default: bgClass = 'bg-info text-white'; iconClass = 'fas fa-info-circle';
+                }
+                const toastId = 'toast-' + Date.now();
+                const toastHtml = `
+                    <div id="${toastId}" class="toast ${bgClass}" role="alert" aria-live="assertive" aria-atomic="true" data-bs-delay="4000">
+                        <div class="toast-header ${bgClass} border-0">
+                            <i class="${iconClass} me-2"></i>
+                            <strong class="me-auto">Notificación</strong>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
+                        </div>
+                        <div class="toast-body">
+                            ${mensaje}
+                        </div>
+                    </div>`;
+                $('#toast-container').append(toastHtml);
+                const toastElement = new bootstrap.Toast(document.getElementById(toastId));
+                toastElement.show();
+                document.getElementById(toastId).addEventListener('hidden.bs.toast', function () { $(this).remove(); });
+            }
+        });
+    </script>
+}

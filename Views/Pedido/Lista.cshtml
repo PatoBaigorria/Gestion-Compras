@@ -83,6 +83,7 @@
                             <th style="width: 70px;">Recibido</th>
                             <th style="width: 160px;">Subfamilia</th>
                             <th style="width: 90px;">Estado</th>
+                            <th style="width: 180px;">Usuario</th>
                         </tr>
                     </thead>
                     <tbody id="listaPedidos">
@@ -175,6 +176,7 @@
                                                     <td>${pedido.recibido}</td>
                                                     <td>${pedido.subFamilia || ''}</td>
                                                     <td>${estadoBadge}</td>
+                                                    <td>${pedido.usuario || ''}</td>
                                                 </tr>
                                             `);
                         });
@@ -184,7 +186,7 @@
                     } else {
                         tbody.append(`
                                             <tr>
-                                                <td colspan="10" class="text-center text-muted">
+                                                <td colspan="11" class="text-center text-muted">
                                                     <i class="fas fa-info-circle"></i> No se encontraron pedidos
                                                 </td>
                                             </tr>
