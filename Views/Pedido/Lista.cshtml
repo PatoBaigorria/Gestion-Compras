@@ -2,110 +2,92 @@
     Layout = "~/Views/Shared/_Layout.cshtml";
     ViewData["Title"] = "Lista de Pedidos";
 }
+<div class="container-custom mt-3">
 
-<div class="container-custom mt-1">
-    <div class="row">
-        <div class="col-md-6">
-            <h3 class="mb-3">Lista de Pedidos</h3>
-        </div>
-        <div class="col-md-6 text-end">
-            @if (User.IsInRole("Administrador"))
-            {
-                <a href="/Pedido/Nuevo" class="btn btn-primary btn-sm">
-                    <i class="fas fa-plus"></i> Generar Pedido
-                </a>
-                <button type="button" class="btn btn-danger btn-sm" onclick="anularPedido()">
-                    <i class="fas fa-times"></i> Anular Pedido
-                </button>
-            }
-        </div>
-    </div>
-
-    <!-- Filtros -->
+    <!-- Card de Filtros -->
     <div class="card shadow mb-2 card-filtros">
         <div class="card-body">
-            <div class="row">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-shopping-cart me-2"></i>Gestión de Pedidos
+                </h5>
+            </div>
+            
+            <div class="row g-3">
                 <div class="col-md-6">
-                    <label for="filtroGeneral" class="form-label">Filtro General:</label>
-                    <input type="text" class="form-control" id="filtroGeneral"
-                        placeholder="Buscar en todos los campos..." onkeyup="filtrarTabla()">
+                    <label for="filtroGeneral" class="form-label">Filtro General</label>
+                    <div class="input-group">
+                        <input type="text" class="form-control form-control-sm" id="filtroGeneral"
+                            placeholder="Buscar en todos los campos...">
+                        <button type="button" class="btn btn-primary btn-sm">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </div>
                 </div>
                 <div class="col-md-6">
-                    <label class="form-label">Filtrar por Estado:</label>
-                    <div class="row">
-                        <div class="col-md-4">
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="filtroPendiente"
-                                    onchange="filtrarTabla()" checked>
-                                <label class="form-check-label" for="filtroPendiente">
-                                    Pendiente
-                                </label>
-                            </div>
+                    <label class="form-label">Filtrar por Estado</label>
+                    <div class="d-flex gap-3 align-items-center">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="filtroPendiente" checked>
+                            <label class="form-check-label" for="filtroPendiente">
+                                Pendiente
+                            </label>
                         </div>
-                        <div class="col-md-4">
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="filtroCompletado"
-                                    onchange="filtrarTabla()" checked>
-                                <label class="form-check-label" for="filtroCompletado">
-                                    Completado
-                                </label>
-                            </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="filtroCompletado" checked>
+                            <label class="form-check-label" for="filtroCompletado">
+                                Completado
+                            </label>
                         </div>
-                        <div class="col-md-4">
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="filtroAnulado"
-                                    onchange="filtrarTabla()" checked>
-                                <label class="form-check-label" for="filtroAnulado">
-                                    Cancelado
-                                </label>
-                            </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="filtroAnulado" checked>
+                            <label class="form-check-label" for="filtroAnulado">
+                                Cancelado
+                            </label>
                         </div>
+                        @if (User.IsInRole("Administrador"))
+                        {
+                            <div class="d-flex gap-2 ms-3">
+                                <a href="/Pedido/Nuevo" class="btn btn-success btn-sm">
+                                    <i class="fas fa-plus me-1"></i>Generar Pedido
+                                </a>
+                                <button type="button" class="btn btn-danger btn-sm" onclick="anularPedido()">
+                                    <i class="fas fa-times me-1"></i>Anular Pedido
+                                </button>
+                            </div>
+                        }
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Tabla de Pedidos -->
+    <!-- Card de Lista de Pedidos -->
     <div class="card shadow mb-0">
-        <div class="card-body">
-            <div class="table-responsive" style="max-height:600px; overflow-y:auto;">
-                <table class="table table-striped table-bordered table-hover text-center table-sm" id="tablaPedidos">
-                    <thead class="table-light sticky-header">
-                        <tr>
-                            <th style="width: 60px;">N° Pedido</th>
-                            <th style="width: 80px;">Fecha</th>
-                            <th style="width: 80px;">Código Item</th>
-                            <th style="width: 400px;">Descripción</th>
-                            <th style="width: 0px;">Unidad Medida</th>
-                            <th style="width: 80px;">Cantidad</th>
-                            <th style="width: 80px;">Pendiente</th>
-                            <th style="width: 70px;">Recibido</th>
-                            <th style="width: 160px;">Subfamilia</th>
-                            <th style="width: 90px;">Estado</th>
-                            <th style="width: 180px;">Usuario</th>
-                        </tr>
-                    </thead>
-                    <tbody id="listaPedidos">
-                        <!-- Los pedidos se cargarán aquí -->
-                    </tbody>
-                </table>
-            </div>
-            <!-- Controles de paginación -->
-            <div id="paginacionPedidos" class="d-flex justify-content-center mt-2">
-                <nav>
-                    <ul class="pagination pagination-sm">
-                        <li class="page-item" id="btnAnteriorPedidos">
-                            <a class="page-link" href="#" onclick="cambiarPaginaPedidos(-1); return false;">← Anterior</a>
-                        </li>
-                        <li class="page-item"><span class="page-link text-muted" id="infoPaginaPedidos">Página 1 de 1</span></li>
-                        <li class="page-item" id="btnSiguientePedidos">
-                            <a class="page-link" href="#" onclick="cambiarPaginaPedidos(1); return false;">Siguiente →</a>
-                        </li>
-                    </ul>
-                </nav>
-                <div class="ms-3">
-                    <select id="tamanoPaginaPedidos" class="form-select form-select-sm">
+        <div class="card-header bg-light d-flex align-items-center justify-content-between">
+            <strong>Lista de Pedidos</strong>
+            <div class="d-flex align-items-center gap-3">
+                <div id="paginacionPedidos" class="d-flex align-items-center">
+                    <nav>
+                        <ul class="pagination pagination-sm mb-0">
+                            <li class="page-item" id="btnAnteriorPedidos">
+                                <a class="page-link" href="#" onclick="cambiarPaginaPedidos(-1); return false;">
+                                    ← Anterior
+                                </a>
+                            </li>
+                            <li class="page-item">
+                                <span class="page-link text-muted" id="infoPaginaPedidos">Página 1 de 1</span>
+                            </li>
+                            <li class="page-item" id="btnSiguientePedidos">
+                                <a class="page-link" href="#" onclick="cambiarPaginaPedidos(1); return false;">
+                                    Siguiente →
+                                </a>
+                            </li>
+                        </ul>
+                    </nav>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <select id="tamanoPaginaPedidos" class="form-select form-select-sm" style="width: auto;">
                         <option value="50">50</option>
                         <option value="100" selected>100</option>
                         <option value="200">200</option>
@@ -113,7 +95,32 @@
                 </div>
             </div>
         </div>
+        <div class="card-body p-0">
+            <div class="table-responsive" style="height: 600px; overflow-y: auto;">
+                <table class="table table-striped table-bordered table-hover text-center table-sm mb-0" id="tablaPedidos">
+                    <thead class="table-header">
+                        <tr>
+                            <th style="width: 8%;">N° Pedido</th>
+                            <th style="width: 8%;">Fecha</th>
+                            <th style="width: 10%;">Código</th>
+                            <th style="width: 25%;">Descripción</th>
+                            <th style="width: 8%;">U.M.</th>
+                            <th style="width: 8%;">Cantidad</th>
+                            <th style="width: 8%;">Pendiente</th>
+                            <th style="width: 8%;">Recibido</th>
+                            <th style="width: 12%;">Subfamilia</th>
+                            <th style="width: 8%;">Estado</th>
+                            <th style="width: 12%;">Usuario</th>
+                        </tr>
+                    </thead>
+                    <tbody id="listaPedidos">
+                        <!-- Los pedidos se cargarán aquí -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </div>
+
 </div>
 
 <style>
@@ -124,27 +131,46 @@
         margin-right: auto;
         margin-left: auto;
         max-width: 1400px;
-        padding-bottom: 0rem;
     }
 
-    .container-custom>.card:last-child {
-        margin-bottom: 0rem;
-        /* o incluso 0 */
+    .table-responsive {
+        position: relative;
     }
 
-
-    /* Encabezado fijo en tablas */
-    .sticky-header th {
+    .table-header {
         position: sticky;
         top: 0;
-        z-index: 10;
-        background-color: #f8f9fa;
-        /* color de .table-light */
+        z-index: 1020;
+        background-color: white;
     }
 
+    /* Estilos de filtros */
     .card-filtros .card-body {
-        padding: 0.5rem 1rem;
-        /* menos espacio interno */
+        padding: 0.75rem 1rem;
+    }
+
+    .card-filtros .card-title {
+        color: #495057;
+        font-size: 1.1rem;
+    }
+
+    .card-filtros .form-control,
+    .card-filtros .form-check-label,
+    .card-filtros .btn {
+        font-size: 0.85rem;
+    }
+
+    /* Reducir el tamaño de la letra en la tabla */
+    .table-sm td,
+    .table-sm th {
+        font-size: 0.9em;
+        text-align: center;
+        vertical-align: middle;
+    }
+
+    /* Hover effect en las filas */
+    .table-hover tbody tr:hover {
+        background-color: rgba(0, 123, 255, 0.075);
     }
 
     .card-filtros label {
@@ -180,56 +206,69 @@
         let paginaActualP = 1;
         let totalPaginasP = 1;
         let tamanoPaginaP = 100;
+        let tamanoPaginaReal = 100; // Tamaño real de página para filtros locales
+        
+        // Variables para el filtrado local
+        let todosLosPedidos = []; // Todos los pedidos del servidor
+        let pedidosFiltrados = []; // Pedidos después de aplicar filtros de checkboxes
+        let paginaFiltrada = 1; // Página actual para filtros locales
+        let usandoFiltrosLocales = false; // Flag para saber si estamos en modo filtros locales
 
         function cargarPedidos(pagina = 1) {
+            // Solo enviar filtro general al servidor
+            const filtroGeneral = $('#filtroGeneral').val() || '';
+            
+            // Verificar si hay filtros de checkboxes activos
+            const filtroPendiente = $('#filtroPendiente').is(':checked');
+            const filtroCompletado = $('#filtroCompletado').is(':checked');
+            const filtroAnulado = $('#filtroAnulado').is(':checked');
+            const hayFiltrosCheckbox = !(filtroPendiente && filtroCompletado && filtroAnulado);
+            
+            console.log('Estados checkboxes:', { filtroPendiente, filtroCompletado, filtroAnulado, hayFiltrosCheckbox });
+            
+            const params = new URLSearchParams();
+            params.append('filtroGeneral', filtroGeneral);
+            
+            if (hayFiltrosCheckbox) {
+                // Si hay filtros de checkboxes, obtener TODOS los elementos
+                tamanoPaginaReal = tamanoPaginaP; // Guardar el tamaño real
+                params.append('pagina', 1);
+                params.append('tamanoPagina', 10000); // Número grande para obtener todos
+                usandoFiltrosLocales = true;
+                paginaFiltrada = pagina;
+                console.log('Modo filtros locales activado, página solicitada:', pagina, 'tamaño real:', tamanoPaginaReal);
+            } else {
+                // Sin filtros de checkboxes, usar paginación normal
+                params.append('pagina', pagina);
+                params.append('tamanoPagina', tamanoPaginaP);
+                usandoFiltrosLocales = false;
+                console.log('Modo paginación normal, página:', pagina);
+            }
+            
             $.ajax({
-                url: '/api/pedido/list',
+                url: '/api/pedido/lista?' + params.toString(),
                 type: 'GET',
-                data: { pagina: pagina, tamanoPagina: tamanoPaginaP },
                 success: function (response) {
-                    const tbody = $('#listaPedidos');
-                    tbody.empty();
                     const items = (response && response.items) ? response.items : [];
+                    const total = response && typeof response.total === 'number' ? response.total : items.length;
+                    
+                    console.log('Respuesta del servidor:', { items: items.length, total, usandoFiltrosLocales });
+                    
+                    // Guardar todos los pedidos para filtrado local
+                    todosLosPedidos = items;
                     paginaActualP = response && response.pagina ? response.pagina : 1;
                     tamanoPaginaP = response && response.tamanoPagina ? response.tamanoPagina : tamanoPaginaP;
-                    const total = response && typeof response.total === 'number' ? response.total : items.length;
                     totalPaginasP = Math.max(1, Math.ceil(total / tamanoPaginaP));
 
-                    if (items.length > 0) {
-                        $.each(items, function (index, pedido) {
-                            const estadoBadge = getEstadoBadge(pedido.estado);
-                            // Corregir formato de fecha - agregar tiempo para evitar problemas de zona horaria
-                            const fecha = new Date(pedido.fechaPedido + 'T00:00:00').toLocaleDateString('es-ES');
-
-                            tbody.append(`
-                                                <tr>
-                                                    <td>${pedido.numeroPedido}</td>
-                                                    <td>${fecha}</td>
-                                                    <td>${pedido.itemCodigo || ''}</td>
-                                                    <td>${pedido.itemDescripcion || ''}</td>
-                                                    <td>${pedido.unidadMedida || ''}</td>
-                                                    <td>${pedido.cantidad}</td>
-                                                    <td>${pedido.estado === 'CANCELADO' ? 0 : (pedido.cantidad - pedido.recibido)}</td>
-                                                    <td>${pedido.recibido}</td>
-                                                    <td>${pedido.subFamilia || ''}</td>
-                                                    <td>${estadoBadge}</td>
-                                                    <td>${pedido.usuario || ''}</td>
-                                                </tr>
-                                            `);
-                        });
-
-                        // Aplicar filtros después de cargar los datos
-                        filtrarTabla();
-                        actualizarPaginacionPedidos(total);
+                    if (usandoFiltrosLocales) {
+                        // Modo filtros locales: aplicar filtros y paginación local
+                        console.log('Aplicando filtros locales...');
+                        aplicarFiltrosYPaginacion();
                     } else {
-                        tbody.append(`
-                                            <tr>
-                                                <td colspan="11" class="text-center text-muted">
-                                                    <i class="fas fa-info-circle"></i> No se encontraron pedidos
-                                                </td>
-                                            </tr>
-                                        `);
-                        actualizarPaginacionPedidos(0);
+                        // Modo normal: renderizar todos los pedidos
+                        console.log('Modo normal, renderizando', items.length, 'pedidos');
+                        renderizarPedidos(items);
+                        actualizarPaginacionPedidos(total);
                     }
                 },
                 error: function (xhr, status, errorThrown) {
@@ -253,14 +292,28 @@
         }
 
         window.cambiarPaginaPedidos = function (delta) {
-            const nueva = paginaActualP + delta;
-            if (nueva >= 1 && nueva <= totalPaginasP) {
-                cargarPedidos(nueva);
+            if (usandoFiltrosLocales) {
+                // Modo filtros locales
+                const nueva = paginaFiltrada + delta;
+                const totalPaginasFiltradas = Math.max(1, Math.ceil(pedidosFiltrados.length / tamanoPaginaReal));
+                console.log('Cambio de página filtros locales:', { nueva, totalPaginasFiltradas, tamanoPaginaReal });
+                if (nueva >= 1 && nueva <= totalPaginasFiltradas) {
+                    paginaFiltrada = nueva;
+                    aplicarFiltrosYPaginacion();
+                }
+            } else {
+                // Modo normal
+                const nueva = paginaActualP + delta;
+                if (nueva >= 1 && nueva <= totalPaginasP) {
+                    cargarPedidos(nueva);
+                }
             }
-        }
+        };
 
+        // Manejar cambio de tamaño de página
         $('#tamanoPaginaPedidos').on('change', function() {
             tamanoPaginaP = parseInt($(this).val(), 10) || 100;
+            tamanoPaginaReal = tamanoPaginaP; // Actualizar también el tamaño real
             cargarPedidos(1);
         });
 
@@ -279,50 +332,142 @@
             }
         }
 
-        // Función para filtrar la tabla
-        function filtrarTabla() {
-            const filtroGeneral = document.getElementById('filtroGeneral').value.toLowerCase();
-            const filtroPendiente = document.getElementById('filtroPendiente').checked;
-            const filtroCompletado = document.getElementById('filtroCompletado').checked;
-            const filtroAnulado = document.getElementById('filtroAnulado').checked;
-            const filas = document.querySelectorAll('#listaPedidos tr');
+        // Función para renderizar pedidos en la tabla
+        function renderizarPedidos(pedidos) {
+            const tbody = $('#listaPedidos');
+            tbody.empty();
+            
+            if (!pedidos || pedidos.length === 0) {
+                tbody.append(`
+                    <tr>
+                        <td colspan="11" class="text-center text-muted">
+                            <i class="fas fa-info-circle"></i> No se encontraron pedidos
+                        </td>
+                    </tr>
+                `);
+                return;
+            }
 
-            filas.forEach(function (fila) {
-                // Obtener el texto de todas las celdas de la fila
-                const textoFila = fila.textContent.toLowerCase();
+            $.each(pedidos, function (index, pedido) {
+                const estadoBadge = getEstadoBadge(pedido.estado);
+                const fecha = new Date(pedido.fechaPedido + 'T00:00:00').toLocaleDateString('es-ES');
 
-                // Verificar filtro general
-                const cumpleFiltroGeneral = filtroGeneral === '' || textoFila.includes(filtroGeneral);
-
-                // Verificar filtro de estado
-                let cumpleFiltroEstado = false;
-                const estadoCell = fila.querySelector('td:nth-child(10)'); // Columna de estado
-                if (estadoCell) {
-                    const estado = estadoCell.textContent.toUpperCase();
-
-                    // Verificar cada tipo de estado
-                    if (filtroPendiente && estado.includes('PENDIENTE')) {
-                        cumpleFiltroEstado = true;
-                    }
-                    if (filtroCompletado && (estado.includes('COMPLETADO') || estado.includes('RECIBIDO'))) {
-                        cumpleFiltroEstado = true;
-                    }
-                    if (filtroAnulado && (estado.includes('CANCELADO') || estado.includes('ANULADO'))) {
-                        cumpleFiltroEstado = true;
-                    }
-                } else {
-                    // Si no hay celda de estado, mostrar si al menos un filtro está activo
-                    cumpleFiltroEstado = filtroPendiente || filtroCompletado || filtroAnulado;
-                }
-
-                // Mostrar u ocultar fila
-                if (cumpleFiltroGeneral && cumpleFiltroEstado) {
-                    fila.style.display = '';
-                } else {
-                    fila.style.display = 'none';
-                }
+                tbody.append(`
+                    <tr>
+                        <td>${pedido.numeroPedido}</td>
+                        <td>${fecha}</td>
+                        <td>${pedido.itemCodigo || ''}</td>
+                        <td>${pedido.itemDescripcion || ''}</td>
+                        <td>${pedido.unidadMedida || ''}</td>
+                        <td>${pedido.cantidad}</td>
+                        <td>${pedido.estado === 'CANCELADO' ? 0 : (pedido.cantidad - pedido.recibido)}</td>
+                        <td>${pedido.recibido}</td>
+                        <td>${pedido.subFamilia || ''}</td>
+                        <td>${estadoBadge}</td>
+                        <td>${pedido.usuario || ''}</td>
+                    </tr>
+                `);
             });
         }
+
+        // Nueva función para aplicar filtros y paginación local
+        function aplicarFiltrosYPaginacion() {
+            const filtroPendiente = $('#filtroPendiente').is(':checked');
+            const filtroCompletado = $('#filtroCompletado').is(':checked');
+            const filtroAnulado = $('#filtroAnulado').is(':checked');
+            const filtroGeneral = $('#filtroGeneral').val().toLowerCase().trim();
+
+            console.log('Aplicando filtros:', { filtroPendiente, filtroCompletado, filtroAnulado, filtroGeneral });
+            console.log('Total pedidos sin filtrar:', todosLosPedidos.length);
+
+            // Filtrar todos los pedidos
+            pedidosFiltrados = todosLosPedidos.filter(pedido => {
+                // Filtro por estado
+                const estado = pedido.estado.toUpperCase();
+                let cumpleEstado = false;
+                
+                if (filtroPendiente && estado.includes('PENDIENTE')) cumpleEstado = true;
+                if (filtroCompletado && (estado.includes('COMPLETADO') || estado.includes('RECIBIDO'))) cumpleEstado = true;
+                if (filtroAnulado && (estado.includes('CANCELADO') || estado.includes('ANULADO'))) cumpleEstado = true;
+
+                if (!cumpleEstado) return false;
+
+                // Filtro general (buscar en todos los campos)
+                if (filtroGeneral) {
+                    const textoCompleto = [
+                        pedido.numeroPedido,
+                        pedido.itemCodigo,
+                        pedido.itemDescripcion,
+                        pedido.unidadMedida,
+                        pedido.cantidad,
+                        pedido.recibido,
+                        pedido.subFamilia,
+                        pedido.estado,
+                        pedido.usuario
+                    ].join(' ').toLowerCase();
+
+                    if (!textoCompleto.includes(filtroGeneral)) return false;
+                }
+
+                return true;
+            });
+
+            console.log('Pedidos filtrados:', pedidosFiltrados.length);
+
+            // Calcular paginación
+            const totalPedidosFiltrados = pedidosFiltrados.length;
+            const totalPaginasFiltradas = Math.max(1, Math.ceil(totalPedidosFiltrados / tamanoPaginaReal));
+
+            console.log('Paginación:', { paginaFiltrada, totalPaginasFiltradas, tamanoPaginaReal });
+
+            // Ajustar página actual si es necesario
+            if (paginaFiltrada > totalPaginasFiltradas) {
+                paginaFiltrada = totalPaginasFiltradas;
+            }
+
+            // Obtener pedidos para la página actual
+            const inicio = (paginaFiltrada - 1) * tamanoPaginaReal;
+            const fin = inicio + tamanoPaginaReal;
+            const pedidosPagina = pedidosFiltrados.slice(inicio, fin);
+
+            console.log('Pedidos para esta página:', pedidosPagina.length, 'de', inicio, 'a', fin);
+
+            // Renderizar pedidos de la página actual
+            renderizarPedidos(pedidosPagina);
+
+            // Actualizar información de paginación
+            $('#infoPaginaPedidos').text(`Página ${paginaFiltrada} de ${totalPaginasFiltradas} (${totalPedidosFiltrados} pedidos)`);
+
+            // Actualizar botones
+            $('#btnAnteriorPedidos').toggleClass('disabled', paginaFiltrada <= 1);
+            $('#btnSiguientePedidos').toggleClass('disabled', paginaFiltrada >= totalPaginasFiltradas);
+        }
+
+
+        // Eventos para filtros
+        $('#filtroGeneral').on('input', function() {
+            clearTimeout(window.filtroTimeout);
+            window.filtroTimeout = setTimeout(function() {
+                if (usandoFiltrosLocales) {
+                    // Si estamos en modo filtros locales, aplicar filtros localmente
+                    paginaFiltrada = 1; // Volver a página 1
+                    aplicarFiltrosYPaginacion();
+                } else {
+                    // Modo normal: recargar del servidor
+                    cargarPedidos(1);
+                }
+            }, 500);
+        });
+        
+        $('#filtroPendiente, #filtroCompletado, #filtroAnulado').on('change', function() {
+            if (usandoFiltrosLocales) {
+                paginaFiltrada = 1; // Volver a página 1
+                aplicarFiltrosYPaginacion();
+            } else {
+                // Recargar datos con filtros
+                cargarPedidos(1);
+            }
+        });
 
         // Función para anular pedido
         function anularPedido() {
@@ -542,9 +687,19 @@
             });
         }
 
-        // Actualizar lista automáticamente cada 5 segundos
-        setInterval(function () {
-            cargarPedidos();
-        }, 5000);
+        // Sistema de actualización automática inteligente
+        let ultimoMovimientoStock = localStorage.getItem('ultimoMovimientoStock') || '0';
+        
+        function verificarActualizaciones() {
+            const nuevoMovimiento = localStorage.getItem('ultimoMovimientoStock') || '0';
+            if (nuevoMovimiento !== ultimoMovimientoStock) {
+                ultimoMovimientoStock = nuevoMovimiento;
+                // Recargar la lista manteniendo la página actual
+                cargarPedidos(paginaActualP);
+            }
+        }
+        
+        // Verificar actualizaciones cada 3 segundos
+        setInterval(verificarActualizaciones, 3000);
     </script>
 }

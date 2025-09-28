@@ -34,18 +34,33 @@ namespace Gestion_Compras.Controllers
         }
 
         // Lista de pedidos (JSON)
-        [HttpGet("list")]
-        public async Task<ActionResult> GetPedidos(int pagina = 1, int tamanoPagina = 100)
+        [HttpGet("lista")]
+        public async Task<ActionResult> GetPedidos(int pagina = 1, int tamanoPagina = 100, string filtroGeneral = "")
         {
             pagina = Math.Max(1, pagina);
             tamanoPagina = tamanoPagina <= 0 ? 100 : tamanoPagina;
 
-            // Total de registros (sin joins para performance)
-            var total = await context.Pedido.CountAsync();
+            // Construir query base
+            var query = context.Pedido.AsNoTracking();
+
+            // Aplicar filtro general si existe
+            if (!string.IsNullOrEmpty(filtroGeneral))
+            {
+                var filtroLower = filtroGeneral.ToLower();
+                query = query.Where(p => 
+                    (p.ItemCodigo != null && p.ItemCodigo.ToLower().Contains(filtroLower)) ||
+                    p.Estado.ToLower().Contains(filtroLower) ||
+                    p.NumeroPedido.ToString().Contains(filtroLower) ||
+                    p.Cantidad.ToString().Contains(filtroLower) ||
+                    p.Recibido.ToString().Contains(filtroLower)
+                );
+            }
+
+            // Total de registros (con filtro aplicado)
+            var total = await query.CountAsync();
 
             // 1) Página de pedidos (sin joins)
-            var pagePedidos = await context.Pedido
-                .AsNoTracking()
+            var pagePedidos = await query
                 .OrderByDescending(p => p.Id)
                 .Skip((pagina - 1) * tamanoPagina)
                 .Take(tamanoPagina)
@@ -119,7 +134,7 @@ namespace Gestion_Compras.Controllers
             return Ok(new { items, total, pagina, tamanoPagina });
         }
 
-        [HttpGet("{id}")]
+        [HttpGet("pedido/{id}")]
         public async Task<ActionResult<Pedido>> GetPedido(int id)
         {
             var pedido = await context.Pedido
