@@ -64,6 +64,56 @@ namespace Gestion_Compras.Controllers
             return PartialView("~/Views/Devolucion/_DevolucionesTable.cshtml", devoluciones);
         }
 
+        // GET: /Devolucion/BuscarJson
+        [HttpGet]
+        [Route("Devolucion/BuscarJson")]
+        public async Task<IActionResult> BuscarJson(string searchTerm = "", int pagina = 1, int tamanoPagina = 100)
+        {
+            pagina = Math.Max(1, pagina);
+            tamanoPagina = tamanoPagina <= 0 ? 100 : tamanoPagina;
+
+            var query = context.Devolucion
+                .Include(d => d.Item)
+                .Include(d => d.Personal)
+                .AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(searchTerm))
+            {
+                bool isNumeric = int.TryParse(searchTerm, out int n);
+                query = query.Where(d =>
+                    (d.Item != null && (
+                        (d.Item.Codigo ?? "").Contains(searchTerm) ||
+                        (d.Item.Descripcion ?? "").Contains(searchTerm)
+                    )) ||
+                    (d.Observaciones ?? "").Contains(searchTerm) ||
+                    (d.Personal != null && (
+                        (d.Personal.NombreYApellido ?? "").Contains(searchTerm)
+                    )) ||
+                    (isNumeric && d.Cantidad == n) ||
+                    d.FechaDevolucion.ToString("dd/MM/yyyy").Contains(searchTerm)
+                );
+            }
+
+            var total = await query.CountAsync();
+
+            var items = await query
+                .OrderByDescending(d => d.FechaDevolucion)
+                .Skip((pagina - 1) * tamanoPagina)
+                .Take(tamanoPagina)
+                .Select(d => new
+                {
+                    codigo = d.Item != null ? d.Item.Codigo : "",
+                    descripcion = d.Item != null ? d.Item.Descripcion : "",
+                    cantidad = d.Cantidad,
+                    personal = d.Personal != null ? d.Personal.NombreYApellido : "",
+                    observaciones = d.Observaciones ?? "",
+                    fecha = d.FechaDevolucion
+                })
+                .ToListAsync();
+
+            return Ok(new { items, total, pagina, tamanoPagina });
+        }
+
         // GET: /Devolucion/ObtenerItemPorCodigo
         [HttpGet]
         public async Task<IActionResult> ObtenerItemPorCodigo(string codigo)

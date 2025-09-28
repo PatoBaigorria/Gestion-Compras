@@ -28,8 +28,44 @@
     <!-- Tabla de ajustes -->
     <div class="row">
         <div class="col">
-            <div id="ajustesContainer">
-                @await Html.PartialAsync("_AjustesTable", Model)
+            <div class="table-responsive" style="height: 600px; overflow-y: auto;">
+                <table class="table table-striped table-bordered table-hover text-center table-sm">
+                    <thead class="table-light table-header">
+                        <tr>
+                            <th style="width: 80px;">Código</th>
+                            <th style="width: 350px;">Descripción</th>
+                            <th style="width: 100px;">Stock Ini</th>
+                            <th style="width: 100px;">Stock Real</th>
+                            <th style="width: 260px;">Observaciones</th>
+                            <th style="width: 150px;">Fecha</th>
+                        </tr>
+                    </thead>
+                    <tbody id="ajustesBody">
+                        <!-- Filas dinámicas -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Paginación -->
+            <div id="paginacionAjustes" class="d-flex justify-content-center mt-2">
+                <nav>
+                    <ul class="pagination pagination-sm">
+                        <li class="page-item" id="btnAnteriorAju">
+                            <a class="page-link" href="#" onclick="cambiarPaginaAju(-1); return false;">← Anterior</a>
+                        </li>
+                        <li class="page-item"><span class="page-link text-muted" id="infoPaginaAju">Página 1 de 1</span></li>
+                        <li class="page-item" id="btnSiguienteAju">
+                            <a class="page-link" href="#" onclick="cambiarPaginaAju(1); return false;">Siguiente →</a>
+                        </li>
+                    </ul>
+                </nav>
+                <div class="ms-3">
+                    <select id="tamanoPaginaAju" class="form-select form-select-sm">
+                        <option value="50">50</option>
+                        <option value="100" selected>100</option>
+                        <option value="200">200</option>
+                    </select>
+                </div>
             </div>
         </div>
     </div>
@@ -109,49 +145,95 @@
     .table-sm td,
     .table-sm th {
         font-size: 0.9em;
+        text-align: center;
+        vertical-align: middle;
+    }
+    /* Columna Descripción (2da) alineada a la izquierda */
+    .table.table-sm tbody tr td:nth-child(2) {
+        text-align: left;
     }
 </style>
 
 @section Scripts {
     <script>
         $(document).ready(function () {
-            // Función para buscar ajustes
-            function buscarAjustes() {
+            // Estado de paginación
+            let paginaActualAju = 1;
+            let totalPaginasAju = 1;
+            let tamanoPaginaAju = 100;
+
+            // Render tabla
+            function renderAjustes(items) {
+                const $tbody = $('#ajustesBody');
+                $tbody.empty();
+                if (!items || items.length === 0) {
+                    $tbody.append('<tr><td colspan="6" class="text-center text-muted"><i class="fas fa-info-circle"></i> No se encontraron ajustes</td></tr>');
+                    return;
+                }
+                const frag = document.createDocumentFragment();
+                items.forEach(a => {
+                    const tr = document.createElement('tr');
+                    const fecha = a.fecha ? new Date(a.fecha).toLocaleDateString('es-ES') : '';
+                    tr.innerHTML = `
+                        <td>${(a.codigo || '').toUpperCase()}</td>
+                        <td style="text-align: center;">${a.descripcion || ''}</td>
+                        <td>${a.stockIni}</td>
+                        <td>${a.stockReal}</td>
+                        <td style="text-align: center;">${a.observaciones || ''}</td>
+                        <td>${fecha}</td>`;
+                    frag.appendChild(tr);
+                });
+                $tbody[0].appendChild(frag);
+            }
+
+            // Actualizar paginación
+            function actualizarPaginacion(total) {
+                $('#infoPaginaAju').text(`Página ${paginaActualAju} de ${totalPaginasAju} (${total} ajustes)`);
+                $('#btnAnteriorAju').toggleClass('disabled', paginaActualAju <= 1);
+                $('#btnSiguienteAju').toggleClass('disabled', paginaActualAju >= totalPaginasAju);
+            }
+
+            // Buscar ajustes (JSON)
+            function buscarAjustes(pagina = 1) {
                 const searchTerm = $('#searchInput').val();
-                
                 $.ajax({
-                    url: '@Url.Action("BuscarAjustes", "Ajuste")',
+                    url: '@Url.Action("BuscarAjustesJson", "Ajuste")',
                     type: 'GET',
-                    data: { searchTerm: searchTerm },
+                    data: { searchTerm: searchTerm, pagina: pagina, tamanoPagina: tamanoPaginaAju },
                     success: function (response) {
-                        $('#ajustesContainer').html(response);
+                        const items = response?.items || [];
+                        paginaActualAju = response?.pagina || 1;
+                        tamanoPaginaAju = response?.tamanoPagina || tamanoPaginaAju;
+                        const total = (typeof response?.total === 'number') ? response.total : items.length;
+                        totalPaginasAju = Math.max(1, Math.ceil(total / tamanoPaginaAju));
+                        renderAjustes(items);
+                        actualizarPaginacion(total);
                     },
-                    error: function (xhr, status, errorThrown) {
+                    error: function (xhr) {
                         console.error('Error al buscar ajustes:', xhr.responseText);
+                        $('#ajustesBody').html('<tr><td colspan="6" class="text-center text-danger">Error al cargar</td></tr>');
                     }
                 });
             }
 
             // Evento click del botón buscar
-            $('#buscarBtn').click(function () {
-                buscarAjustes();
-            });
+            $('#buscarBtn').click(function () { buscarAjustes(1); });
 
             // Búsqueda en tiempo real al escribir
             $('#searchInput').on('keyup', function (e) {
-                if (e.keyCode === 13) { // Enter key
-                    buscarAjustes();
-                }
+                if (e.keyCode === 13) { buscarAjustes(1); }
             });
 
             // Búsqueda automática después de 500ms de inactividad
             let searchTimeout;
             $('#searchInput').on('input', function () {
                 clearTimeout(searchTimeout);
-                searchTimeout = setTimeout(function () {
-                    buscarAjustes();
-                }, 500);
+                searchTimeout = setTimeout(function () { buscarAjustes(1); }, 500);
             });
+
+            // Paginación eventos
+            window.cambiarPaginaAju = function(delta){ const nueva = paginaActualAju + delta; if(nueva>=1 && nueva<= totalPaginasAju) buscarAjustes(nueva); }
+            $('#tamanoPaginaAju').on('change', function(){ tamanoPaginaAju = parseInt($(this).val(),10)||100; buscarAjustes(1); });
 
             // Limpiar formulario cuando se abre el modal
             $('#nuevoAjusteModal').on('show.bs.modal', function () {
@@ -256,8 +338,8 @@
                             $('#nuevoAjusteForm')[0].reset();
                             $('#itemInfo').hide();
                             
-                            // Recargar la tabla
-                            buscarAjustes();
+                            // Recargar la tabla manteniendo página
+                            buscarAjustes(paginaActualAju);
                             
                             // Notificar a otras ventanas que hay un nuevo movimiento
                             localStorage.setItem('ultimoMovimientoKardex', Date.now().toString());
@@ -327,6 +409,251 @@
                     $(this).remove();
                 });
             }
+            // Inicial: cargar página 1
+            buscarAjustes(1);
         });
     </script>
 }
+                items.forEach(a => {
+                    const tr = document.createElement('tr');
+                    const fecha = a.fecha ? new Date(a.fecha).toLocaleDateString('es-ES') : '';
+                    tr.innerHTML = `
+                        <td>${(a.codigo || '').toUpperCase()}</td>
+                        <td style="text-align: center;">${a.descripcion || ''}</td>
+                        <td>${a.stockIni}</td>
+                        <td>${a.stockReal}</td>
+                        <td style="text-align: center;">${a.observaciones || ''}</td>
+                        <td>${fecha}</td>`;
+                    frag.appendChild(tr);
+                });
+                $tbody[0].appendChild(frag);
+            }
+
+            // Actualizar paginación
+            function actualizarPaginacion(total) {
+                $('#infoPaginaAju').text(`Página ${paginaActualAju} de ${totalPaginasAju} (${total} ajustes)`);
+                $('#btnAnteriorAju').toggleClass('disabled', paginaActualAju <= 1);
+                $('#btnSiguienteAju').toggleClass('disabled', paginaActualAju >= totalPaginasAju);
+            }
+
+            // Buscar ajustes (JSON)
+            function buscarAjustes(pagina = 1) {
+                const searchTerm = $('#searchInput').val();
+                $.ajax({
+                    url: '@Url.Action("BuscarAjustesJson", "Ajuste")',
+                    type: 'GET',
+                    data: { searchTerm: searchTerm, pagina: pagina, tamanoPagina: tamanoPaginaAju },
+                    success: function (response) {
+                        const items = response?.items || [];
+                        paginaActualAju = response?.pagina || 1;
+                        tamanoPaginaAju = response?.tamanoPagina || tamanoPaginaAju;
+                        const total = (typeof response?.total === 'number') ? response.total : items.length;
+                        totalPaginasAju = Math.max(1, Math.ceil(total / tamanoPaginaAju));
+                        renderAjustes(items);
+                        actualizarPaginacion(total);
+                    },
+                    error: function (xhr) {
+                        console.error('Error al buscar ajustes:', xhr.responseText);
+                        $('#ajustesBody').html('<tr><td colspan="6" class="text-center text-danger">Error al cargar</td></tr>');
+                    }
+                });
+            }
+
+            // Evento click del botón buscar
+            $('#buscarBtn').click(function () { buscarAjustes(1); });
+
+            // Búsqueda en tiempo real al escribir
+            $('#searchInput').on('keyup', function (e) {
+                if (e.keyCode === 13) { buscarAjustes(1); }
+            });
+
+            // Búsqueda automática después de 500ms de inactividad
+            let searchTimeout;
+            $('#searchInput').on('input', function () {
+                clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(function () { buscarAjustes(1); }, 500);
+            });
+
+            // Paginación eventos
+            window.cambiarPaginaAju = function(delta){ const nueva = paginaActualAju + delta; if(nueva>=1 && nueva<= totalPaginasAju) buscarAjustes(nueva); }
+            $('#tamanoPaginaAju').on('change', function(){ tamanoPaginaAju = parseInt($(this).val(),10)||100; buscarAjustes(1); });
+
+            // Limpiar formulario cuando se abre el modal
+            $('#nuevoAjusteModal').on('show.bs.modal', function () {
+                // Limpiar todos los campos del formulario
+                $('#nuevoAjusteForm')[0].reset();
+                $('#itemInfo').hide();
+                $('#stockIni').val('');
+                $('#itemId').val('');
+            });
+
+            // Función reutilizable para buscar item por código
+            function buscarItemAjuste(value) {
+                if (!value) {
+                    mostrarToast('Por favor ingrese un código de item', 'warning');
+                    return;
+                }
+                $.ajax({
+                    url: '@Url.Action("ObtenerItemPorCodigo", "Ajuste")',
+                    type: 'GET',
+                    data: { codigo: value },
+                    success: function (response) {
+                        if (response.success) {
+                            $('#itemDescripcion').text(response.item.descripcion);
+                            $('#stockActual').text(response.item.stock);
+                            $('#stockIni').val(response.item.stock);
+                            $('#itemId').val(response.item.id);
+                            $('#itemInfo').show();
+                            $('#stockReal').focus();
+                        } else {
+                            mostrarToast(response.message || 'Item no encontrado', 'warning');
+                            $('#itemInfo').hide();
+                            $('#itemDescripcion').text('');
+                            $('#stockActual').text('0');
+                            $('#stockIni').val('');
+                            $('#itemId').val('');
+                        }
+                    },
+                    error: function (xhr, status, errorThrown) {
+                        console.error('Error al buscar item:', xhr.responseText);
+                        mostrarToast('Error al buscar item', 'error');
+                        $('#itemInfo').hide();
+                        $('#itemDescripcion').text('');
+                        $('#stockActual').text('0');
+                        $('#stockIni').val('');
+                        $('#itemId').val('');
+                    }
+                });
+            }
+
+            // Convertir a mayúsculas mientras se escribe
+            $('#itemCodigo').on('input', function () {
+                var cursorPos = this.selectionStart;
+                var value = $(this).val().toUpperCase();
+                $(this).val(value);
+                this.setSelectionRange(cursorPos, cursorPos);
+
+                // Búsqueda automática al llegar a 7 caracteres
+                if (value.length === 7) {
+                    buscarItemAjuste(value);
+                } else if (value.length < 7) {
+                    // Limpiar info si aún no completa 7 caracteres
+                    $('#itemInfo').hide();
+                    $('#itemDescripcion').text('');
+                    $('#stockActual').text('0');
+                    $('#stockIni').val('');
+                    $('#itemId').val('');
+                }
+            });
+
+            // Buscar item al presionar Enter (si ya tiene 7 caracteres)
+            $('#itemCodigo').on('keypress', function (e) {
+                if (e.which === 13) {
+                    const value = $('#itemCodigo').val().toString().toUpperCase();
+                    if (value.length === 7) {
+                        buscarItemAjuste(value);
+                    }
+                }
+            });
+
+            // Enviar formulario de nuevo ajuste
+            $('#nuevoAjusteForm').submit(function (e) {
+                e.preventDefault();
+
+                const ajusteData = {
+                    ItemCodigo: $('#itemCodigo').val(),
+                    StockIni: parseInt($('#stockIni').val()),
+                    StockReal: parseInt($('#stockReal').val()),
+                    Observaciones: $('#observaciones').val()
+                };
+
+                $.ajax({
+                    url: '@Url.Action("GuardarAjuste", "Ajuste")',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify(ajusteData),
+                    success: function (response) {
+                        if (response.success) {
+                            mostrarToast('Ajuste guardado exitosamente', 'success');
+                            $('#nuevoAjusteModal').modal('hide');
+                            
+                            // Limpiar formulario
+                            $('#nuevoAjusteForm')[0].reset();
+                            $('#itemInfo').hide();
+                            
+                            // Recargar la tabla manteniendo página
+                            buscarAjustes(paginaActualAju);
+                            
+                            // Notificar a otras ventanas que hay un nuevo movimiento
+                            localStorage.setItem('ultimoMovimientoKardex', Date.now().toString());
+                        } else {
+                            mostrarToast('Error: ' + response.message, 'error');
+                        }
+                    },
+                    error: function (xhr, status, errorThrown) {
+                        console.error('Error al guardar ajuste:', xhr.responseText);
+                        mostrarToast('Error al guardar ajuste', 'error');
+                    }
+                });
+            });
+
+            // Función para mostrar notificaciones toast modernas
+            function mostrarToast(mensaje, tipo) {
+                // Crear el contenedor de toasts si no existe
+                if ($('#toast-container').length === 0) {
+                    $('body').append('<div id="toast-container" class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 9999;"></div>');
+                }
+
+                // Definir colores según el tipo
+                let bgClass = '';
+                let iconClass = '';
+                switch(tipo) {
+                    case 'success':
+                        bgClass = 'bg-success text-white';
+                        iconClass = 'fas fa-check-circle';
+                        break;
+                    case 'error':
+                        bgClass = 'bg-danger text-white';
+                        iconClass = 'fas fa-exclamation-circle';
+                        break;
+                    case 'warning':
+                        bgClass = 'bg-warning text-dark';
+                        iconClass = 'fas fa-exclamation-triangle';
+                        break;
+                    default:
+                        bgClass = 'bg-info text-white';
+                        iconClass = 'fas fa-info-circle';
+                }
+
+                // Crear el toast
+                const toastId = 'toast-' + Date.now();
+                const toastHtml = `
+                    <div id="${toastId}" class="toast ${bgClass}" role="alert" aria-live="assertive" aria-atomic="true" data-bs-delay="4000">
+                        <div class="toast-header ${bgClass} border-0">
+                            <i class="${iconClass} me-2"></i>
+                            <strong class="me-auto">Notificación</strong>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
+                        </div>
+                        <div class="toast-body">
+                            ${mensaje}
+                        </div>
+                    </div>
+                `;
+
+                // Agregar el toast al contenedor
+                $('#toast-container').append(toastHtml);
+
+                // Mostrar el toast
+                const toastElement = new bootstrap.Toast(document.getElementById(toastId));
+                toastElement.show();
+
+                // Remover el toast del DOM después de que se oculte
+                document.getElementById(toastId).addEventListener('hidden.bs.toast', function () {
+                    $(this).remove();
+                });
+            }
+            // Inicial
+            // Carga inicial de la grilla paginada
+            buscarAjustes(1);
+        });
+    </script>

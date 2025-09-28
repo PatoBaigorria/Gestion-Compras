@@ -23,13 +23,15 @@ namespace Gestion_Compras.Controllers
 
         // GET: /Kardex/BuscarKardex
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<object>>> BuscarKardex(
+        public async Task<ActionResult> BuscarKardex(
             string codigo = null, 
             string descripcion = null, 
             DateTime? fechaDesde = null, 
             string tipoMovimiento = null,
             double? stockInicial = null,
-            DateTime? fechaVale = null)
+            DateTime? fechaVale = null,
+            int pagina = 1,
+            int tamanoPagina = 100)
         {
             var query = context.Kardex
                 .Include(k => k.Item)
@@ -66,6 +68,9 @@ namespace Gestion_Compras.Controllers
                 var fechaValeOnly = DateOnly.FromDateTime(fechaVale.Value);
                 query = query.Where(k => k.FechaMov == fechaValeOnly);
             }
+
+            // Conteo total (sin paginar) tras aplicar filtros base
+            var totalFiltrado = await query.CountAsync();
 
             var movimientos = await query
                 .Where(k => k.FechaRegistro != DateTime.MinValue) // Filtrar registros con fechas válidas
@@ -146,7 +151,20 @@ namespace Gestion_Compras.Controllers
                 .OrderByDescending(m => DateTime.Parse(((dynamic)m).fechaRegistro))
                 .ToList();
 
-            return Ok(movimientosOrdenados);
+            // Aplicar paginación en memoria después de calcular cantidades
+            pagina = Math.Max(1, pagina);
+            tamanoPagina = tamanoPagina <= 0 ? 100 : tamanoPagina;
+            var itemsPaginados = movimientosOrdenados
+                .Skip((pagina - 1) * tamanoPagina)
+                .Take(tamanoPagina)
+                .ToList();
+
+            return Ok(new {
+                items = itemsPaginados,
+                total = movimientosOrdenados.Count, // total tras cálculo (puede diferir de totalFiltrado si se filtrara aquí)
+                pagina,
+                tamanoPagina
+            });
         }
     }
 }

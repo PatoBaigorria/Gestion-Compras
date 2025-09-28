@@ -25,21 +25,32 @@
                 <th style="width: 5%; text-align: center;">Fecha Remito</th>
             </tr>
         </thead>
-        <tbody>
-            @foreach (var ingreso in Model)
-            {
-                <tr>
-                    <td>@ingreso.ItemCodigo</td>
-                    <td>@ingreso.CantidadIngreso</td>
-                    <td>@ingreso.Proveedor.RazonSocial</td>
-                    <td>@ingreso.Remito</td>
-                    <td>@ingreso.OrdenCompra</td>
-                    <td>@ingreso.NumeroPedido</td>
-                    <td>@ingreso.FechaRemito.ToString("dd/MM/yyyy")</td>
-                </tr>
-            }
+        <tbody id="ingresosBody">
+            <!-- Filas dinámicas -->
         </tbody>
     </table>
+</div>
+
+<!-- Paginación -->
+<div id="paginacionIngresos" class="d-flex justify-content-center mt-2">
+    <nav>
+        <ul class="pagination pagination-sm">
+            <li class="page-item" id="btnAnteriorIng">
+                <a class="page-link" href="#" onclick="cambiarPaginaIng(-1); return false;">← Anterior</a>
+            </li>
+            <li class="page-item"><span class="page-link text-muted" id="infoPaginaIng">Página 1 de 1</span></li>
+            <li class="page-item" id="btnSiguienteIng">
+                <a class="page-link" href="#" onclick="cambiarPaginaIng(1); return false;">Siguiente →</a>
+            </li>
+        </ul>
+    </nav>
+    <div class="ms-3">
+        <select id="tamanoPaginaIng" class="form-select form-select-sm">
+            <option value="50">50</option>
+            <option value="100" selected>100</option>
+            <option value="200">200</option>
+        </select>
+    </div>
 </div>
 
 <style>
@@ -58,19 +69,80 @@
     .table-sm td, 
     .table-sm th { 
         font-size: 0.9em; 
+        text-align: center;
+        vertical-align: middle;
     }
 </style>
 
 @section Scripts {
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
     <script>
         $(document).ready(function () {
-            $("#searchInput").on("keyup", function () {
-                var value = $(this).val().toLowerCase();
-                $("#dataTable tbody tr").filter(function () {
-                    $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
+            let paginaActualIng = 1;
+            let totalPaginasIng = 1;
+            let tamanoPaginaIng = 100;
+
+            function renderIngresos(items) {
+                const $tbody = $('#ingresosBody');
+                $tbody.empty();
+                if (!items || items.length === 0) {
+                    $tbody.append('<tr><td colspan="7" class="text-center text-muted"><i class="fas fa-info-circle"></i> No se encontraron ingresos</td></tr>');
+                    return;
+                }
+                const frag = document.createDocumentFragment();
+                items.forEach(x => {
+                    const tr = document.createElement('tr');
+                    const fecha = x.fechaRemito ? new Date(x.fechaRemito).toLocaleDateString('es-ES') : '';
+                    tr.innerHTML = `
+                        <td>${x.itemCodigo || ''}</td>
+                        <td>${x.cantidadIngreso}</td>
+                        <td>${x.proveedor || ''}</td>
+                        <td>${x.remito || ''}</td>
+                        <td>${x.ordenCompra || ''}</td>
+                        <td>${x.numeroPedido || ''}</td>
+                        <td>${fecha}</td>`;
+                    frag.appendChild(tr);
                 });
+                $tbody[0].appendChild(frag);
+            }
+
+            function actualizarPaginacion(total) {
+                $('#infoPaginaIng').text(`Página ${paginaActualIng} de ${totalPaginasIng} (${total} ingresos)`);
+                $('#btnAnteriorIng').toggleClass('disabled', paginaActualIng <= 1);
+                $('#btnSiguienteIng').toggleClass('disabled', paginaActualIng >= totalPaginasIng);
+            }
+
+            function cargarIngresos(pagina = 1) {
+                const searchTerm = $('#searchInput').val();
+                $.ajax({
+                    url: '/Ingreso/ListJson',
+                    type: 'GET',
+                    data: { searchTerm: searchTerm, pagina: pagina, tamanoPagina: tamanoPaginaIng },
+                    success: function (response) {
+                        const items = response?.items || [];
+                        paginaActualIng = response?.pagina || 1;
+                        tamanoPaginaIng = response?.tamanoPagina || tamanoPaginaIng;
+                        const total = (typeof response?.total === 'number') ? response.total : items.length;
+                        totalPaginasIng = Math.max(1, Math.ceil(total / tamanoPaginaIng));
+                        renderIngresos(items);
+                        actualizarPaginacion(total);
+                    },
+                    error: function (xhr) {
+                        console.error('Error al cargar ingresos:', xhr.responseText);
+                        $('#ingresosBody').html('<tr><td colspan="7" class="text-center text-danger">Error al cargar</td></tr>');
+                    }
+                });
+            }
+
+            // Eventos
+            $('#searchInput').on('input', function(){
+                clearTimeout(window._ingrDebounce);
+                window._ingrDebounce = setTimeout(() => cargarIngresos(1), 500);
             });
+            window.cambiarPaginaIng = function(delta){ const nueva = paginaActualIng + delta; if(nueva>=1 && nueva<= totalPaginasIng) cargarIngresos(nueva); }
+            $('#tamanoPaginaIng').on('change', function(){ tamanoPaginaIng = parseInt($(this).val(),10)||100; cargarIngresos(1); });
+
+            // Inicial
+            cargarIngresos(1);
         });
     </script>
 }

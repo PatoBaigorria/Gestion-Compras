@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Gestion_Compras.Models;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
+using System.Linq;
 
 namespace Gestion_Compras.Controllers
 {
@@ -25,6 +26,47 @@ namespace Gestion_Compras.Controllers
                                         .OrderByDescending(s => s.FechaVale)
                                         .ToList();
             return View("~/Views/MaterialesSalida/Index.cshtml", salidas);
+        }
+
+        // GET: /Salida/ListJson
+        [HttpGet("ListJson")]
+        public async Task<IActionResult> ListJson(string searchTerm = "", int pagina = 1, int tamanoPagina = 100)
+        {
+            pagina = Math.Max(1, pagina);
+            tamanoPagina = tamanoPagina <= 0 ? 100 : tamanoPagina;
+
+            var query = context.Salida
+                .Include(s => s.Personal)
+                .Include(s => s.Item)
+                .AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(searchTerm))
+            {
+                var term = searchTerm.ToLower();
+                query = query.Where(s =>
+                    (s.ItemCodigo ?? "").ToLower().Contains(term) ||
+                    (s.Item != null && (s.Item.Descripcion ?? "").ToLower().Contains(term)) ||
+                    (s.Personal != null && (s.Personal.NombreYApellido ?? "").ToLower().Contains(term))
+                );
+            }
+
+            var total = await query.CountAsync();
+
+            var items = await query
+                .OrderByDescending(s => s.Id)
+                .Skip((pagina - 1) * tamanoPagina)
+                .Take(tamanoPagina)
+                .Select(s => new
+                {
+                    itemCodigo = s.ItemCodigo,
+                    descripcion = s.Item != null ? s.Item.Descripcion : "",
+                    cantidad = s.Cantidad,
+                    personal = s.Personal != null ? s.Personal.NombreYApellido : "",
+                    fechaVale = s.FechaVale
+                })
+                .ToListAsync();
+
+            return Ok(new { items, total, pagina, tamanoPagina });
         }
 
         // GET: /Salida/AltaSalidas
