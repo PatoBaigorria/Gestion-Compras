@@ -153,6 +153,15 @@
         let totalPaginasK = 1;
         let tamanoPaginaK = 100;
 
+        // Utilidad: debounce para evitar múltiples llamadas mientras se escribe
+        function debounce(fn, delay) {
+            let t;
+            return function (...args) {
+                clearTimeout(t);
+                t = setTimeout(() => fn.apply(this, args), delay);
+            }
+        }
+
         // Función para buscar movimientos de kardex
         async function buscarKardex(page = 1) {
             const codigo = document.getElementById('codigoItem').value;
@@ -235,23 +244,28 @@
         }
 
         // Event listeners
-        buscarBtn.addEventListener('click', buscarKardex);
+        buscarBtn.addEventListener('click', () => buscarKardex(1));
+
+        // Búsqueda en vivo al escribir en Código y Descripción
+        const onInputDebounced = debounce(() => buscarKardex(1), 400);
+        document.getElementById('codigoItem').addEventListener('input', onInputDebounced);
+        document.getElementById('descripcionItem').addEventListener('input', onInputDebounced);
 
         // Buscar al presionar Enter en cualquier campo de filtro
         document.querySelectorAll('#codigoItem, #descripcionItem, #fechaRegistro, #fechaMovimiento').forEach(input => {
             input.addEventListener('keypress', function(e) {
                 if (e.key === 'Enter') {
-                    buscarKardex();
+                    buscarKardex(1);
                 }
             });
         });
 
         // Buscar al cambiar las fechas
-        document.getElementById('fechaRegistro').addEventListener('change', buscarKardex);
-        document.getElementById('fechaMovimiento').addEventListener('change', buscarKardex);
+        document.getElementById('fechaRegistro').addEventListener('change', () => buscarKardex(1));
+        document.getElementById('fechaMovimiento').addEventListener('change', () => buscarKardex(1));
 
         // Buscar al cambiar el select de tipo de movimiento
-        document.getElementById('tipoMovimiento').addEventListener('change', buscarKardex);
+        document.getElementById('tipoMovimiento').addEventListener('change', () => buscarKardex(1));
 
         // Variables para el ordenamiento
         let movimientosOriginales = [];
