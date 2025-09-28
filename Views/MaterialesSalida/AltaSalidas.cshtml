@@ -255,7 +255,7 @@
                     mostrarMensajeExito(response.message);
                     
                     // Notificar a otras ventanas que hay un nuevo movimiento
-                    localStorage.setItem('ultimoMovimientoKardex', Date.now().toString());
+                    localStorage.setItem('ultimoMovimientoStock', Date.now().toString());
                     
                     setTimeout(function () {
                         location.reload();

@@ -478,6 +478,8 @@
                                 showConfirmButton: false
                             });
                             cargarPedidos(); // Recargar la lista
+                            // Notificar cambio para otras ventanas
+                            localStorage.setItem('ultimoMovimientoStock', new Date().getTime());
                             Swal.close(); // Cerrar el modal de ítems
                         },
                         error: function (xhr, status, errorThrown) {
@@ -521,6 +523,8 @@
                                 showConfirmButton: false
                             });
                             cargarPedidos(); // Recargar la lista
+                            // Notificar cambio para otras ventanas
+                            localStorage.setItem('ultimoMovimientoStock', new Date().getTime());
                         },
                         error: function (xhr, status, errorThrown) {
                             let mensaje = 'Error al anular el pedido';

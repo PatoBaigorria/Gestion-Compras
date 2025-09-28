@@ -5,47 +5,92 @@
     ViewData["Title"] = "Lista de Personal";
 }
 
-<h3>Lista de Personal</h3>
+<div class="container-custom mt-3">
 
-<!-- Contenedor para el Mensaje de Éxito -->
-<div id="successMessage" class="alert alert-success" style="display: none;" role="alert">
-    Personal eliminado exitosamente.
-</div>
+    <!-- Contenedor para el Mensaje de Éxito -->
+    <div id="messageContainer" class="mb-3">
+        <div id="successMessage" class="alert alert-success" style="display: none;" role="alert">
+            <i class="fas fa-check-circle me-2"></i>
+            <span id="successMessageText">Personal eliminado exitosamente.</span>
+        </div>
+        <div id="errorMessage" class="alert alert-danger" style="display: none;" role="alert">
+            <i class="fas fa-exclamation-circle me-2"></i>
+            <span id="errorMessageText"></span>
+        </div>
+    </div>
 
-<!-- Botón de Agregar Personal arriba de la tabla -->
-<a href="/Personal/Alta" class="btn btn-primary mb-3">Agregar Personal</a>
-
-<div class="table-responsive" style="height: 600px; overflow-y: auto;">
-    <table class="table table-striped table-bordered table-sm">
-        <thead class="table-header">
-            <tr>
-                <th style="width: 30%; text-align: center;">Nombre y Apellido</th>
-                <th style="width: 30%; text-align: center;">DNI</th>
-                <th style="width: 30%; text-align: center;">Sector</th>
-                <th style="width: 5%; text-align: center;">Acciones</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var persona in Model)
-            {
-                <tr>
-                    <td>@persona.NombreYApellido</td>
-                    <td>@persona.DNI</td>
-                    <td>@persona.Sector</td>
-                    <td>
-                    <div class="d-flex justify-content-center">
-                        <button class="btn btn-danger btn-sm" title="Eliminar Personal"
-                            onclick="confirmDelete(@persona.Id)">
-                            <i class="fas fa-trash-alt"></i>
+    <!-- Card de Filtros -->
+    <div class="card shadow mb-2 card-filtros">
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-users me-2"></i>Gestión de Personal
+                </h5>
+                <div class="d-flex align-items-center gap-3">
+                    <div class="input-group" style="width: 300px;">
+                        <input type="text" id="filtroGeneral" class="form-control form-control-sm" placeholder="Buscar personal...">
+                        <button type="button" class="btn btn-primary btn-sm" id="buscarBtn">
+                            <i class="fas fa-search"></i>
                         </button>
                     </div>
-                    </td>
-                </tr>
-            }
-        </tbody>
-    </table>
+                    <a href="/Personal/Alta" class="btn btn-success btn-sm">
+                        <i class="fas fa-plus me-2"></i>Agregar Personal
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Card de Lista de Personal -->
+    <div class="card shadow mb-0">
+        <div class="card-header bg-light d-flex align-items-center justify-content-between">
+            <strong>Personal (@Model.Count())</strong>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive" style="height: 600px; overflow-y: auto;">
+                <table id="personalTable" class="table table-striped table-bordered table-hover text-center table-sm mb-0">
+                    <thead class="table-header">
+                        <tr>
+                            <th style="width: 40%;">Nombre y Apellido</th>
+                            <th style="width: 20%;">DNI</th>
+                            <th style="width: 30%;">Sector</th>
+                            <th style="width: 10%;">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var persona in Model)
+                        {
+                            <tr>
+                                <td style="text-align: left;">@persona.NombreYApellido</td>
+                                <td>@persona.DNI</td>
+                                <td style="text-align: left;">@persona.Sector</td>
+                                <td>
+                                    <div class="d-flex justify-content-center">
+                                        <button class="btn btn-danger btn-sm" title="Eliminar Personal"
+                                            onclick="confirmDelete(@persona.Id)">
+                                            <i class="fas fa-trash-alt"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
 </div>
 <style>
+    .container-custom {
+        width: 100%;
+        padding-right: 15px;
+        padding-left: 15px;
+        margin-right: auto;
+        margin-left: auto;
+        max-width: 1400px;
+    }
+
     .table-responsive {
         position: relative;
     }
@@ -55,14 +100,39 @@
         top: 0;
         z-index: 1020;
         background-color: white;
-        /* Asegúrate de que el fondo sea blanco */
     }
-    /* Reducir el tamaño de la letra en la tabla y centrar */ 
-    .table-sm td, 
-    .table-sm th { 
-        font-size: 0.9em; 
+
+    /* Estilos de filtros */
+    .card-filtros .card-body {
+        padding: 0.75rem 1rem;
+    }
+
+    .card-filtros .card-title {
+        color: #495057;
+        font-size: 1.1rem;
+    }
+
+    .card-filtros label {
+        font-size: 0.85rem;
+        margin-bottom: 0.25rem;
+    }
+
+    .card-filtros .form-control,
+    .card-filtros .btn {
+        font-size: 0.85rem;
+    }
+
+    /* Reducir el tamaño de la letra en la tabla */
+    .table-sm td,
+    .table-sm th {
+        font-size: 0.9em;
         text-align: center;
         vertical-align: middle;
+    }
+
+    /* Hover effect en las filas */
+    .table-hover tbody tr:hover {
+        background-color: rgba(0, 123, 255, 0.075);
     }
 </style>
 <!-- Modal para Confirmación de Eliminación -->
@@ -92,6 +162,37 @@
     <script>
         var deleteId = 0;
 
+        // Función de filtrado
+        function filtrarPersonal() {
+            const filtro = document.getElementById('filtroGeneral').value.toLowerCase();
+            const filas = document.querySelectorAll('#personalTable tbody tr');
+            let contadorVisible = 0;
+
+            filas.forEach(function(fila) {
+                const nombre = fila.cells[0].textContent.toLowerCase();
+                const dni = fila.cells[1].textContent.toLowerCase();
+                const sector = fila.cells[2].textContent.toLowerCase();
+                
+                const coincide = nombre.includes(filtro) || 
+                                dni.includes(filtro) || 
+                                sector.includes(filtro);
+                
+                if (coincide) {
+                    fila.style.display = '';
+                    contadorVisible++;
+                } else {
+                    fila.style.display = 'none';
+                }
+            });
+
+            // Actualizar contador en el header
+            document.querySelector('.card-header strong').textContent = `Personal (${contadorVisible})`;
+        }
+
+        // Event listeners para filtros
+        document.getElementById('filtroGeneral').addEventListener('input', filtrarPersonal);
+        document.getElementById('buscarBtn').addEventListener('click', filtrarPersonal);
+
         function confirmDelete(id) {
             deleteId = id;
             var deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'), {
@@ -113,18 +214,61 @@
                 },
                 error: function (xhr, status, errorThrown) {
                     console.error('Error al eliminar personal:', xhr.responseText);
-                    alert('Error al eliminar personal: ' + xhr.responseText);
+                    var errorMessage = 'Ocurrió un error al intentar eliminar el personal.';
+                    try {
+                        var response = JSON.parse(xhr.responseText);
+                        if (response && response.error) {
+                            errorMessage = response.error;
+                            if (response.detalles) {
+                                errorMessage += ' ' + response.detalles;
+                            }
+                        }
+                    } catch (e) {
+                        console.error('Error al procesar la respuesta de error:', e);
+                    }
+                    showErrorMessage(errorMessage);
                 }
             });
         });
 
         function showSuccessMessage(message) {
+            // Ocultar cualquier mensaje de error visible
+            document.getElementById('errorMessage').style.display = 'none';
+            
+            // Mostrar mensaje de éxito
             var successMessage = document.getElementById('successMessage');
-            successMessage.textContent = message;
+            document.getElementById('successMessageText').textContent = message;
             successMessage.style.display = 'block';
+            
+            // Desplazarse suavemente al mensaje
+            $('html, body').animate({
+                scrollTop: $('#messageContainer').offset().top - 20
+            }, 500);
+            
+            // Ocultar después de 5 segundos
             setTimeout(function () {
                 successMessage.style.display = 'none';
-            }, 20000); // El mensaje desaparecerá después de 5 segundos
+            }, 5000);
+        }
+        
+        function showErrorMessage(message) {
+            // Ocultar mensaje de éxito si está visible
+            document.getElementById('successMessage').style.display = 'none';
+            
+            // Mostrar mensaje de error
+            var errorMessage = document.getElementById('errorMessage');
+            document.getElementById('errorMessageText').textContent = message;
+            errorMessage.style.display = 'block';
+            
+            // Desplazarse suavemente al mensaje
+            $('html, body').animate({
+                scrollTop: $('#messageContainer').offset().top - 20
+            }, 500);
+            
+            // Ocultar después de 10 segundos (más tiempo para mensajes de error)
+            setTimeout(function () {
+                errorMessage.style.display = 'none';
+            }, 10000);
         }
     </script>
 }
