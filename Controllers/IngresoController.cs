@@ -22,10 +22,12 @@ namespace Gestion_Compras.Controllers
         public IActionResult Index() 
         { 
             var ingresos = context.Ingreso.Include(i => i.Proveedor)
+                                          .Include(i => i.Item)
                                           .Select(i => new
                                           {
                                               i.Id,
                                               i.ItemCodigo,
+                                              ItemDescripcion = i.Item != null ? i.Item.Descripcion : "",
                                               i.CantidadIngreso,
                                               i.Proveedor,
                                               i.Remito,
@@ -48,6 +50,7 @@ namespace Gestion_Compras.Controllers
 
             var query = context.Ingreso
                 .Include(i => i.Proveedor)
+                .Include(i => i.Item)
                 .AsQueryable();
 
             if (!string.IsNullOrWhiteSpace(searchTerm))
@@ -56,6 +59,7 @@ namespace Gestion_Compras.Controllers
                 var isNumeric = int.TryParse(searchTerm, out var numeroBusqueda);
                 query = query.Where(i =>
                     (i.ItemCodigo ?? "").ToLower().Contains(term) ||
+                    (i.Item != null && (i.Item.Descripcion ?? "").ToLower().Contains(term)) ||
                     (i.Proveedor != null && (i.Proveedor.RazonSocial ?? "").ToLower().Contains(term)) ||
                     ((i.Remito ?? "").ToLower().Contains(term)) ||
                     (isNumeric && i.OrdenCompra == numeroBusqueda)
@@ -72,6 +76,7 @@ namespace Gestion_Compras.Controllers
                 {
                     id = i.Id,
                     itemCodigo = i.ItemCodigo,
+                    itemDescripcion = i.Item != null ? i.Item.Descripcion : "",
                     cantidadIngreso = i.CantidadIngreso,
                     proveedor = i.Proveedor != null ? i.Proveedor.RazonSocial : "",
                     remito = i.Remito,

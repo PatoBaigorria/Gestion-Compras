@@ -105,7 +105,7 @@
                 <div class="col-md-3">
                     <label for="proveedorId" class="form-label">Proveedor</label>
                     <select class="form-control form-control-sm" id="proveedorId"
-                        onchange="limpiarError('proveedorId'); hacerNoEditable(this)">
+                        onchange="limpiarError('proveedorId')">
                         <option value="">Selecciona Proveedor</option>
                         @foreach (var proveedor in proveedorList)
                         {
@@ -116,25 +116,25 @@
                 </div>
                 <div class="col-md-2">
                     <label for="remito" class="form-label">Remito</label>
-                    <input type="text" class="form-control form-control-sm" id="remito" onblur="hacerNoEditable(this)"
+                    <input type="text" class="form-control form-control-sm" id="remito"
                         oninput="limpiarError('remito')" />
                     <div id="remitoError" class="text-danger"></div>
                 </div>
                 <div class="col-md-2">
                     <label for="ordenCompra" class="form-label">Orden de Compra</label>
-                    <input type="number" class="form-control form-control-sm" id="ordenCompra" onblur="hacerNoEditable(this)"
+                    <input type="number" class="form-control form-control-sm" id="ordenCompra"
                         oninput="limpiarError('ordenCompra')" />
                     <div id="ordenCompraError" class="text-danger"></div>
                 </div>
                 <div class="col-md-2">
                     <label for="pedido" class="form-label">Pedido</label>
-                    <input type="number" class="form-control form-control-sm" id="pedido" onblur="hacerNoEditable(this)"
+                    <input type="number" class="form-control form-control-sm" id="pedido"
                         oninput="limpiarError('pedido')" />
                     <div id="pedidoError" class="text-danger"></div>
                 </div>
                 <div class="col-md-2">
                     <label for="fecha" class="form-label">Fecha Remito</label>
-                    <input type="date" class="form-control form-control-sm" id="fecha" onblur="hacerNoEditable(this)"
+                    <input type="date" class="form-control form-control-sm" id="fecha"
                         oninput="limpiarError('fecha')" />
                     <div id="fechaError" class="text-danger"></div>
                 </div>
@@ -193,11 +193,6 @@
 
     <script>
         var ingresos = [];
-        var fechaFijada = ""; // Variable para mantener la fecha fijada
-        var proveedorFijado = ""; // Variable para mantener el proveedor fijo
-        var remitoFijado = ""; // Variable para mantener el remito fijo
-        var ordenCompraFijada = ""; // Variable para mantener la orden de compra fija
-        var pedidoFijado = ""; // Variable para mantener el pedido fijo
         var items = @Html.Raw(Json.Serialize(ViewBag.ItemList));
         console.log("Estructura de los ítems cargados:", items.slice(0, 5)); // Verificar la estructura de los primeros ítems
 
@@ -233,35 +228,11 @@
             document.getElementById(campo + "Error").textContent = "";
         }
 
-        function hacerNoEditable(input) {
-            var campo = input.id;
-            if (campo === "fecha" && fechaFijada === "" && input.value !== "") {
-                fechaFijada = input.value; // Fijar la fecha una vez
-                input.setAttribute("readonly", true);
-                input.style.backgroundColor = "#e9ecef"; // Cambiar el color de fondo a gris claro
-            } else if (campo === "proveedorId" && proveedorFijado === "" && input.value !== "") {
-                proveedorFijado = input.value; // Fijar el proveedor una vez
-                input.setAttribute("disabled", true);
-                input.style.backgroundColor = "#e9ecef"; // Cambiar el color de fondo a gris claro
-            } else if (campo === "remito" && remitoFijado === "" && input.value.length > 1) {
-                remitoFijado = input.value; // Fijar el remito una vez
-                input.setAttribute("readonly", true);
-                input.style.backgroundColor = "#e9ecef"; // Cambiar el color de fondo a gris claro
-            } else if (campo === "ordenCompra" && ordenCompraFijada === "" && input.value.length > 1) {
-                ordenCompraFijada = input.value; // Fijar la orden de compra una vez
-                input.setAttribute("readonly", true);
-                input.style.backgroundColor = "#e9ecef"; // Cambiar el color de fondo a gris claro
-            } else if (campo === "pedido" && pedidoFijado === "" && input.value.length > 1) {
-                pedidoFijado = input.value; // Fijar el pedido una vez
-                input.setAttribute("readonly", true);
-                input.style.backgroundColor = "#e9ecef"; // Cambiar el color de fondo a gris claro
-            }
-        }
 
         function limpiarCampos() {
             document.getElementById("itemCodigo").value = "";
             document.getElementById("cantidadIngreso").value = "";
-            // No limpiar la fecha, proveedor, ordenCompra, pedido y remito para mantenerlos fijos
+            // Los demás campos se mantienen para facilitar la carga de múltiples items
         }
 
         function formatearFecha(fecha) {
@@ -315,8 +286,8 @@
                 return;
             }
 
-            // Verificar si el ítem existe
-            var item = items.find(i => i.codigo === itemCodigo);
+            // Verificar si el ítem existe (case-insensitive)
+            var item = items.find(i => i.codigo.toLowerCase() === itemCodigo.toLowerCase());
             if (!item) {
                 mostrarModalError("El código del ítem no existe.");
                 return;
@@ -324,9 +295,12 @@
 
             var descripcion = item ? item.descripcion : "Descripción no encontrada";
             var proveedorText = document.getElementById("proveedorId").options[document.getElementById("proveedorId").selectedIndex].text;
+            
+            // Convertir el código a mayúsculas para guardarlo y mostrarlo
+            var itemCodigoMayuscula = itemCodigo.toUpperCase();
 
             ingresos.push({
-                ItemCodigo: itemCodigo,
+                ItemCodigo: itemCodigoMayuscula,
                 CantidadIngreso: cantidadIngreso,
                 ProveedorId: parseInt(proveedorId),
                 Remito: remito,
@@ -341,7 +315,7 @@
 
             var listaIngresos = document.getElementById("listaIngresos");
             var tr = document.createElement("tr");
-            tr.innerHTML = `<td>${itemCodigo}</td><td>${descripcion}</td><td>${cantidadIngreso}</td><td>${proveedorText}</td><td>${remito}</td><td>${ordenCompra}</td><td>${pedido}</td><td>${fechaFormateada}</td><td class="text-center align-middle"><button class="btn btn-danger btn-sm" title="Borrar Fila" onclick="borrarFila(this)"><i class="fas fa-trash-alt"></i></button></td>`;
+            tr.innerHTML = `<td>${itemCodigoMayuscula}</td><td>${descripcion}</td><td>${cantidadIngreso}</td><td>${proveedorText}</td><td>${remito}</td><td>${ordenCompra}</td><td>${pedido}</td><td>${fechaFormateada}</td><td class="text-center align-middle"><button class="btn btn-danger btn-sm" title="Borrar Fila" onclick="borrarFila(this)"><i class="fas fa-trash-alt"></i></button></td>`;
             listaIngresos.appendChild(tr);
         }
 
