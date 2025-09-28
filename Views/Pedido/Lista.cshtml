@@ -56,7 +56,7 @@
                                 <input class="form-check-input" type="checkbox" id="filtroAnulado"
                                     onchange="filtrarTabla()" checked>
                                 <label class="form-check-label" for="filtroAnulado">
-                                    Anulado
+                                    Cancelado
                                 </label>
                             </div>
                         </div>
@@ -267,7 +267,7 @@
         function getEstadoBadge(estado) {
             switch (estado) {
                 case 'PENDIENTE':
-                    return '<span class="badge bg-warning">PENDIENTE</span>';
+                    return '<span class="badge bg-warning text-dark">PENDIENTE</span>';
                 case 'RECIBIDO':
                     return '<span class="badge bg-success">RECIBIDO</span>';
                 case 'COMPLETADO':

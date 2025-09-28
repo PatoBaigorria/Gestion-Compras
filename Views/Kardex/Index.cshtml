@@ -3,88 +3,98 @@
     ViewData["Title"] = "Kardex de Movimientos";
 }
 
-<h3>Kardex</h3>
+<h3 class="mb-3">Kardex</h3>
 
-<div class="row mb-3">
-    <div class="col-md-2">
+<!-- Card de Filtros y Botones (estilo Pedidos) -->
+<div class="card shadow mb-2 card-filtros">
+  <div class="card-body">
+    <div class="row g-2 align-items-end">
+      <div class="col-md-1">
         <label for="codigoItem" class="form-label">Código</label>
         <input type="text" id="codigoItem" class="form-control" maxlength="10"/>
-    </div>
-    <div class="col-md-3">
+      </div>
+      <div class="col-md-4">
         <label for="descripcionItem" class="form-label">Descripción</label>
         <input type="text" id="descripcionItem" class="form-control"/>
-    </div>
-    <div class="col-md-2">
+      </div>
+      <div class="col-md-2">
         <label for="fechaRegistro" class="form-label">Fecha Registro</label>
         <input type="date" id="fechaRegistro" class="form-control"/>
-    </div>
-    <div class="col-md-2">
+      </div>
+      <div class="col-md-2">
         <label for="fechaMovimiento" class="form-label">Fecha Movimiento</label>
         <input type="date" id="fechaMovimiento" class="form-control"/>
-    </div>
-    <div class="col-md-2">
+      </div>
+      <div class="col-md-2">
         <label for="tipoMovimiento" class="form-label">Tipo Movimiento</label>
-        <select id="tipoMovimiento" class="form-select">
+        <select id="tipoMovimiento" class="form-select form-select-sm">
             <option value="">Todos</option>
             <option value="Ingreso">Ingreso</option>
             <option value="Salida">Salida</option>
             <option value="Ajuste">Ajuste</option>
             <option value="Devolucion">Devolucion</option>
         </select>
+      </div>
+      <div class="col-md-1 d-flex align-items-end">
+          <button type="button" class="btn btn-primary btn-sm px-2" id="buscarKardexBtn">
+              <i class="fas fa-search"></i>
+          </button>
+      </div>
     </div>
-    <div class="col-md-1 d-flex align-items-end">
-        <button type="button" class="btn btn-primary w-100" id="buscarKardexBtn">
-            <i class="fas fa-search"></i>
-        </button>
-    </div>
+  </div>
 </div>
 
-<div class="table-responsive" style="height: 600px; overflow-y: auto;">
-    <table id="dataTable" class="table table-striped table-bordered table-sm">
-        <thead class="table-header">
-            <tr>
-                <th style="width: 120px; text-align: center; cursor: pointer;" onclick="ordenarPor('fechaRegistro')">
-                    Fecha Registro <i id="icon-fechaRegistro" class="fas fa-sort"></i>
-                </th>
-                <th style="width: 100px; text-align: center; cursor: pointer;" onclick="ordenarPor('fechaMovimiento')">
-                    Fecha Movimiento <i id="icon-fechaMovimiento" class="fas fa-sort"></i>
-                </th>
-                <th style="width: 50px; text-align: center;">Código</th>
-                <th style="width: 45%; text-align: center;">Descripción</th>
-                <th style="width: 100px; text-align: center;">Tipo Movimiento</th>
-                <th style="width: 50px; text-align: center;">Stock Inicial</th>
-                <th style="width: 120px; text-align: center;">Cantidad Ingreso/Salida</th>
-                <th style="width: 50px; text-align: center;">Stock Final</th>
-                <th style="width: 180px; text-align: center;">Usuario</th>
-            </tr>
-        </thead>
-        <tbody id="resultadosKardex">
-            <!-- Resultados irán aquí -->
-        </tbody>
-    </table>
-</div>
-
-<!-- Controles de paginación -->
-<div id="paginacionKardex" class="d-flex justify-content-center mt-3">
-    <nav>
-        <ul class="pagination pagination-sm">
-            <li class="page-item" id="btnAnteriorKardex">
-                <a class="page-link" href="#" onclick="cambiarPaginaKardex(-1); return false;">← Anterior</a>
-            </li>
-            <li class="page-item"><span class="page-link text-muted" id="infoPaginaKardex">Página 1 de 1</span></li>
-            <li class="page-item" id="btnSiguienteKardex">
-                <a class="page-link" href="#" onclick="cambiarPaginaKardex(1); return false;">Siguiente →</a>
-            </li>
-        </ul>
-    </nav>
-    <div class="ms-3">
-        <select id="tamanoPaginaKardex" class="form-select form-select-sm">
+<!-- Card de Resultados -->
+<div class="card shadow mb-0">
+  <div class="card-header bg-light d-flex align-items-center justify-content-between">
+    <strong>Movimientos</strong>
+    <div class="d-flex align-items-center gap-2">
+        <nav>
+            <ul class="pagination pagination-sm mb-0">
+                <li class="page-item" id="btnAnteriorKardex">
+                    <a class="page-link" href="#" onclick="cambiarPaginaKardex(-1); return false;">← Anterior</a>
+                </li>
+                <li class="page-item"><span class="page-link text-muted" id="infoPaginaKardex">Página 1 de 1</span></li>
+                <li class="page-item" id="btnSiguienteKardex">
+                    <a class="page-link" href="#" onclick="cambiarPaginaKardex(1); return false;">Siguiente →</a>
+                </li>
+            </ul>
+        </nav>
+        <select id="tamanoPaginaKardex" class="form-select form-select-sm" style="width: auto;">
             <option value="50">50</option>
             <option value="100" selected>100</option>
             <option value="200">200</option>
         </select>
     </div>
+  </div>
+  <div class="card-body p-0">
+    <div class="table-responsive" style="height: 600px; overflow-y: auto;">
+        <table id="dataTable" class="table table-striped table-bordered table-sm mb-0">
+            <thead class="table-header">
+                <tr>
+                    <th style="width: 120px; text-align: center; cursor: pointer;" onclick="ordenarPor('fechaRegistro')">
+                        Fecha Registro <i id="icon-fechaRegistro" class="fas fa-sort"></i>
+                    </th>
+                    <th style="width: 100px; text-align: center; cursor: pointer;" onclick="ordenarPor('fechaMovimiento')">
+                        Fecha Movimiento <i id="icon-fechaMovimiento" class="fas fa-sort"></i>
+                    </th>
+                    <th style="width: 50px; text-align: center;">Código</th>
+                    <th style="width: 45%; text-align: center;">Descripción</th>
+                    <th style="width: 100px; text-align: center;">Tipo Movimiento</th>
+                    <th style="width: 50px; text-align: center;">Stock Inicial</th>
+                    <th style="width: 120px; text-align: center;">Cantidad Ingreso/Salida</th>
+                    <th style="width: 50px; text-align: center;">Stock Final</th>
+                    <th style="width: 180px; text-align: center;">Usuario</th>
+                </tr>
+            </thead>
+            <tbody id="resultadosKardex">
+                <!-- Resultados irán aquí -->
+            </tbody>
+        </table>
     </div>
+  </div>
+  
+</div>
 
 <style>
     .table-responsive {
@@ -96,6 +106,20 @@
         top: 0;
         z-index: 1020;
         background-color: white;
+    }
+
+    /* Estilos de filtros como en Pedidos */
+    .card-filtros .card-body {
+        padding: 0.5rem 1rem; /* menos espacio interno */
+    }
+    .card-filtros label {
+        font-size: 0.85rem; /* achica etiquetas */
+        margin-bottom: 0.25rem;
+    }
+    .card-filtros .form-control,
+    .card-filtros .form-check-label,
+    .card-filtros .form-select {
+        font-size: 0.85rem; /* controles más chicos */
     }
 
     .tipo-ingreso {
@@ -218,7 +242,7 @@
                         <td class="text-center">${mov.fechaMovimiento}</td>
                         <td class="text-center">${mov.codigo || ''}</td>
                         <td style="text-align: left;">${mov.descripcion || ''}</td>
-                        <td class="text-center"><span class="${tipoClass}">${(mov.tipoMovimiento || '').toLowerCase()}</span></td>
+                        <td class="text-center"><span class="${tipoClass}">${(mov.tipoMovimiento || '').toUpperCase()}</span></td>
                         <td class="text-center">${mov.stockInicial !== null ? mov.stockInicial : ''}</td>
                         <td class="text-center"><span class="${cantidadClass}">${mov.cantidadMovimiento}</span></td>
                         <td class="text-center"><strong>${mov.stockFinal !== null ? mov.stockFinal : ''}</strong></td>
@@ -231,15 +255,15 @@
         function getTipoMovimientoClass(tipo) {
             switch (tipo?.toLowerCase()) {
                 case 'ingreso':
-                    return 'tipo-ingreso';
+                    return 'badge rounded-pill bg-success';
                 case 'salida':
-                    return 'tipo-salida';
+                    return 'badge rounded-pill bg-danger';
                 case 'ajuste':
-                    return 'tipo-ajuste';
+                    return 'badge rounded-pill bg-warning text-dark';
                 case 'devolucion':
-                    return 'tipo-devolucion';
+                    return 'badge rounded-pill bg-primary';
                 default:
-                    return '';
+                    return 'badge rounded-pill bg-secondary';
             }
         }
 
