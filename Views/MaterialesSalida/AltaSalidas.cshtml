@@ -8,81 +8,158 @@
     var itemList = ViewBag.ItemList as List<Item>;
 }
 
-<h3>Registrar Salidas</h3>
+<style>
+    .container-custom {
+        width: 100%;
+        padding-right: 15px;
+        padding-left: 15px;
+        margin-right: auto;
+        margin-left: auto;
+        max-width: 1400px;
+    }
 
-<div id="successMessageContainer" class="mb-3"></div> <!-- Contenedor para el mensaje de éxito -->
-<div id="errorMessageContainer" class="mb-3"></div> <!-- Contenedor para el mensaje de error -->
+    .table-responsive {
+        position: relative;
+    }
 
-<!-- Modal de Error -->
-<div class="modal fade" id="errorModal" tabindex="-1" aria-labelledby="errorModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="errorModalLabel">Error</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body" id="errorModalBody">
-                <!-- Mensaje de error -->
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+    .table-header {
+        position: sticky;
+        top: 0;
+        z-index: 1020;
+        background-color: white;
+    }
+
+    /* Estilos de cards */
+    .card-formulario .card-body {
+        padding: 1rem;
+    }
+
+    .card-formulario .card-title {
+        color: #495057;
+        font-size: 1.1rem;
+    }
+
+    /* Reducir el tamaño de la letra en la tabla */
+    .table-sm td,
+    .table-sm th {
+        font-size: 0.9em;
+        text-align: center;
+        vertical-align: middle;
+    }
+
+    /* Hover effect en las filas */
+    .table-hover tbody tr:hover {
+        background-color: rgba(0, 123, 255, 0.075);
+    }
+</style>
+
+<div class="container-custom mt-3">
+
+    <!-- Contenedores para mensajes -->
+    <div id="successMessageContainer" class="mb-3"></div>
+    <div id="errorMessageContainer" class="mb-3"></div>
+
+    <!-- Modal de Error -->
+    <div class="modal fade" id="errorModal" tabindex="-1" aria-labelledby="errorModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="errorModalLabel">Error</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="errorModalBody">
+                    <!-- Mensaje de error -->
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                </div>
             </div>
         </div>
     </div>
+
+    <!-- Card de Formulario -->
+    <div class="card shadow mb-3 card-formulario">
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-sign-out-alt me-2"></i>Registrar Salidas de Materiales
+                </h5>
+                <a href="/Salida/Index" class="btn btn-outline-secondary btn-sm">
+                    <i class="fas fa-arrow-left me-2"></i>Volver a la Lista
+                </a>
+            </div>
+            
+            <form id="salidaForm" class="row g-3">
+                @Html.AntiForgeryToken()
+                <div class="col-md-3">
+                    <label for="itemCodigo" class="form-label">Código del Ítem</label>
+                    <input type="text" class="form-control form-control-sm" id="itemCodigo" oninput="limpiarError('itemCodigo')" />
+                    <div id="itemCodigoError" class="text-danger"></div>
+                </div>
+                <div class="col-md-2">
+                    <label for="cantidad" class="form-label">Cantidad</label>
+                    <input type="number" class="form-control form-control-sm" id="cantidad" oninput="limpiarError('cantidad')" />
+                    <div id="cantidadError" class="text-danger"></div>
+                </div>
+                <div class="col-md-3">
+                    <label for="personalId" class="form-label">Personal</label>
+                    <select class="form-control form-control-sm" id="personalId" onchange="limpiarError('personalId')">
+                        <option value="">Selecciona Personal</option>
+                        @foreach (var persona in personalList)
+                        {
+                            <option value="@persona.Id">@persona.NombreYApellido</option>
+                        }
+                    </select>
+                    <div id="personalIdError" class="text-danger"></div>
+                </div>
+                <div class="col-md-2">
+                    <label for="fecha" class="form-label">Fecha Vale</label>
+                    <input type="date" class="form-control form-control-sm" id="fecha"
+                        onchange="limpiarError('fecha'); hacerNoEditable('fecha')" />
+                    <div id="fechaError" class="text-danger"></div>
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="button" class="btn btn-success btn-sm" onclick="agregarSalida()">
+                        <i class="fas fa-plus me-2"></i>Agregar Salida
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Card de Lista de Salidas -->
+    <div class="card shadow mb-0">
+        <div class="card-header bg-light d-flex align-items-center justify-content-between">
+            <strong>Lista de Salidas Pendientes</strong>
+            <div class="d-flex gap-2">
+                <button type="button" class="btn btn-primary btn-sm" onclick="registrarSalidas()">
+                    <i class="fas fa-save me-2"></i>Registrar Salidas
+                </button>
+                <a href="/Salida/Index" class="btn btn-secondary btn-sm">
+                    <i class="fas fa-times me-2"></i>Cancelar
+                </a>
+            </div>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive" style="height: 400px; overflow-y: auto;">
+                <table class="table table-striped table-bordered table-hover text-center table-sm mb-0">
+                    <thead class="table-header">
+                        <tr>
+                            <th style="width: 15%;">Código</th>
+                            <th style="width: 30%;">Descripción</th>
+                            <th style="width: 10%;">Cantidad</th>
+                            <th style="width: 25%;">Personal</th>
+                            <th style="width: 15%;">Fecha Vale</th>
+                            <th style="width: 5%;">Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody id="listaSalidas"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
 </div>
-
-<form id="salidaForm" class="row g-2">
-    @Html.AntiForgeryToken()
-    <div class="col-md-3">
-        <label for="itemCodigo" class="form-label">Código del Ítem</label>
-        <input type="text" class="form-control form-control-sm" id="itemCodigo" oninput="limpiarError('itemCodigo')" />
-        <div id="itemCodigoError" class="text-danger"></div>
-    </div>
-    <div class="col-md-3">
-        <label for="cantidad" class="form-label">Cantidad</label>
-        <input type="number" class="form-control form-control-sm" id="cantidad" oninput="limpiarError('cantidad')" />
-        <div id="cantidadError" class="text-danger"></div>
-    </div>
-    <div class="col-md-3">
-        <label for="personalId" class="form-label">Personal</label>
-        <select class="form-control form-control-sm" id="personalId" onchange="limpiarError('personalId')">
-            <option value="">Selecciona Personal</option> <!-- Opción por defecto -->
-            @foreach (var persona in personalList)
-            {
-                <option value="@persona.Id">@persona.NombreYApellido</option>
-            }
-        </select>
-        <div id="personalIdError" class="text-danger"></div>
-    </div>
-    <div class="col-md-3">
-        <label for="fecha" class="form-label">Fecha Vale</label>
-        <input type="date" class="form-control form-control-sm" id="fecha"
-            onchange="limpiarError('fecha'); hacerNoEditable('fecha')" />
-        <div id="fechaError" class="text-danger"></div>
-    </div>
-    <div class="col-md-3 d-flex align-items-end">
-        <button type="button" class="btn btn-success" onclick="agregarSalida()">Agregar Salida</button>
-    </div>
-</form>
-
-<h4 class="mt-4">Lista de Salidas</h4>
-
-<table class="table table-striped table-bordered">
-    <thead class="text-center">
-        <tr>
-            <th>Código del Ítem</th>
-            <th>Descripción</th>
-            <th>Cantidad</th>
-            <th>Personal</th>
-            <th>Fecha Vale</th>
-            <th>Acción</th>
-        </tr>
-    </thead>
-    <tbody id="listaSalidas"></tbody>
-</table>
-
-<button type="button" class="btn btn-primary" onclick="registrarSalidas()">Registrar Salidas</button>
-<a href="/Salida/Index" class="btn btn-secondary">Cancelar</a>
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />

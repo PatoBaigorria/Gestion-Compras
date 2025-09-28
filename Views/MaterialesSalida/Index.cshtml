@@ -6,51 +6,16 @@
     ViewData["Title"] = "Lista de Salidas";
 }
 
-<h3>Lista de Salidas</h3>
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <a href="/Salida/AltaSalidas" class="btn btn-primary">Agregar Salida</a>
-    <input type="text" id="searchInput" placeholder="Buscar..." class="form-control" style="width: 250px;">
-</div>
-
-<div class="table-responsive" style="height: 600px; overflow-y: auto;">
-    <table id="dataTable" class="table table-striped table-bordered table-sm">
-        <thead class="table-header">
-            <tr>
-                <th style="width: 5%; text-align: center;">Código del Ítem</th>
-                <th style="width: 20%; text-align: center;">Descripción</th>
-                <th style="width: 3%; text-align: center;">Cantidad</th>
-                <th style="width: 10%; text-align: center;">Personal</th>
-                <th style="width: 3%; text-align: center;">Fecha Vale</th>
-            </tr>
-        </thead>
-        <tbody id="salidasBody">
-            <!-- Filas dinámicas -->
-        </tbody>
-    </table>
-</div>
-
-<!-- Paginación -->
-<div id="paginacionSalidas" class="d-flex justify-content-center mt-2">
-    <nav>
-        <ul class="pagination pagination-sm">
-            <li class="page-item" id="btnAnteriorSal">
-                <a class="page-link" href="#" onclick="cambiarPaginaSal(-1); return false;">← Anterior</a>
-            </li>
-            <li class="page-item"><span class="page-link text-muted" id="infoPaginaSal">Página 1 de 1</span></li>
-            <li class="page-item" id="btnSiguienteSal">
-                <a class="page-link" href="#" onclick="cambiarPaginaSal(1); return false;">Siguiente →</a>
-            </li>
-        </ul>
-    </nav>
-    <div class="ms-3">
-        <select id="tamanoPaginaSal" class="form-select form-select-sm">
-            <option value="50">50</option>
-            <option value="100" selected>100</option>
-            <option value="200">200</option>
-        </select>
-    </div>
-</div>
 <style>
+    .container-custom {
+        width: 100%;
+        padding-right: 15px;
+        padding-left: 15px;
+        margin-right: auto;
+        margin-left: auto;
+        max-width: 1400px;
+    }
+
     .table-responsive {
         position: relative;
     }
@@ -60,16 +25,117 @@
         top: 0;
         z-index: 1020;
         background-color: white;
-        /* Asegúrate de que el fondo sea blanco */
     }
 
-    /* Reducir el tamaño de la letra en la tabla y centrar */ 
-    .table-sm td, 
-    .table-sm th { 
-        font-size: 0.9em; 
+    /* Estilos de filtros */
+    .card-filtros .card-body {
+        padding: 0.75rem 1rem;
+    }
+
+    .card-filtros .card-title {
+        color: #495057;
+        font-size: 1.1rem;
+    }
+
+    .card-filtros .form-control,
+    .card-filtros .btn {
+        font-size: 0.85rem;
+    }
+
+    /* Reducir el tamaño de la letra en la tabla */
+    .table-sm td,
+    .table-sm th {
+        font-size: 0.9em;
         text-align: center;
         vertical-align: middle;
     }
+
+    /* Hover effect en las filas */
+    .table-hover tbody tr:hover {
+        background-color: rgba(0, 123, 255, 0.075);
+    }
+</style>
+
+<div class="container-custom mt-3">
+
+    <!-- Card de Filtros -->
+    <div class="card shadow mb-2 card-filtros">
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-clipboard-list me-2"></i>Lista de Salidas
+                </h5>
+                <div class="d-flex align-items-center gap-3">
+                    <div class="input-group" style="width: 300px;">
+                        <input type="text" id="searchInput" class="form-control form-control-sm" placeholder="Buscar salidas...">
+                        <button type="button" class="btn btn-primary btn-sm" id="buscarBtn">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </div>
+                    <a href="/Salida/AltaSalidas" class="btn btn-success btn-sm">
+                        <i class="fas fa-plus me-2"></i>Agregar Salida
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Card de Lista de Salidas -->
+    <div class="card shadow mb-0">
+        <div class="card-header bg-light d-flex align-items-center justify-content-between">
+            <strong>Historial de Salidas</strong>
+            <div class="d-flex align-items-center gap-3">
+                <div id="paginacionSalidas" class="d-flex align-items-center">
+                    <nav>
+                        <ul class="pagination pagination-sm mb-0">
+                            <li class="page-item" id="btnAnteriorSal">
+                                <a class="page-link" href="#" onclick="cambiarPaginaSal(-1); return false;">
+                                    ← Anterior
+                                </a>
+                            </li>
+                            <li class="page-item">
+                                <span class="page-link text-muted" id="infoPaginaSal">Página 1 de 1</span>
+                            </li>
+                            <li class="page-item" id="btnSiguienteSal">
+                                <a class="page-link" href="#" onclick="cambiarPaginaSal(1); return false;">
+                                    Siguiente →
+                                </a>
+                            </li>
+                        </ul>
+                    </nav>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <select id="tamanoPaginaSal" class="form-select form-select-sm" style="width: auto;">
+                        <option value="50">50</option>
+                        <option value="100" selected>100</option>
+                        <option value="200">200</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive" style="height: 600px; overflow-y: auto;">
+                <table id="dataTable" class="table table-striped table-bordered table-hover text-center table-sm mb-0">
+                    <thead class="table-header">
+                        <tr>
+                            <th style="width: 12%;">Código</th>
+                            <th style="width: 35%;">Descripción</th>
+                            <th style="width: 10%;">Cantidad</th>
+                            <th style="width: 25%;">Personal</th>
+                            <th style="width: 18%;">Fecha Vale</th>
+                        </tr>
+                    </thead>
+                    <tbody id="salidasBody">
+                        <!-- Filas dinámicas -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<style>
     /* Columna Descripción (2da) alineada a la izquierda */
     #dataTable tbody tr td:nth-child(2) {
         text-align: left;
@@ -137,6 +203,9 @@
             $('#searchInput').on('input', function(){
                 clearTimeout(window._salDebounce);
                 window._salDebounce = setTimeout(() => cargarSalidas(1), 500);
+            });
+            $('#buscarBtn').on('click', function() {
+                cargarSalidas(1);
             });
             window.cambiarPaginaSal = function(delta){ const nueva = paginaActualSal + delta; if(nueva>=1 && nueva<= totalPaginasSal) cargarSalidas(nueva); }
             $('#tamanoPaginaSal').on('change', function(){ tamanoPaginaSal = parseInt($(this).val(),10)||100; cargarSalidas(1); });
