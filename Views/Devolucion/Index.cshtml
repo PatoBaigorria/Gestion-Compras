@@ -310,7 +310,7 @@
                             $('#nuevaDevolucionForm')[0].reset();
                             $('#itemInfo').hide();
                             buscar(paginaActualDev);
-                            localStorage.setItem('ultimoMovimientoKardex', Date.now().toString());
+                            localStorage.setItem('ultimoMovimientoStock', Date.now().toString());
                         } else {
                             mostrarToast('Error: ' + response.message, 'error');
                         }
