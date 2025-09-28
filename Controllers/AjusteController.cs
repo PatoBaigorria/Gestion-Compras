@@ -63,6 +63,51 @@ namespace Gestion_Compras.Controllers
             return PartialView("_AjustesTable", ajustes);
         }
 
+        // GET: Ajuste/BuscarAjustesJson
+        [HttpGet]
+        [Route("Ajuste/BuscarAjustesJson")]
+        public async Task<IActionResult> BuscarAjustesJson(string searchTerm = "", int pagina = 1, int tamanoPagina = 100)
+        {
+            pagina = Math.Max(1, pagina);
+            tamanoPagina = tamanoPagina <= 0 ? 100 : tamanoPagina;
+
+            var query = context.Ajuste
+                .Join(context.Item, a => a.ItemCodigo, i => i.Codigo, (a, i) => new { a, i })
+                .AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(searchTerm))
+            {
+                var term = searchTerm.ToLower();
+                bool isNumeric = int.TryParse(searchTerm, out int n);
+                query = query.Where(x =>
+                    (x.a.ItemCodigo ?? "").ToLower().Contains(term) ||
+                    (x.i.Descripcion ?? "").ToLower().Contains(term) ||
+                    (x.a.Observaciones ?? "").ToLower().Contains(term) ||
+                    (isNumeric && (x.a.StockIni == n || x.a.StockReal == n)) ||
+                    x.a.FechaAjuste.ToString().Contains(searchTerm)
+                );
+            }
+
+            var total = await query.CountAsync();
+
+            var items = await query
+                .OrderByDescending(x => x.a.FechaAjuste)
+                .Skip((pagina - 1) * tamanoPagina)
+                .Take(tamanoPagina)
+                .Select(x => new
+                {
+                    codigo = x.a.ItemCodigo,
+                    descripcion = x.i.Descripcion,
+                    stockIni = x.a.StockIni,
+                    stockReal = x.a.StockReal,
+                    observaciones = x.a.Observaciones ?? "",
+                    fecha = x.a.FechaAjuste
+                })
+                .ToListAsync();
+
+            return Ok(new { items, total, pagina, tamanoPagina });
+        }
+
         // GET: Ajuste/ObtenerItemPorCodigo
         [HttpGet]
         public async Task<IActionResult> ObtenerItemPorCodigo(string codigo)

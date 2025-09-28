@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Gestion_Compras.Models;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
+using System.Linq;
 
 namespace Gestion_Compras.Controllers
 {
@@ -36,6 +37,51 @@ namespace Gestion_Compras.Controllers
                                           .OrderByDescending(i => i.Id)
                                           .ToList(); 
             return View("~/Views/MaterialesIngreso/Index.cshtml", ingresos); 
+        }
+
+        // GET: /Ingreso/ListJson
+        [HttpGet("ListJson")]
+        public async Task<IActionResult> ListJson(string searchTerm = "", int pagina = 1, int tamanoPagina = 100)
+        {
+            pagina = Math.Max(1, pagina);
+            tamanoPagina = tamanoPagina <= 0 ? 100 : tamanoPagina;
+
+            var query = context.Ingreso
+                .Include(i => i.Proveedor)
+                .AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(searchTerm))
+            {
+                var term = searchTerm.ToLower();
+                var isNumeric = int.TryParse(searchTerm, out var numeroBusqueda);
+                query = query.Where(i =>
+                    (i.ItemCodigo ?? "").ToLower().Contains(term) ||
+                    (i.Proveedor != null && (i.Proveedor.RazonSocial ?? "").ToLower().Contains(term)) ||
+                    ((i.Remito ?? "").ToLower().Contains(term)) ||
+                    (isNumeric && i.OrdenCompra == numeroBusqueda)
+                );
+            }
+
+            var total = await query.CountAsync();
+
+            var items = await query
+                .OrderByDescending(i => i.Id)
+                .Skip((pagina - 1) * tamanoPagina)
+                .Take(tamanoPagina)
+                .Select(i => new
+                {
+                    id = i.Id,
+                    itemCodigo = i.ItemCodigo,
+                    cantidadIngreso = i.CantidadIngreso,
+                    proveedor = i.Proveedor != null ? i.Proveedor.RazonSocial : "",
+                    remito = i.Remito,
+                    ordenCompra = i.OrdenCompra,
+                    numeroPedido = context.Pedido.Where(p => p.Id == i.PedidoId).Select(p => p.NumeroPedido).FirstOrDefault(),
+                    fechaRemito = i.FechaRemito
+                })
+                .ToListAsync();
+
+            return Ok(new { items, total, pagina, tamanoPagina });
         }
 
         // GET: /Ingreso/AltaIngresos

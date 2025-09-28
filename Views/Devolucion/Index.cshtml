@@ -25,8 +25,43 @@
 
     <div class="row">
         <div class="col">
-            <div id="devolucionesContainer">
-                @await Html.PartialAsync("_DevolucionesTable", Model)
+            <div class="table-responsive" style="height: 600px; overflow-y: auto;">
+                <table class="table table-striped table-bordered table-hover text-center table-sm">
+                    <thead class="table-light table-header">
+                        <tr>
+                            <th style="width: 80px;">Código</th>
+                            <th style="width: 350px;">Descripción</th>
+                            <th style="width: 80px;">Cantidad</th>
+                            <th style="width: 150px;">Personal</th>
+                            <th style="width: 260px;">Observaciones</th>
+                            <th style="width: 150px;">Fecha</th>
+                        </tr>
+                    </thead>
+                    <tbody id="devolucionesBody">
+                        <!-- Filas dinámicas -->
+                    </tbody>
+                </table>
+            </div>
+            <!-- Paginación -->
+            <div id="paginacionDevoluciones" class="d-flex justify-content-center mt-2">
+                <nav>
+                    <ul class="pagination pagination-sm">
+                        <li class="page-item" id="btnAnteriorDev">
+                            <a class="page-link" href="#" onclick="cambiarPaginaDev(-1); return false;">← Anterior</a>
+                        </li>
+                        <li class="page-item"><span class="page-link text-muted" id="infoPaginaDev">Página 1 de 1</span></li>
+                        <li class="page-item" id="btnSiguienteDev">
+                            <a class="page-link" href="#" onclick="cambiarPaginaDev(1); return false;">Siguiente →</a>
+                        </li>
+                    </ul>
+                </nav>
+                <div class="ms-3">
+                    <select id="tamanoPaginaDev" class="form-select form-select-sm">
+                        <option value="50">50</option>
+                        <option value="100" selected>100</option>
+                        <option value="200">200</option>
+                    </select>
+                </div>
             </div>
         </div>
     </div>
@@ -114,29 +149,85 @@
         z-index: 1020;
         background-color: white;
     }
+
+    /* Unificar estilo como Buscador: tamaño y centrado */
+    .table-sm td,
+    .table-sm th {
+        font-size: 0.9em;
+        text-align: center;
+        vertical-align: middle;
+    }
 </style>
 
 @section Scripts {
     <script>
         $(document).ready(function () {
-            function buscar() {
+            let paginaActualDev = 1;
+            let totalPaginasDev = 1;
+            let tamanoPaginaDev = 100;
+
+            function renderTabla(items) {
+                const $tbody = $('#devolucionesBody');
+                $tbody.empty();
+                if (!items || items.length === 0) {
+                    $tbody.append(`
+                        <tr>
+                            <td colspan="6" class="text-center text-muted">
+                                <i class="fas fa-info-circle"></i> No se encontraron devoluciones
+                            </td>
+                        </tr>`);
+                    return;
+                }
+                const frag = document.createDocumentFragment();
+                items.forEach(d => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>${(d.codigo || '').toUpperCase()}</td>
+                        <td style="text-align: left;">${d.descripcion || ''}</td>
+                        <td>${d.cantidad}</td>
+                        <td>${d.personal || ''}</td>
+                        <td>${d.observaciones || ''}</td>
+                        <td>${new Date(d.fecha).toLocaleDateString('es-ES')}</td>`;
+                    frag.appendChild(tr);
+                });
+                $tbody[0].appendChild(frag);
+            }
+
+            function actualizarPaginacion(total) {
+                $('#infoPaginaDev').text(`Página ${paginaActualDev} de ${totalPaginasDev} (${total} devoluciones)`);
+                $('#btnAnteriorDev').toggleClass('disabled', paginaActualDev <= 1);
+                $('#btnSiguienteDev').toggleClass('disabled', paginaActualDev >= totalPaginasDev);
+            }
+
+            function buscar(page = 1) {
                 const searchTerm = $('#searchInput').val();
+                // Mostrar estado de carga
+                $('#devolucionesBody').html('<tr><td colspan="6" class="text-center text-muted">Cargando...</td></tr>');
                 $.ajax({
-                    url: '@Url.Action("Buscar", "Devolucion")',
+                    url: '@Url.Action("BuscarJson", "Devolucion")',
                     type: 'GET',
-                    data: { searchTerm: searchTerm },
+                    data: { searchTerm: searchTerm, pagina: page, tamanoPagina: tamanoPaginaDev },
                     success: function (response) {
-                        $('#devolucionesContainer').html(response);
+                        const items = response && response.items ? response.items : [];
+                        paginaActualDev = response && response.pagina ? response.pagina : 1;
+                        tamanoPaginaDev = response && response.tamanoPagina ? response.tamanoPagina : tamanoPaginaDev;
+                        const total = response && typeof response.total === 'number' ? response.total : items.length;
+                        totalPaginasDev = Math.max(1, Math.ceil(total / tamanoPaginaDev));
+                        renderTabla(items);
+                        actualizarPaginacion(total);
                     },
                     error: function (xhr) {
                         console.error('Error al buscar devoluciones:', xhr.responseText);
+                        $('#devolucionesBody').html('<tr><td colspan="6" class="text-center text-danger">Error al cargar</td></tr>');
                     }
                 });
             }
 
-            $('#buscarBtn').click(buscar);
-            $('#searchInput').on('keypress', function (e) { if (e.which === 13) buscar(); });
-            let searchTimeout; $('#searchInput').on('input', function () { clearTimeout(searchTimeout); searchTimeout = setTimeout(buscar, 500); });
+            $('#buscarBtn').click(() => buscar(1));
+            $('#searchInput').on('keypress', function (e) { if (e.which === 13) buscar(1); });
+            let searchTimeout; $('#searchInput').on('input', function () { clearTimeout(searchTimeout); searchTimeout = setTimeout(() => buscar(1), 500); });
+            window.cambiarPaginaDev = function (delta) { const nueva = paginaActualDev + delta; if (nueva >= 1 && nueva <= totalPaginasDev) buscar(nueva); };
+            $('#tamanoPaginaDev').on('change', function(){ tamanoPaginaDev = parseInt($(this).val(), 10) || 100; buscar(1); });
 
             $('#nuevaDevolucionModal').on('show.bs.modal', function () {
                 $('#nuevaDevolucionForm')[0].reset();
@@ -192,6 +283,12 @@
                 }
             });
 
+            // Inicialización segura al entrar en la vista
+            $('#searchInput').val('');
+            $('#devolucionesBody').html('<tr><td colspan="6" class="text-center text-muted">Cargando...</td></tr>');
+            buscar(1);
+            window.addEventListener('pageshow', function () { buscar(1); });
+
             $('#nuevaDevolucionForm').submit(function (e) {
                 e.preventDefault();
                 const data = {
@@ -212,7 +309,7 @@
                             $('#nuevaDevolucionModal').modal('hide');
                             $('#nuevaDevolucionForm')[0].reset();
                             $('#itemInfo').hide();
-                            buscar();
+                            buscar(paginaActualDev);
                             localStorage.setItem('ultimoMovimientoKardex', Date.now().toString());
                         } else {
                             mostrarToast('Error: ' + response.message, 'error');

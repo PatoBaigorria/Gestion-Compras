@@ -91,6 +91,27 @@
                     </tbody>
                 </table>
             </div>
+            <!-- Controles de paginación -->
+            <div id="paginacionPedidos" class="d-flex justify-content-center mt-2">
+                <nav>
+                    <ul class="pagination pagination-sm">
+                        <li class="page-item" id="btnAnteriorPedidos">
+                            <a class="page-link" href="#" onclick="cambiarPaginaPedidos(-1); return false;">← Anterior</a>
+                        </li>
+                        <li class="page-item"><span class="page-link text-muted" id="infoPaginaPedidos">Página 1 de 1</span></li>
+                        <li class="page-item" id="btnSiguientePedidos">
+                            <a class="page-link" href="#" onclick="cambiarPaginaPedidos(1); return false;">Siguiente →</a>
+                        </li>
+                    </ul>
+                </nav>
+                <div class="ms-3">
+                    <select id="tamanoPaginaPedidos" class="form-select form-select-sm">
+                        <option value="50">50</option>
+                        <option value="100" selected>100</option>
+                        <option value="200">200</option>
+                    </select>
+                </div>
+            </div>
         </div>
     </div>
 </div>
@@ -141,25 +162,41 @@
     .table-sm td,
     .table-sm th {
         font-size: 0.9em;
+        text-align: center;
+        vertical-align: middle;
+    }
+    /* Descripción (4ta columna) a la izquierda */
+    #tablaPedidos tbody tr td:nth-child(4) {
+        text-align: left;
     }
 </style>
 
 @section Scripts {
     <script>
         $(document).ready(function () {
-            cargarPedidos();
+            cargarPedidos(1);
         });
 
-        function cargarPedidos() {
+        let paginaActualP = 1;
+        let totalPaginasP = 1;
+        let tamanoPaginaP = 100;
+
+        function cargarPedidos(pagina = 1) {
             $.ajax({
                 url: '/api/pedido/list',
                 type: 'GET',
+                data: { pagina: pagina, tamanoPagina: tamanoPaginaP },
                 success: function (response) {
                     const tbody = $('#listaPedidos');
                     tbody.empty();
+                    const items = (response && response.items) ? response.items : [];
+                    paginaActualP = response && response.pagina ? response.pagina : 1;
+                    tamanoPaginaP = response && response.tamanoPagina ? response.tamanoPagina : tamanoPaginaP;
+                    const total = response && typeof response.total === 'number' ? response.total : items.length;
+                    totalPaginasP = Math.max(1, Math.ceil(total / tamanoPaginaP));
 
-                    if (response && response.length > 0) {
-                        $.each(response, function (index, pedido) {
+                    if (items.length > 0) {
+                        $.each(items, function (index, pedido) {
                             const estadoBadge = getEstadoBadge(pedido.estado);
                             // Corregir formato de fecha - agregar tiempo para evitar problemas de zona horaria
                             const fecha = new Date(pedido.fechaPedido + 'T00:00:00').toLocaleDateString('es-ES');
@@ -169,7 +206,7 @@
                                                     <td>${pedido.numeroPedido}</td>
                                                     <td>${fecha}</td>
                                                     <td>${pedido.itemCodigo || ''}</td>
-                                                    <td style="text-align: left;">${pedido.itemDescripcion || ''}</td>
+                                                    <td>${pedido.itemDescripcion || ''}</td>
                                                     <td>${pedido.unidadMedida || ''}</td>
                                                     <td>${pedido.cantidad}</td>
                                                     <td>${pedido.estado === 'CANCELADO' ? 0 : (pedido.cantidad - pedido.recibido)}</td>
@@ -183,6 +220,7 @@
 
                         // Aplicar filtros después de cargar los datos
                         filtrarTabla();
+                        actualizarPaginacionPedidos(total);
                     } else {
                         tbody.append(`
                                             <tr>
@@ -191,6 +229,7 @@
                                                 </td>
                                             </tr>
                                         `);
+                        actualizarPaginacionPedidos(0);
                     }
                 },
                 error: function (xhr, status, errorThrown) {
@@ -205,6 +244,25 @@
                 }
             });
         }
+
+        // Paginación
+        function actualizarPaginacionPedidos(total) {
+            $('#infoPaginaPedidos').text(`Página ${paginaActualP} de ${totalPaginasP} (${total} pedidos)`);
+            $('#btnAnteriorPedidos').toggleClass('disabled', paginaActualP <= 1);
+            $('#btnSiguientePedidos').toggleClass('disabled', paginaActualP >= totalPaginasP);
+        }
+
+        window.cambiarPaginaPedidos = function (delta) {
+            const nueva = paginaActualP + delta;
+            if (nueva >= 1 && nueva <= totalPaginasP) {
+                cargarPedidos(nueva);
+            }
+        }
+
+        $('#tamanoPaginaPedidos').on('change', function() {
+            tamanoPaginaP = parseInt($(this).val(), 10) || 100;
+            cargarPedidos(1);
+        });
 
         function getEstadoBadge(estado) {
             switch (estado) {

@@ -35,31 +35,88 @@ namespace Gestion_Compras.Controllers
 
         // Lista de pedidos (JSON)
         [HttpGet("list")]
-        public async Task<ActionResult<IEnumerable<object>>> GetPedidos()
+        public async Task<ActionResult> GetPedidos(int pagina = 1, int tamanoPagina = 100)
         {
-            var pedidos = await context.Pedido
-                .Join(context.Item, p => p.ItemCodigo, i => i.Codigo, (p, i) => new { p, i })
-                .Join(context.SubFamilia, pi => pi.i.SubFamiliaId, sf => sf.Id, (pi, sf) => new { pi.p, pi.i, sf })
-                .Join(context.UnidadDeMedida, pis => pis.i.UnidadDeMedidaId, um => um.Id, (pis, um) => new { pis.p, pis.i, pis.sf, um })
-                .GroupJoin(context.Usuario, x => x.p.UsuarioId, u => u.Id, (x, usuarios) => new { x.p, x.i, x.sf, x.um, usuario = usuarios.FirstOrDefault() })
-                .Select(result => new
-                {
-                    result.p.Id,
-                    result.p.NumeroPedido,
-                    result.p.FechaPedido,
-                    result.p.ItemCodigo,
-                    ItemDescripcion = result.i.Descripcion,
-                    result.p.Cantidad,
-                    SubFamilia = result.sf.Descripcion,
-                    UnidadMedida = result.um.Abreviatura,
-                    result.p.Recibido,
-                    result.p.Estado,
-                    Usuario = result.usuario != null ? (result.usuario.Apellido + " " + result.usuario.Nombre) : ""
-                })
+            pagina = Math.Max(1, pagina);
+            tamanoPagina = tamanoPagina <= 0 ? 100 : tamanoPagina;
+
+            // Total de registros (sin joins para performance)
+            var total = await context.Pedido.CountAsync();
+
+            // 1) Página de pedidos (sin joins)
+            var pagePedidos = await context.Pedido
+                .AsNoTracking()
                 .OrderByDescending(p => p.Id)
+                .Skip((pagina - 1) * tamanoPagina)
+                .Take(tamanoPagina)
+                .Select(p => new
+                {
+                    p.Id,
+                    p.NumeroPedido,
+                    p.FechaPedido,
+                    p.ItemCodigo,
+                    p.Cantidad,
+                    p.Recibido,
+                    p.Estado,
+                    p.UsuarioId
+                })
                 .ToListAsync();
 
-            return Ok(pedidos);
+            if (pagePedidos.Count == 0)
+            {
+                return Ok(new { items = new object[0], total, pagina, tamanoPagina });
+            }
+
+            // 2) Resolver dependencias en lotes
+            var codigos = pagePedidos.Select(x => x.ItemCodigo).Distinct().ToList();
+            var itemsDict = await context.Item
+                .AsNoTracking()
+                .Where(i => codigos.Contains(i.Codigo))
+                .Select(i => new { i.Codigo, i.Descripcion, i.UnidadDeMedidaId, i.SubFamiliaId })
+                .ToDictionaryAsync(i => i.Codigo!, i => i);
+
+            var unidadIds = itemsDict.Values.Select(v => v.UnidadDeMedidaId).Distinct().ToList();
+            var unidadesDict = await context.UnidadDeMedida
+                .AsNoTracking()
+                .Where(um => unidadIds.Contains(um.Id))
+                .ToDictionaryAsync(um => um.Id, um => um.Abreviatura);
+
+            var subFamiliaIds = itemsDict.Values.Select(v => v.SubFamiliaId).Distinct().ToList();
+            var subFamiliasDict = await context.SubFamilia
+                .AsNoTracking()
+                .Where(sf => subFamiliaIds.Contains(sf.Id))
+                .ToDictionaryAsync(sf => sf.Id, sf => sf.Descripcion);
+
+            var usuarioIds = pagePedidos.Select(p => p.UsuarioId).Where(id => id.HasValue).Select(id => id!.Value).Distinct().ToList();
+            var usuariosDict = await context.Usuario
+                .AsNoTracking()
+                .Where(u => usuarioIds.Contains(u.Id))
+                .ToDictionaryAsync(u => u.Id, u => (u.Apellido + " " + u.Nombre));
+
+            // 3) Proyección final
+            var items = pagePedidos.Select(p =>
+            {
+                var infoItem = (p.ItemCodigo != null && itemsDict.TryGetValue(p.ItemCodigo, out var ii)) ? ii : null;
+                var unidad = (infoItem != null && unidadesDict.TryGetValue(infoItem.UnidadDeMedidaId, out var abrev)) ? abrev : "";
+                var subfam = (infoItem != null && subFamiliasDict.TryGetValue(infoItem.SubFamiliaId, out var sfDesc)) ? sfDesc : "";
+                var usuarioNombre = (p.UsuarioId.HasValue && usuariosDict.TryGetValue(p.UsuarioId.Value, out var nombre)) ? nombre : "";
+                return new
+                {
+                    p.Id,
+                    p.NumeroPedido,
+                    p.FechaPedido,
+                    ItemCodigo = p.ItemCodigo,
+                    ItemDescripcion = infoItem?.Descripcion ?? "",
+                    p.Cantidad,
+                    SubFamilia = subfam,
+                    UnidadMedida = unidad,
+                    p.Recibido,
+                    p.Estado,
+                    Usuario = usuarioNombre
+                };
+            }).ToList();
+
+            return Ok(new { items, total, pagina, tamanoPagina });
         }
 
         [HttpGet("{id}")]

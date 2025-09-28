@@ -23,19 +23,32 @@
                 <th style="width: 3%; text-align: center;">Fecha Vale</th>
             </tr>
         </thead>
-        <tbody>
-            @foreach (var salida in Model)
-            {
-                <tr>
-                    <td>@salida.ItemCodigo</td>
-                    <td>@salida.Item?.Descripcion</td>
-                    <td>@salida.Cantidad</td>
-                    <td>@salida.Personal?.NombreYApellido</td>
-                    <td>@salida.FechaVale.ToString("dd/MM/yyyy")</td>
-                </tr>
-            }
+        <tbody id="salidasBody">
+            <!-- Filas dinámicas -->
         </tbody>
     </table>
+</div>
+
+<!-- Paginación -->
+<div id="paginacionSalidas" class="d-flex justify-content-center mt-2">
+    <nav>
+        <ul class="pagination pagination-sm">
+            <li class="page-item" id="btnAnteriorSal">
+                <a class="page-link" href="#" onclick="cambiarPaginaSal(-1); return false;">← Anterior</a>
+            </li>
+            <li class="page-item"><span class="page-link text-muted" id="infoPaginaSal">Página 1 de 1</span></li>
+            <li class="page-item" id="btnSiguienteSal">
+                <a class="page-link" href="#" onclick="cambiarPaginaSal(1); return false;">Siguiente →</a>
+            </li>
+        </ul>
+    </nav>
+    <div class="ms-3">
+        <select id="tamanoPaginaSal" class="form-select form-select-sm">
+            <option value="50">50</option>
+            <option value="100" selected>100</option>
+            <option value="200">200</option>
+        </select>
+    </div>
 </div>
 <style>
     .table-responsive {
@@ -50,23 +63,86 @@
         /* Asegúrate de que el fondo sea blanco */
     }
 
-    /* Reducir el tamaño de la letra en la tabla */ 
+    /* Reducir el tamaño de la letra en la tabla y centrar */ 
     .table-sm td, 
     .table-sm th { 
         font-size: 0.9em; 
+        text-align: center;
+        vertical-align: middle;
+    }
+    /* Columna Descripción (2da) alineada a la izquierda */
+    #dataTable tbody tr td:nth-child(2) {
+        text-align: left;
     }
 </style>
 
 @section Scripts {
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
     <script>
         $(document).ready(function () {
-            $("#searchInput").on("keyup", function () {
-                var value = $(this).val().toLowerCase();
-                $("#dataTable tbody tr").filter(function () {
-                    $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
+            let paginaActualSal = 1;
+            let totalPaginasSal = 1;
+            let tamanoPaginaSal = 100;
+
+            function renderSalidas(items) {
+                const $tbody = $('#salidasBody');
+                $tbody.empty();
+                if (!items || items.length === 0) {
+                    $tbody.append('<tr><td colspan="5" class="text-center text-muted"><i class="fas fa-info-circle"></i> No se encontraron salidas</td></tr>');
+                    return;
+                }
+                const frag = document.createDocumentFragment();
+                items.forEach(x => {
+                    const tr = document.createElement('tr');
+                    const fecha = x.fechaVale ? new Date(x.fechaVale).toLocaleDateString('es-ES') : '';
+                    tr.innerHTML = `
+                        <td>${x.itemCodigo || ''}</td>
+                        <td>${x.descripcion || ''}</td>
+                        <td>${x.cantidad}</td>
+                        <td>${x.personal || ''}</td>
+                        <td>${fecha}</td>`;
+                    frag.appendChild(tr);
                 });
+                $tbody[0].appendChild(frag);
+            }
+
+            function actualizarPaginacion(total) {
+                $('#infoPaginaSal').text(`Página ${paginaActualSal} de ${totalPaginasSal} (${total} salidas)`);
+                $('#btnAnteriorSal').toggleClass('disabled', paginaActualSal <= 1);
+                $('#btnSiguienteSal').toggleClass('disabled', paginaActualSal >= totalPaginasSal);
+            }
+
+            function cargarSalidas(pagina = 1) {
+                const searchTerm = $('#searchInput').val();
+                $.ajax({
+                    url: '/Salida/ListJson',
+                    type: 'GET',
+                    data: { searchTerm: searchTerm, pagina: pagina, tamanoPagina: tamanoPaginaSal },
+                    success: function (response) {
+                        const items = response?.items || [];
+                        paginaActualSal = response?.pagina || 1;
+                        tamanoPaginaSal = response?.tamanoPagina || tamanoPaginaSal;
+                        const total = (typeof response?.total === 'number') ? response.total : items.length;
+                        totalPaginasSal = Math.max(1, Math.ceil(total / tamanoPaginaSal));
+                        renderSalidas(items);
+                        actualizarPaginacion(total);
+                    },
+                    error: function (xhr) {
+                        console.error('Error al cargar salidas:', xhr.responseText);
+                        $('#salidasBody').html('<tr><td colspan="5" class="text-center text-danger">Error al cargar</td></tr>');
+                    }
+                });
+            }
+
+            // Eventos
+            $('#searchInput').on('input', function(){
+                clearTimeout(window._salDebounce);
+                window._salDebounce = setTimeout(() => cargarSalidas(1), 500);
             });
+            window.cambiarPaginaSal = function(delta){ const nueva = paginaActualSal + delta; if(nueva>=1 && nueva<= totalPaginasSal) cargarSalidas(nueva); }
+            $('#tamanoPaginaSal').on('change', function(){ tamanoPaginaSal = parseInt($(this).val(),10)||100; cargarSalidas(1); });
+
+            // Inicial
+            cargarSalidas(1);
         });
     </script>
 }

@@ -22,8 +22,9 @@
 <!-- Botón de Agregar Proveedor arriba de la tabla -->
 <a href="/Proveedor/Alta" class="btn btn-primary mb-3">Agregar Proveedor</a>
 
-<table class="table table-striped table-bordered">
-    <thead>
+<div class="table-responsive" style="height: 600px; overflow-y: auto;">
+<table class="table table-striped table-bordered table-sm">
+    <thead class="table-header">
         <tr>
             <th style="text-align: center;">ID</th>
             <th style="text-align: center;">Razón Social</th>
@@ -55,6 +56,7 @@
         }
     </tbody>
 </table>
+</div>
 
 <style>
     .table-responsive {
@@ -68,10 +70,12 @@
         background-color: white;
         /* Asegúrate de que el fondo sea blanco */
     }
-    /* Reducir el tamaño de la letra en la tabla */ 
+    /* Reducir el tamaño de la letra en la tabla y centrar */ 
     .table-sm td, 
     .table-sm th { 
         font-size: 0.9em; 
+        text-align: center;
+        vertical-align: middle;
     }
 </style>
 <!-- Modal para Confirmación de Eliminación -->
