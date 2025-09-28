@@ -562,112 +562,131 @@ namespace Gestion_Compras.Controllers
                 }
                 catch { /* sin bloqueo si falla el logo */ }
 
-                // Construir documento PDF
+                // Construir documento PDF moderno y profesional
                 var document = Document.Create(container =>
                 {
                     container.Page(page =>
                     {
-                        page.Margin(30);
+                        page.Margin(20);
                         page.Size(PageSizes.A4);
+                        page.DefaultTextStyle(x => x.FontFamily("Arial"));
 
-                        page.Header().Row(row =>
+                        // Header moderno con gradiente visual
+                        page.Header().Height(120).Background("#f8f9fa").Padding(20).Column(col =>
                         {
-                            if (logoBytes != null)
+                            col.Item().Row(row =>
                             {
-                                // Reducir tamaño del contenedor del logo a la mitad
-                                row.ConstantItem(35).Image(logoBytes);
-                            }
-                            // Título centrado, levemente desplazado a la derecha
-                            row.RelativeItem().PaddingLeft(150).Column(col =>
-                            {
-                                col.Item().AlignCenter().Text("Nota de Pedido").FontSize(14).Bold();
-                            });
-                            // Bloque a la derecha con referencias
-                            row.RelativeItem().Column(colRight =>
-                            {
-                                colRight.Item().AlignRight().Text("Ref.: P-COM-01").FontSize(10);
-                                colRight.Item().AlignRight().Text("Rev. 03 Form. 91").FontSize(10);
+                                // Logo
+                                if (logoBytes != null)
+                                {
+                                    row.ConstantItem(80).Height(60).Image(logoBytes);
+                                }
+                                
+                                // Título principal
+                                row.RelativeItem().AlignCenter().Column(titleCol =>
+                                {
+                                    titleCol.Item().AlignCenter().Text("NOTA DE PEDIDO")
+                                        .FontSize(24).Bold().FontColor("#2c3e50");
+                                    titleCol.Item().AlignCenter().PaddingTop(5).Text($"N° {numeroPedido}")
+                                        .FontSize(16).SemiBold().FontColor("#3498db");
+                                });
+                                
+                                // Info de referencia
+                                row.ConstantItem(120).Column(refCol =>
+                                {
+                                    refCol.Item().AlignRight().Text("Ref.: P-COM-01").FontSize(10).FontColor("#7f8c8d");
+                                    refCol.Item().AlignRight().Text("Rev. 03 Form. 91").FontSize(10).FontColor("#7f8c8d");
+                                    refCol.Item().AlignRight().PaddingTop(10).Text("Hoja 1/1")
+                                        .FontSize(12).SemiBold().FontColor("#2c3e50");
+                                });
                             });
                         });
 
-                        page.Content().Column(col =>
+                        // Contenido principal
+                        page.Content().Padding(10).Column(col =>
                         {
-                            col.Spacing(10);
-                            // Espacio equivalente a ~3 líneas
-                            col.Item().Height(36);
-                            // Fila con Fecha de Pedido (izquierda), Solicito (centro) y N° Pedido (derecha)
-                            col.Item().Row(r =>
+                            // Información del pedido en cards
+                            col.Item().PaddingBottom(20).Row(row =>
                             {
-                                r.RelativeItem().Text(txt =>
-                                {
-                                    txt.Span("Fecha de Pedido: ").Underline().Bold().FontSize(10);
-                                    txt.Span($"{fecha:dd/MM/yyyy}").FontSize(10);
-                                });
-                                r.RelativeItem().AlignCenter().Text(txt =>
-                                {
-                                    txt.Span("Solicitó: ").Underline().Bold().FontSize(10);
-                                    txt.Span(solicitante).FontSize(10);
-                                });
-                                r.RelativeItem().AlignRight().Text(txt =>
-                                {
-                                    txt.Span("N° Pedido: ").Underline().Bold().FontSize(10);
-                                    txt.Span(numeroPedido.ToString()).FontSize(10);
-                                });
+                                // Card Solicitante
+                                row.RelativeItem().Padding(5).Background("#ecf0f1").Border(1).BorderColor("#bdc3c7")
+                                    .Padding(15).Column(cardCol =>
+                                    {
+                                        cardCol.Item().Text("SOLICITANTE").FontSize(9).Bold().FontColor("#7f8c8d");
+                                        cardCol.Item().PaddingTop(5).Text(solicitante).FontSize(13).SemiBold().FontColor("#2c3e50");
+                                    });
+                                
+                                row.ConstantItem(20); // Espaciado
+                                
+                                // Card Fecha a la derecha
+                                row.ConstantItem(200).Padding(5).Background("#ecf0f1").Border(1).BorderColor("#bdc3c7")
+                                    .Padding(15).Column(cardCol =>
+                                    {
+                                        cardCol.Item().AlignRight().Text("FECHA DE PEDIDO").FontSize(9).Bold().FontColor("#7f8c8d");
+                                        cardCol.Item().PaddingTop(5).AlignRight().Text($"{fecha:dd/MM/yyyy}").FontSize(13).SemiBold().FontColor("#2c3e50");
+                                    });
                             });
-                            // Agregar 3 filas (espacios) adicionales antes de la tabla
-                            col.Item().Height(12);
-                            col.Item().Height(12);
-                            col.Item().Border(0.8f).BorderColor("#bfbfbf").Table(table =>
+
+                            // Tabla moderna con mejor diseño
+                            col.Item().Table(table =>
                             {
                                 table.ColumnsDefinition(columns =>
                                 {
-                                    columns.RelativeColumn(5);    // Descripción
-                                    columns.ConstantColumn(60);   // Unidad de Medida
-                                    columns.ConstantColumn(60);   // Cantidad
-                                    columns.ConstantColumn(90);   // Equipo-Código
+                                    columns.ConstantColumn(80);   // Código
+                                    columns.RelativeColumn(4);   // Descripción
+                                    columns.ConstantColumn(80);  // Unidad
+                                    columns.ConstantColumn(80);  // Cantidad
+                                    columns.ConstantColumn(100); // Equipo-Código
                                 });
 
-                                // Encabezado
+                                // Encabezado moderno
                                 table.Header(header =>
                                 {
-                                    header.Cell().Element(CellHeader).AlignCenter().Text("Descripción");
-                                    header.Cell().Element(CellHeader).AlignCenter().Text("Unidad de Medida");
-                                    header.Cell().Element(CellHeader).AlignCenter().Text("Cantidad");
-                                    header.Cell().Element(CellHeader).AlignCenter().Text("Equipo-Código");
+                                    header.Cell().Element(ModernHeader).Text("CÓDIGO").FontColor("#ffffff");
+                                    header.Cell().Element(ModernHeader).Text("DESCRIPCIÓN").FontColor("#ffffff");
+                                    header.Cell().Element(ModernHeader).Text("UNIDAD").FontColor("#ffffff");
+                                    header.Cell().Element(ModernHeader).Text("CANTIDAD").FontColor("#ffffff");
+                                    header.Cell().Element(ModernHeader).Text("EQUIPO-CÓDIGO").FontColor("#ffffff");
 
-                                    static IContainer CellHeader(IContainer container)
+                                    static IContainer ModernHeader(IContainer container)
                                         => container
-                                            .DefaultTextStyle(x => x.SemiBold().FontSize(10))
-                                            .Padding(5)
-                                            .Background("#eeeeee")
-                                            .BorderLeft(0.6f)
-                                            .BorderRight(0.6f)
-                                            .BorderColor("#c8c8c8");
+                                            .Background("#34495e")
+                                            .Padding(12)
+                                            .DefaultTextStyle(x => x.Bold().FontSize(9));
                                 });
 
-                                // Filas
+                                // Filas con alternancia de colores
+                                var isEven = false;
                                 foreach (var it in items)
                                 {
-                                    table.Cell().Element(Cell).Text(it.Descripcion);
-                                    table.Cell().Element(Cell).AlignCenter().Text(it.Unidad);
-                                    table.Cell().Element(Cell).AlignCenter().Text(it.Cantidad.ToString());
-                                    table.Cell().Element(Cell).AlignCenter().Text(it.EquipoCodigo);
+                                    var bgColor = isEven ? "#f8f9fa" : "#ffffff";
+                                    
+                                    table.Cell().Element(container => ModernCell(container, bgColor)).Text(it.Codigo).FontSize(8);
+                                    table.Cell().Element(container => ModernCell(container, bgColor)).Text(it.Descripcion).FontSize(8);
+                                    table.Cell().Element(container => ModernCell(container, bgColor)).AlignCenter().Text(it.Unidad).FontSize(8);
+                                    table.Cell().Element(container => ModernCell(container, bgColor)).AlignCenter().Text(it.Cantidad.ToString()).FontSize(8).SemiBold();
+                                    table.Cell().Element(container => ModernCell(container, bgColor)).AlignCenter().Text(it.EquipoCodigo).FontSize(8);
+                                    
+                                    isEven = !isEven;
                                 }
 
-                                static IContainer Cell(IContainer container)
+                                static IContainer ModernCell(IContainer container, string backgroundColor)
                                     => container
-                                        .DefaultTextStyle(x => x.FontSize(9))
-                                        .Padding(5)
-                                        .BorderLeft(0.5f)
-                                        .BorderRight(0.5f)
-                                        .BorderColor("#d0d0d0");
+                                        .Background(backgroundColor)
+                                        .Border(0.5f)
+                                        .BorderColor("#dee2e6")
+                                        .Padding(10);
                             });
+
                         });
 
-                        page.Footer().AlignRight().Text(txt =>
+                        // Footer moderno
+                        page.Footer().Height(40).Background("#34495e").Padding(10).Row(row =>
                         {
-                            txt.Span("Generado: ").FontSize(9);
-                            txt.Span(DateTime.Now.ToString("dd/MM/yyyy HH:mm")).FontSize(9);
+                            row.RelativeItem().AlignLeft().Text("Gestión Abastecimiento Pañol")
+                                .FontSize(10).FontColor("#ffffff");
+                            row.RelativeItem().AlignRight().Text($"Generado: {DateTime.Now:dd/MM/yyyy HH:mm}")
+                                .FontSize(10).FontColor("#ffffff");
                         });
                     });
                 });
