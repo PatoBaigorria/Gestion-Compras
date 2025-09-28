@@ -14,17 +14,12 @@
             </div>
             
             <div class="row g-3">
-                <div class="col-md-6">
+                <div class="col-md-5">
                     <label for="filtroGeneral" class="form-label">Filtro General</label>
-                    <div class="input-group">
-                        <input type="text" class="form-control form-control-sm" id="filtroGeneral"
-                            placeholder="Buscar en todos los campos...">
-                        <button type="button" class="btn btn-primary btn-sm">
-                            <i class="fas fa-search"></i>
-                        </button>
-                    </div>
+                    <input type="text" class="form-control form-control-sm" id="filtroGeneral"
+                        placeholder="Buscar en todos los campos...">
                 </div>
-                <div class="col-md-6">
+                <div class="col-md-7">
                     <label class="form-label">Filtrar por Estado</label>
                     <div class="d-flex gap-3 align-items-center">
                         <div class="form-check">
@@ -47,12 +42,15 @@
                         </div>
                         @if (User.IsInRole("Administrador"))
                         {
-                            <div class="d-flex gap-2 ms-3">
+                            <div class="d-flex gap-2 ms-1">
                                 <a href="/Pedido/Nuevo" class="btn btn-success btn-sm">
                                     <i class="fas fa-plus me-1"></i>Generar Pedido
                                 </a>
                                 <button type="button" class="btn btn-danger btn-sm" onclick="anularPedido()">
                                     <i class="fas fa-times me-1"></i>Anular Pedido
+                                </button>
+                                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="descargarPdfPedido()">
+                                    <i class="fas fa-file-pdf me-1"></i>PDF
                                 </button>
                             </div>
                         }
@@ -472,6 +470,35 @@
         // Función para anular pedido
         function anularPedido() {
             mostrarModalAnularPedido();
+        }
+
+        // Función para descargar PDF de pedido
+        function descargarPdfPedido() {
+            Swal.fire({
+                title: 'Descargar PDF del Pedido',
+                text: 'Ingrese el número de pedido:',
+                input: 'number',
+                inputAttributes: {
+                    min: 1,
+                    step: 1
+                },
+                showCancelButton: true,
+                confirmButtonText: 'Descargar PDF',
+                cancelButtonText: 'Cancelar',
+                confirmButtonColor: '#28a745',
+                inputValidator: (value) => {
+                    if (!value || value <= 0) {
+                        return 'Debe ingresar un número de pedido válido';
+                    }
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    const numeroPedido = result.value;
+                    // Abrir el PDF en una nueva ventana
+                    const urlPdf = `/api/pedido/pdf/${numeroPedido}`;
+                    window.open(urlPdf, '_blank');
+                }
+            });
         }
 
         // Función separada para mostrar el modal de anular pedido

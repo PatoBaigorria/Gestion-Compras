@@ -10,12 +10,13 @@ using QuestPDF.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Configurar licencia QuestPDF para uso Community (gratuito)
+QuestPDF.Settings.License = LicenseType.Community;
+
 /*Código para hashear la contraseña 
 string password = "123"; 
 string hashedPassword = BCrypt.Net.BCrypt.HashPassword(password); 
 Console.WriteLine($"Contraseña hasheada: {hashedPassword}");*/
-
-// Configuración de licencia QuestPDF (Community)
 builder.Services.AddControllers()
     .AddNewtonsoftJson(options =>
     {
