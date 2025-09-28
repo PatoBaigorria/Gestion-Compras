@@ -3,125 +3,200 @@
     Layout = "~/Views/Shared/_Layout.cshtml";
     ViewData["Title"] = "Gestión de Familias y Subfamilias";
 }
-<style> 
-    .input-sm { 
-        max-width: 110px; 
+
+<style>
+    .container-custom {
+        width: 100%;
+        padding-right: 15px;
+        padding-left: 15px;
+        margin-right: auto;
+        margin-left: auto;
+        max-width: 1400px;
     }
-    .pe-1 { 
-        padding-right: 5px; 
-    /* Ajusta el padding derecho según prefieras */ 
+
+    /* Estilos para los cards */
+    .card {
+        border: none;
+        border-radius: 8px;
     }
-    .select-sm {
-        max-width: 90px;
+
+    .card-header {
+        border-bottom: 1px solid #dee2e6;
+        font-weight: 500;
     }
-    .mt-3 { 
-        margin-top: 1rem; 
-        /* Ajusta el valor según prefieras */ 
+
+    /* Estilos para formularios */
+    .form-control-sm, .form-select-sm {
+        font-size: 0.875rem;
+    }
+
+    .form-label {
+        font-size: 0.875rem;
+        font-weight: 500;
+        margin-bottom: 0.25rem;
+    }
+
+    .form-check-label {
+        font-size: 0.875rem;
+    }
+
+    /* Estilos para alertas */
+    .alert {
+        border-radius: 6px;
+        font-size: 0.875rem;
+    }
+
+    /* Estilos para modales */
+    .modal-content {
+        border-radius: 8px;
+    }
+
+    .modal-header {
+        border-bottom: 1px solid #dee2e6;
+    }
+
+    .card-filtros .card-title {
+        color: #495057;
+        font-size: 1.1rem;
     }
 </style>
 
-<div class="container mt-5">
-    <h3 class="text-center mb-4">Alta - Familias - Subfamilias - Items </h3>
+<div class="container-custom mt-3">
+
     <!-- Mostrar mensajes de éxito o error -->
     @if (TempData["SuccessMessage"] != null)
     {
-        <div class="alert alert-success"> @TempData["SuccessMessage"] </div>
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="fas fa-check-circle me-2"></i>@TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
     }
     @if (ViewData.ModelState.IsValid == false)
     {
-        <div class="alert alert-danger">
-            Por favor corrige los errores en el formulario.
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="fas fa-exclamation-triangle me-2"></i>Por favor corrige los errores en el formulario.
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
     }
-    <!-- Formulario para crear Subfamilia -->
-    <form id="familiaSubfamiliaForm">
-        @Html.AntiForgeryToken()
 
-        <!-- Selección de Familia -->
-        <div class="row mb-3">
-            <div class="col-md-6 col-lg-3">
-                <label for="familiaSelect" class="form-label">Seleccione una Familia</label>
-                <select id="familiaSelect" name="FamiliaId" class="form-select">
-                    <option value=""</option>
-                    @foreach (var familia in Model.FamiliaList)
-                    {
-                        <option value="@familia.Id" @(familia.Id == Model.FamiliaSeleccionadaId ? "selected" : "")>
-                            @familia.Codigo - @familia.Descripcion
-                        </option>
-                    }
-                </select>
+    <!-- Card de Selección de Familia y Subfamilia -->
+    <div class="card shadow mb-3 card-filtros">
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-sitemap me-2"></i>Gestión de Familias y Subfamilias
+                </h5>
             </div>
-            <div class="col-md-6 col-lg-4 d-flex align-items-end">
-                <button type="button" class="btn btn-primary" id="addFamiliaBtn" data-bs-toggle="modal"
-                    data-bs-target="#addFamiliaModal">Nueva Familia</button>
-            </div>
+            
+            <form id="familiaSubfamiliaForm">
+                @Html.AntiForgeryToken()
+                
+                <div class="row g-3">
+                    <!-- Selección de Familia -->
+                    <div class="col-md-4">
+                        <label for="familiaSelect" class="form-label">Familia</label>
+                        <select id="familiaSelect" name="FamiliaId" class="form-select form-select-sm">
+                            <option value="">Seleccione una familia...</option>
+                            @foreach (var familia in Model.FamiliaList)
+                            {
+                                <option value="@familia.Id" @(familia.Id == Model.FamiliaSeleccionadaId ? "selected" : "")>
+                                    @familia.Codigo - @familia.Descripcion
+                                </option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-md-2 d-flex align-items-end">
+                        <button type="button" class="btn btn-outline-primary btn-sm w-100" id="addFamiliaBtn" 
+                                data-bs-toggle="modal" data-bs-target="#addFamiliaModal">
+                            <i class="fas fa-plus me-1"></i>Nueva Familia
+                        </button>
+                    </div>
+
+                    <!-- Selección de Subfamilia -->
+                    <div class="col-md-4">
+                        <label for="subfamiliaSelect" class="form-label">Subfamilia</label>
+                        <select id="subfamiliaSelect" class="form-select form-select-sm">
+                            <option value="">Seleccione una subfamilia...</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2 d-flex align-items-end">
+                        <button type="button" class="btn btn-outline-primary btn-sm w-100" id="addSubfamiliaBtn" 
+                                data-bs-toggle="modal" data-bs-target="#addSubfamiliaModal">
+                            <i class="fas fa-plus me-1"></i>Nueva Subfamilia
+                        </button>
+                    </div>
+                </div>
+            </form>
         </div>
+    </div>
 
-        <!-- Combo Box de Subfamilias -->
-        <div class="row mb-3">
-            <div class="col-md-6 col-lg-3">
-                <label for="subfamiliaSelect" class="form-label">Seleccione una Subfamilia</label>
-                <select id="subfamiliaSelect" class="form-select">
-                    <option value=""</option>
-                </select>
+    <!-- Card de Crear Item -->
+    <div class="card shadow mb-0 card-filtros">
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-cube me-2"></i>Crear Nuevo Item
+                </h5>
+                <button type="submit" class="btn btn-success btn-sm" form="familiaSubfamiliaForm">
+                    <i class="fas fa-save me-1"></i>Guardar Item
+                </button>
             </div>
-            <div class="col-md-6 col-lg-4 d-flex align-items-end">
-                <button type="button" class="btn btn-primary" id="addSubfamiliaBtn" data-bs-toggle="modal"
-                    data-bs-target="#addSubfamiliaModal">Nueva Subfamilia</button>
-            </div>
-        </div>
-
-        <!-- Campos para Crear Item --> 
-        <div class="row mb-3"> 
-            <!-- Campo para Descripción del Item --> 
-            <div class="col-md-6 col-lg-4 mb-2"> 
-                <label for="descripcionItem" class="form-label">Descripción Item</label> 
-                <textarea id="descripcionItem" name="Descripcion" class="form-control" rows="4" required></textarea> 
-            </div> 
-            <!-- Agrupar Stock, Punto de Pedido, Precio en una columna --> 
-            <div class="col-md-6 col-lg-8"> 
-                <div class="row"> 
-                    <div class="col-md-4 mb-2 pe-1"> 
-                        <label for="stockItem" class="form-label">Stock</label> 
-                        <input type="number" id="stockItem" name="Stock" class="form-control input-sm" required /> 
-                    </div> 
-
-                    <div class="col-md-4 mb-2 pe-1"> 
-                        <label for="puntoDePedidoItem" class="form-label">Punto de Pedido</label> 
-                        <input type="number" id="puntoDePedidoItem" name="PuntoDePedido" class="form-control input-sm" required /> 
-                    </div> 
-
-                    <div class="col-md-4 mb-2 pe-1"> 
-                        <label for="precioItem" class="form-label">Precio</label> 
-                        <input type="number" id="precioItem" name="Precio" class="form-control input-sm" required /> 
-                    </div> 
-
-                </div> 
-                <div class="row"> 
-                    <div class="col-md-4 mb-2 pe-2 mt-4"> 
-                        <label for="criticoItem" class="form-label">Crítico</label> 
-                        <input type="checkbox" id="criticoItem" name="Critico" class="form-check-input" checked /> 
-                    </div> 
-                    <div class="col-md-4 mb-2 mt-4"> 
-                        <label for="activoItem" class="form-label">Activo</label> 
-                        <input type="checkbox" id="activoItem" name="Activo" class="form-check-input" checked /> 
-                    </div> 
-                    <div class="col-md-4 mb-2 mt-4"> 
-                        <label for="unidadDeMedidaSelect" class="form-label">Unidad de Medida</label> 
-                        <select id="unidadDeMedidaSelect" name="UnidadDeMedidaId" class="form-select select-sm" required> 
-                            <option value=""</option> 
-                            @foreach (var unidad in Model.UnidadDeMedidaList) 
-                            { 
-                                <option value="@unidad.Id">@unidad.Abreviatura</option> 
-                            } 
-                        </select> 
-                    </div> 
+            <div class="row g-3">
+                <!-- Descripción del Item -->
+                <div class="col-md-12">
+                    <label for="descripcionItem" class="form-label">Descripción del Item</label>
+                    <textarea id="descripcionItem" name="Descripcion" class="form-control form-control-sm" 
+                              rows="3" placeholder="Ingrese la descripción del item..." required></textarea>
+                </div>
+                
+                <!-- Primera fila de campos -->
+                <div class="col-md-3">
+                    <label for="stockItem" class="form-label">Stock Inicial</label>
+                    <input type="number" id="stockItem" name="Stock" class="form-control form-control-sm" 
+                           min="0" step="0.01" placeholder="0" required />
+                </div>
+                <div class="col-md-3">
+                    <label for="puntoDePedidoItem" class="form-label">Punto de Pedido</label>
+                    <input type="number" id="puntoDePedidoItem" name="PuntoDePedido" class="form-control form-control-sm" 
+                           min="0" step="0.01" placeholder="0" required />
+                </div>
+                <div class="col-md-3">
+                    <label for="precioItem" class="form-label">Precio</label>
+                    <input type="number" id="precioItem" name="Precio" class="form-control form-control-sm" 
+                           min="0" step="0.01" placeholder="0.00" required />
+                </div>
+                <div class="col-md-3">
+                    <label for="unidadDeMedidaSelect" class="form-label">Unidad de Medida</label>
+                    <select id="unidadDeMedidaSelect" name="UnidadDeMedidaId" class="form-select form-select-sm" required>
+                        <option value="">Seleccione...</option>
+                        @foreach (var unidad in Model.UnidadDeMedidaList)
+                        {
+                            <option value="@unidad.Id">@unidad.Abreviatura</option>
+                        }
+                    </select>
+                </div>
+                
+                <!-- Segunda fila - Checkboxes -->
+                <div class="col-md-6">
+                    <div class="form-check">
+                        <input type="checkbox" id="criticoItem" name="Critico" class="form-check-input" checked />
+                        <label for="criticoItem" class="form-check-label">
+                            <i class="fas fa-exclamation-triangle text-warning me-1"></i>Item Crítico
+                        </label>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-check">
+                        <input type="checkbox" id="activoItem" name="Activo" class="form-check-input" checked />
+                        <label for="activoItem" class="form-check-label">
+                            <i class="fas fa-check-circle text-success me-1"></i>Item Activo
+                        </label>
+                    </div>
                 </div>
             </div>
-        </div> 
-        <!-- Botón de envío --> 
-        <button type="submit" class="btn btn-success mt-3">Guardar Item</button>
-    </form>
+        </div>
+    </div>
+
 </div>
 <!-- Modal para agregar una nueva Familia -->
 <div class="modal fade" id="addFamiliaModal" tabindex="-1" aria-labelledby="addFamiliaModalLabel" aria-hidden="true">
