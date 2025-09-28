@@ -29,6 +29,7 @@
             <option value="Ingreso">Ingreso</option>
             <option value="Salida">Salida</option>
             <option value="Ajuste">Ajuste</option>
+            <option value="Devolucion">Devolucion</option>
         </select>
     </div>
     <div class="col-md-1 d-flex align-items-end">
@@ -54,6 +55,7 @@
                 <th style="width: 50px; text-align: center;">Stock Inicial</th>
                 <th style="width: 120px; text-align: center;">Cantidad Ingreso/Salida</th>
                 <th style="width: 50px; text-align: center;">Stock Final</th>
+                <th style="width: 180px; text-align: center;">Usuario</th>
             </tr>
         </thead>
         <tbody id="resultadosKardex">
@@ -86,6 +88,12 @@
 
     .tipo-ajuste {
         color: #ffc107;
+        font-weight: bold;
+    }
+
+    /* Nueva clase para devoluciones (azul) */
+    .tipo-devolucion {
+        color: #0d6efd; /* Bootstrap primary */
         font-weight: bold;
     }
 
@@ -146,7 +154,7 @@
             resultadosContainer.innerHTML = '';
 
             if (movimientos.length === 0) {
-                resultadosContainer.innerHTML = '<tr><td colspan="8" class="text-center">No se encontraron movimientos</td></tr>';
+                resultadosContainer.innerHTML = '<tr><td colspan="9" class="text-center">No se encontraron movimientos</td></tr>';
                 return;
             }
 
@@ -164,6 +172,7 @@
                         <td class="text-center">${mov.stockInicial !== null ? mov.stockInicial : ''}</td>
                         <td class="text-center"><span class="${cantidadClass}">${mov.cantidadMovimiento}</span></td>
                         <td class="text-center"><strong>${mov.stockFinal !== null ? mov.stockFinal : ''}</strong></td>
+                        <td class="text-center">${mov.usuario || ''}</td>
                     </tr>
                 `;
                 resultadosContainer.insertAdjacentHTML('beforeend', row);
@@ -179,6 +188,8 @@
                     return 'tipo-salida';
                 case 'ajuste':
                     return 'tipo-ajuste';
+                case 'devolucion':
+                    return 'tipo-devolucion';
                 default:
                     return '';
             }

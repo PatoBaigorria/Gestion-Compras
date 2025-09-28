@@ -49,12 +49,7 @@
                     <!-- Campo para Código del Item -->
                     <div class="mb-3">
                         <label for="itemCodigo" class="form-label">Código del Item</label>
-                        <div class="input-group">
-                            <input type="text" id="itemCodigo" name="ItemCodigo" class="form-control" placeholder="Ingrese el código del item" required />
-                            <button type="button" class="btn btn-outline-secondary" id="buscarItemBtn">
-                                <i class="fas fa-search"></i>
-                            </button>
-                        </div>
+                        <input type="text" id="itemCodigo" name="ItemCodigo" class="form-control" placeholder="Ingrese el código del item" required />
                     </div>
 
                     <!-- Información del Item (se muestra después de buscar) -->
@@ -167,18 +162,16 @@
                 $('#itemId').val('');
             });
 
-            // Funcionalidad del modal de nuevo ajuste
-            $('#buscarItemBtn').click(function () {
-                const itemCodigo = $('#itemCodigo').val();
-                if (!itemCodigo) {
+            // Función reutilizable para buscar item por código
+            function buscarItemAjuste(value) {
+                if (!value) {
                     mostrarToast('Por favor ingrese un código de item', 'warning');
                     return;
                 }
-
                 $.ajax({
                     url: '@Url.Action("ObtenerItemPorCodigo", "Ajuste")',
                     type: 'GET',
-                    data: { codigo: itemCodigo },
+                    data: { codigo: value },
                     success: function (response) {
                         if (response.success) {
                             $('#itemDescripcion').text(response.item.descripcion);
@@ -186,18 +179,27 @@
                             $('#stockIni').val(response.item.stock);
                             $('#itemId').val(response.item.id);
                             $('#itemInfo').show();
+                            $('#stockReal').focus();
                         } else {
-                            mostrarToast('Item no encontrado', 'warning');
+                            mostrarToast(response.message || 'Item no encontrado', 'warning');
                             $('#itemInfo').hide();
+                            $('#itemDescripcion').text('');
+                            $('#stockActual').text('0');
+                            $('#stockIni').val('');
+                            $('#itemId').val('');
                         }
                     },
                     error: function (xhr, status, errorThrown) {
                         console.error('Error al buscar item:', xhr.responseText);
                         mostrarToast('Error al buscar item', 'error');
                         $('#itemInfo').hide();
+                        $('#itemDescripcion').text('');
+                        $('#stockActual').text('0');
+                        $('#stockIni').val('');
+                        $('#itemId').val('');
                     }
                 });
-            });
+            }
 
             // Convertir a mayúsculas mientras se escribe
             $('#itemCodigo').on('input', function () {
@@ -205,12 +207,27 @@
                 var value = $(this).val().toUpperCase();
                 $(this).val(value);
                 this.setSelectionRange(cursorPos, cursorPos);
+
+                // Búsqueda automática al llegar a 7 caracteres
+                if (value.length === 7) {
+                    buscarItemAjuste(value);
+                } else if (value.length < 7) {
+                    // Limpiar info si aún no completa 7 caracteres
+                    $('#itemInfo').hide();
+                    $('#itemDescripcion').text('');
+                    $('#stockActual').text('0');
+                    $('#stockIni').val('');
+                    $('#itemId').val('');
+                }
             });
 
-            // Buscar item al presionar Enter
+            // Buscar item al presionar Enter (si ya tiene 7 caracteres)
             $('#itemCodigo').on('keypress', function (e) {
                 if (e.which === 13) {
-                    $('#buscarItemBtn').click();
+                    const value = $('#itemCodigo').val().toString().toUpperCase();
+                    if (value.length === 7) {
+                        buscarItemAjuste(value);
+                    }
                 }
             });
 
