@@ -982,17 +982,6 @@
                     });
                 });
 
-
-                // Verificar si hay cambios en el inventario cada 5 segundos (aumentado de 2 a 5)
-                setInterval(function () {
-                    const ultimoMovimiento = localStorage.getItem('ultimoMovimientoKardex');
-                    const ultimoCheckBuscador = localStorage.getItem('ultimoCheckBuscador') || '0';
-
-                    if (ultimoMovimiento && ultimoMovimiento !== ultimoCheckBuscador) {
-                        localStorage.setItem('ultimoCheckBuscador', ultimoMovimiento);
-                    }
-                }, 5000);
-
                 // Utilidades de exportación e impresión
                 function tieneFiltrosAplicados() {
                     const codigo = $('#codigoItem').val();
