@@ -43,26 +43,6 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
         options.Cookie.SameSite = SameSiteMode.Strict;
         options.Cookie.IsEssential = true;
 
-        // ❌ Importante: sin ExpireTimeSpan → será cookie de sesión pura
-        options.ExpireTimeSpan = TimeSpan.FromMinutes(30); // seguridad por inactividad
-        options.SlidingExpiration = false;
-        options.Cookie.Expiration = null; // al cerrar navegador/pestañas se borra
-
-        // Validar manualmente expiración
-        options.Events = new CookieAuthenticationEvents
-        {
-            OnValidatePrincipal = context =>
-            {
-                if (context.Properties?.IssuedUtc != null &&
-                    DateTimeOffset.UtcNow.Subtract(context.Properties.IssuedUtc.Value) > TimeSpan.FromMinutes(30))
-                {
-                    context.RejectPrincipal();
-                    context.HttpContext.Response.Redirect("/Autenticacion/Login");
-                }
-                return Task.CompletedTask;
-            }
-        };
-
         options.Events.OnRedirectToLogin = context =>
         {
             context.Response.Redirect(context.RedirectUri);
@@ -116,18 +96,6 @@ app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseCors(x => x.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
 app.UseRouting();
-
-// Middleware para detectar si es nueva sesión de navegador
-app.Use(async (context, next) =>
-{
-    if (!context.Request.Cookies.ContainsKey("BrowserSessionStarted"))
-    {
-        // Si no existe, eliminamos cualquier cookie de auth previa
-        context.Response.Cookies.Delete(".AspNetCore.Cookies");
-        context.Response.Cookies.Append("BrowserSessionStarted", "true");
-    }
-    await next();
-});
 
 app.UseAuthentication();
 app.UseAuthorization();
