@@ -38,7 +38,7 @@ publish/
 *.code-workspace
 
 # Visual Studio specific
-.vs/
+vs/
 *.psess
 *.sln.docstates
 
@@ -46,9 +46,10 @@ publish/
 wwwroot/
 appsettings.*.json
 appsettings.json
+!appsettings.Example.json
 
 # Entity Framework
-*Migrations/
+Migrations/
 
 # Configuration
 launchSettings.json
