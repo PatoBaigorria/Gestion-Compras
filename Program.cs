@@ -39,8 +39,8 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
         // Configuración de la cookie
         options.Cookie.Name = ".AspNetCore.Cookies";
         options.Cookie.HttpOnly = true;
-        options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
-        options.Cookie.SameSite = SameSiteMode.Strict;
+        options.Cookie.SecurePolicy = CookieSecurePolicy.None; // Cambiado a None para permitir HTTP
+        options.Cookie.SameSite = SameSiteMode.Lax; // Cambiado a Lax para permitir acceso remoto
         options.Cookie.IsEssential = true;
 
         options.Events.OnRedirectToLogin = context =>
@@ -92,7 +92,7 @@ else
     app.UseHsts();
 }
 
-app.UseHttpsRedirection();
+// app.UseHttpsRedirection(); // Comentado para permitir acceso HTTP remoto
 app.UseStaticFiles();
 app.UseCors(x => x.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
 app.UseRouting();
