@@ -171,6 +171,8 @@
                 });
                 $tbody[0].appendChild(frag);
             }
+
+            function actualizarPaginacion(total) {
                 $('#infoPaginaIng').text(`Página ${paginaActualIng} de ${totalPaginasIng} (${total} ingresos)`);
                 $('#btnAnteriorIng').toggleClass('disabled', paginaActualIng <= 1);
                 $('#btnSiguienteIng').toggleClass('disabled', paginaActualIng >= totalPaginasIng);
