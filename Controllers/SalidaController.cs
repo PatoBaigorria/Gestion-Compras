@@ -62,7 +62,7 @@ namespace Gestion_Compras.Controllers
                     descripcion = s.Item != null ? s.Item.Descripcion : "",
                     cantidad = s.Cantidad,
                     personal = s.Personal != null ? s.Personal.NombreYApellido : "",
-                    fechaVale = s.FechaVale
+                    fechaVale = s.FechaVale.ToString("dd/MM/yyyy")
                 })
                 .ToListAsync();
 

@@ -213,14 +213,13 @@
                 const frag = document.createDocumentFragment();
                 items.forEach(a => {
                     const tr = document.createElement('tr');
-                    const fecha = a.fecha ? new Date(a.fecha).toLocaleDateString('es-ES') : '';
                     tr.innerHTML = `
                         <td>${(a.codigo || '').toUpperCase()}</td>
                         <td style="text-align: center;">${a.descripcion || ''}</td>
                         <td>${a.stockIni}</td>
                         <td>${a.stockReal}</td>
                         <td style="text-align: center;">${a.observaciones || ''}</td>
-                        <td>${fecha}</td>`;
+                        <td>${a.fecha || ''}</td>`;
                     frag.appendChild(tr);
                 });
                 $tbody[0].appendChild(frag);

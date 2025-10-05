@@ -5,6 +5,10 @@ using BCrypt.Net;
 using Gestion_Compras.Models;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
+using Gestion_Compras.Services;
+using System.Text;
+using System.IdentityModel.Tokens.Jwt;
+using Microsoft.IdentityModel.Tokens;
 
 namespace Gestion_Compras.Controllers
 {
@@ -12,10 +16,14 @@ namespace Gestion_Compras.Controllers
     public class AutenticacionController : Controller
     {
         private readonly DataContext context;
+        private readonly IEmailService _emailService;
+        private readonly IConfiguration _configuration;
 
-        public AutenticacionController(DataContext context)
+        public AutenticacionController(DataContext context, IEmailService emailService, IConfiguration configuration)
         {
             this.context = context;
+            _emailService = emailService;
+            _configuration = configuration;
         }
 
         // Permitir acceso anónimo a la vista de login
@@ -289,5 +297,195 @@ namespace Gestion_Compras.Controllers
                 return false;
             }
         }
+
+        // GET: Mostrar formulario de recuperación de contraseña
+        [AllowAnonymous]
+        [HttpGet("RecuperarPassword")]
+        public IActionResult RecuperarPassword()
+        {
+            return View();
+        }
+
+        // POST: Procesar solicitud de recuperación de contraseña con TOKEN
+        [AllowAnonymous]
+        [HttpPost("RecuperarPassword")]
+        public async Task<IActionResult> RecuperarPassword(string email)
+        {
+            if (string.IsNullOrWhiteSpace(email))
+            {
+                TempData["ErrorMessage"] = "Por favor ingresa tu email.";
+                return View();
+            }
+
+            var usuario = context.Usuario.FirstOrDefault(u => u.Email == email);
+            
+            if (usuario == null)
+            {
+                // Por seguridad, no revelar si el email existe o no
+                TempData["SuccessMessage"] = "Si el email está registrado, recibirás instrucciones para recuperar tu contraseña.";
+                return View();
+            }
+
+            try
+            {
+                // Generar token JWT con expiración de 5 minutos
+                var key = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(_configuration["TokenAuthentication:SecretKey"]));
+                var credenciales = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+                var claims = new List<Claim>
+                {
+                    new Claim(ClaimTypes.Email, usuario.Email),
+                    new Claim("UserId", usuario.Id.ToString()),
+                    new Claim(ClaimTypes.Name, usuario.UsuarioLogin),
+                };
+                
+                var token = new JwtSecurityToken(
+                    issuer: _configuration["TokenAuthentication:Issuer"],
+                    audience: _configuration["TokenAuthentication:Audience"],
+                    claims: claims,
+                    expires: DateTime.Now.AddMinutes(5),
+                    signingCredentials: credenciales
+                );
+                
+                var tokenString = new JwtSecurityTokenHandler().WriteToken(token);
+                
+                // Construir enlace de restablecimiento
+                var resetLink = Url.Action("RestablecerPassword", "Autenticacion", 
+                    new { token = tokenString }, Request.Scheme);
+                
+                // Enviar email con el enlace
+                bool emailEnviado = await _emailService.EnviarEmailRecuperacionConTokenAsync(
+                    usuario.Email, 
+                    $"{usuario.Nombre} {usuario.Apellido}", 
+                    resetLink
+                );
+
+                if (emailEnviado)
+                {
+                    TempData["SuccessMessage"] = "Se ha enviado un email con instrucciones para restablecer tu contraseña. Revisa tu bandeja de entrada.";
+                }
+                else
+                {
+                    TempData["ErrorMessage"] = "Hubo un error al enviar el email. Por favor contacta al administrador.";
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error en recuperación de contraseña: {ex.Message}");
+                TempData["ErrorMessage"] = "Ocurrió un error al procesar tu solicitud. Intenta nuevamente.";
+            }
+
+            return View();
+        }
+
+        // GET: Restablecer contraseña con token
+        [AllowAnonymous]
+        [HttpGet("RestablecerPassword")]
+        public IActionResult RestablecerPassword(string token)
+        {
+            if (string.IsNullOrWhiteSpace(token))
+            {
+                TempData["ErrorMessage"] = "Token inválido o expirado.";
+                return RedirectToAction("Login");
+            }
+
+            try
+            {
+                var tokenHandler = new JwtSecurityTokenHandler();
+                var key = Encoding.ASCII.GetBytes(_configuration["TokenAuthentication:SecretKey"]);
+                
+                tokenHandler.ValidateToken(token, new TokenValidationParameters
+                {
+                    ValidateIssuerSigningKey = true,
+                    IssuerSigningKey = new SymmetricSecurityKey(key),
+                    ValidateIssuer = true,
+                    ValidIssuer = _configuration["TokenAuthentication:Issuer"],
+                    ValidateAudience = true,
+                    ValidAudience = _configuration["TokenAuthentication:Audience"],
+                    ValidateLifetime = true,
+                    ClockSkew = TimeSpan.Zero
+                }, out SecurityToken validatedToken);
+
+                ViewBag.Token = token;
+                return View();
+            }
+            catch (SecurityTokenExpiredException)
+            {
+                TempData["ErrorMessage"] = "El enlace ha expirado. Por favor solicita uno nuevo.";
+                return RedirectToAction("RecuperarPassword");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error validando token: {ex.Message}");
+                TempData["ErrorMessage"] = "Token inválido. Por favor solicita un nuevo enlace.";
+                return RedirectToAction("RecuperarPassword");
+            }
+        }
+
+        // POST: Restablecer contraseña con token
+        [AllowAnonymous]
+        [HttpPost("RestablecerPassword")]
+        public async Task<IActionResult> RestablecerPassword(string token, string newPassword, string confirmPassword)
+        {
+            if (string.IsNullOrWhiteSpace(token))
+            {
+                TempData["ErrorMessage"] = "Token inválido.";
+                return RedirectToAction("Login");
+            }
+
+            if (newPassword != confirmPassword)
+            {
+                ViewBag.Token = token;
+                ModelState.AddModelError("", "Las contraseñas no coinciden.");
+                return View();
+            }
+
+            try
+            {
+                var tokenHandler = new JwtSecurityTokenHandler();
+                var key = Encoding.ASCII.GetBytes(_configuration["TokenAuthentication:SecretKey"]);
+                
+                var principal = tokenHandler.ValidateToken(token, new TokenValidationParameters
+                {
+                    ValidateIssuerSigningKey = true,
+                    IssuerSigningKey = new SymmetricSecurityKey(key),
+                    ValidateIssuer = true,
+                    ValidIssuer = _configuration["TokenAuthentication:Issuer"],
+                    ValidateAudience = true,
+                    ValidAudience = _configuration["TokenAuthentication:Audience"],
+                    ValidateLifetime = true,
+                    ClockSkew = TimeSpan.Zero
+                }, out SecurityToken validatedToken);
+
+                var userId = int.Parse(principal.FindFirst("UserId")?.Value ?? "0");
+                var usuario = await context.Usuario.FindAsync(userId);
+
+                if (usuario == null)
+                {
+                    TempData["ErrorMessage"] = "Usuario no encontrado.";
+                    return RedirectToAction("Login");
+                }
+
+                // Actualizar contraseña
+                usuario.Password = BCrypt.Net.BCrypt.HashPassword(newPassword);
+                context.Update(usuario);
+                await context.SaveChangesAsync();
+
+                TempData["MensajeExito"] = "Contraseña restablecida exitosamente. Ya puedes iniciar sesión.";
+                return RedirectToAction("Login");
+            }
+            catch (SecurityTokenExpiredException)
+            {
+                TempData["ErrorMessage"] = "El enlace ha expirado. Por favor solicita uno nuevo.";
+                return RedirectToAction("RecuperarPassword");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error restableciendo contraseña: {ex.Message}");
+                ViewBag.Token = token;
+                ModelState.AddModelError("", "Error al restablecer la contraseña. Intenta nuevamente.");
+                return View();
+            }
+        }
+
     }
 }

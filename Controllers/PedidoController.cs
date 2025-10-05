@@ -71,7 +71,7 @@ namespace Gestion_Compras.Controllers
                 {
                     p.Id,
                     p.NumeroPedido,
-                    p.FechaPedido,
+                    FechaPedido = p.FechaPedido.ToString("dd/MM/yyyy"),
                     p.ItemCodigo,
                     p.Cantidad,
                     p.Recibido,

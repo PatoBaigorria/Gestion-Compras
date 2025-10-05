@@ -54,6 +54,12 @@
             color: #721c24;
         }
         
+        .alert-success {
+            background-color: #d4edda;
+            border-color: #c3e6cb;
+            color: #155724;
+        }
+        
         .alert-heading {
             font-size: 1rem;
             margin-bottom: 0.25rem;
@@ -90,6 +96,13 @@
                     <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
                 </div>
             }
+            @if (TempData["MensajeExito"] != null)
+            {
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    <i class="fas fa-check-circle"></i> @TempData["MensajeExito"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+                </div>
+            }
             <form asp-action="Login" method="post">
                 <div class="form-group">
                     <label for="username">Usuario</label>
@@ -100,6 +113,11 @@
                     <input type="password" id="password" name="password" class="form-control" required>
                 </div>
                 <button type="submit" class="btn btn-primary">Entrar</button>
+                <div class="text-center mt-3">
+                    <a href="/Autenticacion/RecuperarPassword" style="color: #007bff; text-decoration: none;">
+                        <i class="fas fa-key"></i> ¿Olvidaste tu contraseña?
+                    </a>
+                </div>
             </form>
         </div>
     </div>

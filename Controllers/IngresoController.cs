@@ -82,7 +82,7 @@ namespace Gestion_Compras.Controllers
                     remito = i.Remito,
                     ordenCompra = i.OrdenCompra,
                     numeroPedido = context.Pedido.Where(p => p.Id == i.PedidoId).Select(p => p.NumeroPedido).FirstOrDefault(),
-                    fechaRemito = i.FechaRemito
+                    fechaRemito = i.FechaRemito.ToString("dd/MM/yyyy")
                 })
                 .ToListAsync();
 

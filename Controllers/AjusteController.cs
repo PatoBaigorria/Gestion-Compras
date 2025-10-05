@@ -101,7 +101,7 @@ namespace Gestion_Compras.Controllers
                     stockIni = x.a.StockIni,
                     stockReal = x.a.StockReal,
                     observaciones = x.a.Observaciones ?? "",
-                    fecha = x.a.FechaAjuste
+                    fecha = x.a.FechaAjuste.ToString("dd/MM/yyyy")
                 })
                 .ToListAsync();
 
