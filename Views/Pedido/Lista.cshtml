@@ -44,13 +44,13 @@
                         {
                             <div class="d-flex gap-2 ms-1">
                                 <a href="/Pedido/Nuevo" class="btn btn-success btn-sm">
-                                    <i class="fas fa-plus me-1"></i>Generar Pedido
+                                    <i></i>Generar
                                 </a>
                                 <button type="button" class="btn btn-danger btn-sm" onclick="anularPedido()">
-                                    <i class="fas fa-times me-1"></i>Anular Pedido
+                                    <i></i>Anular
                                 </button>
                                 <button type="button" class="btn btn-outline-secondary btn-sm" onclick="descargarPdfPedido()">
-                                    <i class="fas fa-file-pdf me-1"></i>PDF
+                                    <i class="fas fa-file-pdf me-1"></i>
                                 </button>
                             </div>
                         }
@@ -348,12 +348,11 @@
 
             $.each(pedidos, function (index, pedido) {
                 const estadoBadge = getEstadoBadge(pedido.estado);
-                const fecha = new Date(pedido.fechaPedido + 'T00:00:00').toLocaleDateString('es-ES');
 
                 tbody.append(`
                     <tr>
                         <td>${pedido.numeroPedido}</td>
-                        <td>${fecha}</td>
+                        <td>${pedido.fechaPedido || ''}</td>
                         <td>${pedido.itemCodigo || ''}</td>
                         <td>${pedido.itemDescripcion || ''}</td>
                         <td>${pedido.unidadMedida || ''}</td>

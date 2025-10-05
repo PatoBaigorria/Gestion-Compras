@@ -7,6 +7,7 @@ using Gestion_Compras.Filters;
 using Newtonsoft.Json.Converters;
 using System.Diagnostics;
 using QuestPDF.Infrastructure;
+using Gestion_Compras.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -53,11 +54,14 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
 var serverVersion = ServerVersion.AutoDetect("Server=localhost;User=root;Password=;Database=GestionComprasP;SslMode=none");
 
 builder.Services.AddDbContext<DataContext>(dbContextOptions => dbContextOptions
-    .UseMySql("Server=100.93.151.125;User=mbaigorria;Password=Ag0sM1c4;Database=GestionComprasP;SslMode=none;AllowZeroDateTime=True;ConvertZeroDateTime=True", serverVersion)
+    .UseMySql("Server=100.82.200.28;User=mbaigorria;Password=Ag0sM1c4;Database=GestionComprasP;SslMode=none;AllowZeroDateTime=True;ConvertZeroDateTime=True", serverVersion)
     .LogTo(Console.WriteLine, LogLevel.Information)
     .EnableSensitiveDataLogging(false)
     .EnableDetailedErrors()
 );
+
+// Registrar servicio de email
+builder.Services.AddScoped<IEmailService, EmailService>();
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>

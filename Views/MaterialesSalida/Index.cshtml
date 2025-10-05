@@ -159,13 +159,12 @@
                 const frag = document.createDocumentFragment();
                 items.forEach(x => {
                     const tr = document.createElement('tr');
-                    const fecha = x.fechaVale ? new Date(x.fechaVale).toLocaleDateString('es-ES') : '';
                     tr.innerHTML = `
                         <td>${x.itemCodigo || ''}</td>
                         <td>${x.descripcion || ''}</td>
                         <td>${x.cantidad}</td>
                         <td>${x.personal || ''}</td>
-                        <td>${fecha}</td>`;
+                        <td>${x.fechaVale || ''}</td>`;
                     frag.appendChild(tr);
                 });
                 $tbody[0].appendChild(frag);

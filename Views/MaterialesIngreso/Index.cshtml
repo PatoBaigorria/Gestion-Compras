@@ -153,28 +153,24 @@
                 const $tbody = $('#ingresosBody');
                 $tbody.empty();
                 if (!items || items.length === 0) {
-                    $tbody.append('<tr><td colspan="8" class="text-center text-muted"><i class="fas fa-info-circle"></i> No se encontraron ingresos</td></tr>');
                     return;
                 }
                 const frag = document.createDocumentFragment();
                 items.forEach(x => {
                     const tr = document.createElement('tr');
-                    const fecha = x.fechaRemito ? new Date(x.fechaRemito).toLocaleDateString('es-ES') : '';
                     tr.innerHTML = `
                         <td>${x.itemCodigo || ''}</td>
                         <td style="text-align: left;">${x.itemDescripcion || ''}</td>
                         <td>${x.cantidadIngreso}</td>
-                        <td style="text-align: center;">${x.proveedor || ''}</td>
+                        <td>${x.proveedor || ''}</td>
                         <td>${x.remito || ''}</td>
                         <td>${x.ordenCompra || ''}</td>
                         <td>${x.numeroPedido || ''}</td>
-                        <td>${fecha}</td>`;
+                        <td>${x.fechaRemito || ''}</td>`;
                     frag.appendChild(tr);
                 });
                 $tbody[0].appendChild(frag);
             }
-
-            function actualizarPaginacion(total) {
                 $('#infoPaginaIng').text(`Página ${paginaActualIng} de ${totalPaginasIng} (${total} ingresos)`);
                 $('#btnAnteriorIng').toggleClass('disabled', paginaActualIng <= 1);
                 $('#btnSiguienteIng').toggleClass('disabled', paginaActualIng >= totalPaginasIng);

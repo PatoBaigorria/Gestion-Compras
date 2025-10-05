@@ -26,6 +26,10 @@ namespace Gestion_Compras.Models
 		[Required]
 		public string Apellido { get; set; }
 
+		[Required, EmailAddress]
+		[Display(Name = "Email")]
+		public string Email { get; set; }
+
 		[Required]
 		public string UsuarioLogin { get; set; }
 
@@ -37,7 +41,7 @@ namespace Gestion_Compras.Models
 		public bool ActivarLogin { get; set; } = false; 
         // Propiedades para control de primer inicio de sesión
         // Usamos int para compatibilidad con MySQL (0 = false, 1 = true)
-        public int PrimeraVezLogin { get; set; } = 1;
+		public int PrimeraVezLogin { get; set; } = 1;
 
 		public override string ToString()
         {

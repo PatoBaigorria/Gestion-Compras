@@ -254,7 +254,7 @@
                         <td>${d.cantidad}</td>
                         <td>${d.personal || ''}</td>
                         <td>${d.observaciones || ''}</td>
-                        <td>${new Date(d.fecha).toLocaleDateString('es-ES')}</td>`;
+                        <td>${d.fecha || ''}</td>`;
                     frag.appendChild(tr);
                 });
                 $tbody[0].appendChild(frag);

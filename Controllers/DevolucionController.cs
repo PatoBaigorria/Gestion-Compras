@@ -107,7 +107,7 @@ namespace Gestion_Compras.Controllers
                     cantidad = d.Cantidad,
                     personal = d.Personal != null ? d.Personal.NombreYApellido : "",
                     observaciones = d.Observaciones ?? "",
-                    fecha = d.FechaDevolucion
+                    fecha = d.FechaDevolucion.ToString("dd/MM/yyyy")
                 })
                 .ToListAsync();
 
