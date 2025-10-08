@@ -173,6 +173,14 @@ namespace Gestion_Compras.Controllers
             return RedirectToAction("Login", "Autenticacion");
         }
 
+        // Logout silencioso para PWA (sin redirección)
+        [HttpPost("Logout")]
+        public async Task<IActionResult> LogoutPost()
+        {
+            await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+            return Ok(); // Retorna 200 OK sin redirección
+        }
+
         [AllowAnonymous]
         [HttpGet]
         public IActionResult AccessDenied()
@@ -306,23 +314,33 @@ namespace Gestion_Compras.Controllers
             return View();
         }
 
-        // POST: Procesar solicitud de recuperación de contraseña con TOKEN
+        // POST: Procesar solicitud de recuperación de contraseña con TOKEN (busca por usuario)
         [AllowAnonymous]
         [HttpPost("RecuperarPassword")]
-        public async Task<IActionResult> RecuperarPassword(string email)
+        public async Task<IActionResult> RecuperarPassword(string username)
         {
-            if (string.IsNullOrWhiteSpace(email))
+            if (string.IsNullOrWhiteSpace(username))
             {
-                TempData["ErrorMessage"] = "Por favor ingresa tu email.";
+                TempData["ErrorMessage"] = "Por favor ingresa tu nombre de usuario.";
                 return View();
             }
 
-            var usuario = context.Usuario.FirstOrDefault(u => u.Email == email);
+            // Buscar usuario por nombre de usuario (no por email)
+            var usuario = context.Usuario.FirstOrDefault(u => u.UsuarioLogin == username);
             
             if (usuario == null)
             {
-                // Por seguridad, no revelar si el email existe o no
-                TempData["SuccessMessage"] = "Si el email está registrado, recibirás instrucciones para recuperar tu contraseña.";
+                // Por seguridad, no revelar si el usuario existe o no
+                TempData["SuccessMessage"] = "Si el usuario está registrado, recibirás un email con instrucciones para recuperar tu contraseña.";
+                return View();
+            }
+
+            // Validar que el usuario tenga un email registrado
+            if (string.IsNullOrWhiteSpace(usuario.Email))
+            {
+                // No revelar que el usuario existe pero no tiene email
+                TempData["SuccessMessage"] = "Si el usuario está registrado, recibirás un email con instrucciones para recuperar tu contraseña.";
+                Console.WriteLine($"Usuario {username} no tiene email registrado");
                 return View();
             }
 
@@ -352,7 +370,7 @@ namespace Gestion_Compras.Controllers
                 var resetLink = Url.Action("RestablecerPassword", "Autenticacion", 
                     new { token = tokenString }, Request.Scheme);
                 
-                // Enviar email con el enlace
+                // Enviar email al correo registrado en la base de datos
                 bool emailEnviado = await _emailService.EnviarEmailRecuperacionConTokenAsync(
                     usuario.Email, 
                     $"{usuario.Nombre} {usuario.Apellido}", 
@@ -362,6 +380,7 @@ namespace Gestion_Compras.Controllers
                 if (emailEnviado)
                 {
                     TempData["SuccessMessage"] = "Se ha enviado un email con instrucciones para restablecer tu contraseña. Revisa tu bandeja de entrada.";
+                    Console.WriteLine($"Email de recuperación enviado a {usuario.Email} para usuario {username}");
                 }
                 else
                 {

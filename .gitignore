@@ -44,6 +44,10 @@ vs/
 
 # ASP.NET Core
 wwwroot/
+!wwwroot/manifest.json
+!wwwroot/service-worker.js
+!wwwroot/offline.html
+!wwwroot/icons/
 appsettings.*.json
 appsettings.json
 !appsettings.Example.json

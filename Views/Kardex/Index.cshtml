@@ -236,6 +236,13 @@
 
             try {
                 const response = await fetch(`/Kardex/BuscarKardex?${params.toString()}`);
+                
+                // Si la respuesta es una redirección al login (401 o 302)
+                if (response.redirected && response.url.includes('/Autenticacion/Login')) {
+                    window.location.href = '/Autenticacion/Login';
+                    return;
+                }
+                
                 if (!response.ok) {
                     throw new Error('Error en la búsqueda');
                 }
@@ -250,7 +257,12 @@
                 actualizarPaginacionKardex(data.total || movimientos.length);
             } catch (error) {
                 console.error('Error:', error);
-                resultadosContainer.innerHTML = '<tr><td colspan="9" class="text-center text-danger">Error al cargar los datos</td></tr>';
+                // Si el error es por JSON inválido (probablemente HTML del login)
+                if (error.message.includes('JSON')) {
+                    window.location.href = '/Autenticacion/Login';
+                    return;
+                }
+                resultadosContainer.innerHTML = '<tr><td colspan="9" class="text-center text-danger">Error al cargar los datos. Por favor, recarga la página.</td></tr>';
             }
         }
 

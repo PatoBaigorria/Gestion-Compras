@@ -44,6 +44,10 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
         options.Cookie.SameSite = SameSiteMode.Lax; // Cambiado a Lax para permitir acceso remoto
         options.Cookie.IsEssential = true;
 
+        // Expiración de sesión
+        options.ExpireTimeSpan = TimeSpan.FromHours(8); // Sesión expira en 8 horas
+        options.SlidingExpiration = true; // Renueva la sesión con cada actividad
+
         options.Events.OnRedirectToLogin = context =>
         {
             context.Response.Redirect(context.RedirectUri);
@@ -55,6 +59,7 @@ var serverVersion = ServerVersion.AutoDetect("Server=localhost;User=root;Passwor
 
 builder.Services.AddDbContext<DataContext>(dbContextOptions => dbContextOptions
     .UseMySql("Server=100.82.200.28;User=mbaigorria;Password=Ag0sM1c4;Database=GestionComprasP;SslMode=none;AllowZeroDateTime=True;ConvertZeroDateTime=True", serverVersion)
+    //.UseMySql("Server=localhost;User=root;Password=;Database=GestionComprasP;SslMode=none;AllowZeroDateTime=True;ConvertZeroDateTime=True", serverVersion)
     .LogTo(Console.WriteLine, LogLevel.Information)
     .EnableSensitiveDataLogging(false)
     .EnableDetailedErrors()
@@ -117,22 +122,22 @@ app.Urls.Clear();
 app.Urls.Add("http://localhost:5000");
 app.Urls.Add("http://*:5000");
 
-// Abrir navegador automáticamente
-var url = "http://localhost:5000";
-Task.Run(() =>
-{
-    try
-    {
-        Process.Start(new ProcessStartInfo
-        {
-            FileName = url,
-            UseShellExecute = true
-        });
-    }
-    catch (Exception ex)
-    {
-        Console.WriteLine($"Error al abrir el navegador: {ex.Message}");
-    }
-});
+// Abrir navegador automáticamente (DESHABILITADO - se usa PWA instalada)
+// var url = "http://localhost:5000";
+// Task.Run(() =>
+// {
+//     try
+//     {
+//         Process.Start(new ProcessStartInfo
+//         {
+//             FileName = url,
+//             UseShellExecute = true
+//         });
+//     }
+//     catch (Exception ex)
+//     {
+//         Console.WriteLine($"Error al abrir el navegador: {ex.Message}");
+//     }
+// });
 
 app.Run();
