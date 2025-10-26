@@ -90,7 +90,8 @@ namespace Gestion_Compras.Controllers
         [HttpGet("BuscarItemPorCodigo")]
         public IActionResult BuscarItemPorCodigo(string codigo)
         {
-            var item = context.Item.FirstOrDefault(i => i.Codigo == codigo);
+            var codigoUpper = codigo?.ToUpper();
+            var item = context.Item.FirstOrDefault(i => i.Codigo == codigoUpper);
             if (item == null)
             {
                 return NotFound(new { error = "Ítem no encontrado." });
@@ -114,6 +115,7 @@ namespace Gestion_Compras.Controllers
             }
             foreach (var salida in salidas)
             {
+                salida.ItemCodigo = salida.ItemCodigo?.ToUpper();
                 var item = await context.Item.FirstOrDefaultAsync(i => i.Codigo == salida.ItemCodigo);
                 if (item == null)
                 {

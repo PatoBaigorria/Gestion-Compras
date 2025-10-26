@@ -43,10 +43,11 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
         options.Cookie.SecurePolicy = CookieSecurePolicy.None; // Cambiado a None para permitir HTTP
         options.Cookie.SameSite = SameSiteMode.Lax; // Cambiado a Lax para permitir acceso remoto
         options.Cookie.IsEssential = true;
+        options.Cookie.MaxAge = null; // Cookie de sesión - se borra al cerrar el navegador
 
         // Expiración de sesión
-        options.ExpireTimeSpan = TimeSpan.FromHours(8); // Sesión expira en 8 horas
-        options.SlidingExpiration = true; // Renueva la sesión con cada actividad
+        options.ExpireTimeSpan = TimeSpan.FromMinutes(30); // Sesión expira en 30 minutos de inactividad
+        options.SlidingExpiration = false; // NO renovar - sesión fija de 30 minutos
 
         options.Events.OnRedirectToLogin = context =>
         {

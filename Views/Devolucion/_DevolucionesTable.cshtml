@@ -20,7 +20,7 @@
                     <tr>
                         <td>@(d.Item?.Codigo?.ToUpper() ?? "")</td>
                         <td style="text-align: center;">@(d.Item?.Descripcion ?? "")</td>
-                        <td>@d.Cantidad</td>
+                        <td>@(d.Cantidad % 1 == 0 ? d.Cantidad.ToString("0") : d.Cantidad.ToString("0.##"))</td>
                         <td style="text-align: center;">@(d.Personal?.NombreYApellido ?? "")</td>
                         <td style="text-align: center;">@(d.Observaciones ?? "")</td>
                         <td>@d.FechaDevolucion.ToString("dd/MM/yyyy")</td>

@@ -17,9 +17,9 @@ namespace Gestion_Compras.Models
 
 		public int UnidadDeMedidaId { get; set; }
         
-		public int Cantidad { get; set; }
+		public double Cantidad { get; set; }
 
-        public int Recibido { get; set; }
+        public double Recibido { get; set; }
 
         public int  SubFamiliaId { get; set; }
 

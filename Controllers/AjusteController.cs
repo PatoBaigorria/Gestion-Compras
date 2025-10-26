@@ -150,8 +150,8 @@ namespace Gestion_Compras.Controllers
                         usuarioId = uid;
                 }
                 string itemCodigo = ajusteData.ItemCodigo;
-                int stockIni = ajusteData.StockIni;
-                int stockReal = ajusteData.StockReal;
+                double stockIni = ajusteData.StockIni;
+                double stockReal = ajusteData.StockReal;
                 string observaciones = ajusteData.Observaciones ?? "";
 
                 if (string.IsNullOrEmpty(itemCodigo))

@@ -201,6 +201,25 @@
             cargarPedidos(1);
         });
 
+        // Función para formatear números (mostrar decimales solo si existen)
+        function formatearNumero(num) {
+            return num % 1 === 0 ? num.toFixed(0) : num.toFixed(2);
+        }
+
+        // Función para formatear fecha
+        function formatearFecha(fechaStr) {
+            if (!fechaStr) return '';
+            // Si ya está en formato dd/MM/yyyy, devolverla tal cual
+            if (fechaStr.includes('/')) return fechaStr;
+            // Si viene en formato ISO (yyyy-MM-dd), convertirla
+            const fecha = new Date(fechaStr + 'T00:00:00');
+            if (isNaN(fecha.getTime())) return fechaStr;
+            const dia = String(fecha.getDate()).padStart(2, '0');
+            const mes = String(fecha.getMonth() + 1).padStart(2, '0');
+            const anio = fecha.getFullYear();
+            return `${dia}/${mes}/${anio}`;
+        }
+
         let paginaActualP = 1;
         let totalPaginasP = 1;
         let tamanoPaginaP = 100;
@@ -348,17 +367,24 @@
 
             $.each(pedidos, function (index, pedido) {
                 const estadoBadge = getEstadoBadge(pedido.estado);
+                
+                // LOG: Ver qué fecha llega del servidor
+                if (index === 0) { // Solo loguear el primer pedido para no saturar
+                    console.log('[PEDIDO FRONTEND LOG] Primer pedido:', pedido);
+                    console.log('[PEDIDO FRONTEND LOG] FechaPedido RAW:', pedido.fechaPedido);
+                    console.log('[PEDIDO FRONTEND LOG] FechaPedido Formateada:', formatearFecha(pedido.fechaPedido));
+                }
 
                 tbody.append(`
                     <tr>
                         <td>${pedido.numeroPedido}</td>
-                        <td>${pedido.fechaPedido || ''}</td>
+                        <td>${formatearFecha(pedido.fechaPedido)}</td>
                         <td>${pedido.itemCodigo || ''}</td>
                         <td>${pedido.itemDescripcion || ''}</td>
                         <td>${pedido.unidadMedida || ''}</td>
-                        <td>${pedido.cantidad}</td>
-                        <td>${pedido.estado === 'CANCELADO' ? 0 : (pedido.cantidad - pedido.recibido)}</td>
-                        <td>${pedido.recibido}</td>
+                        <td>${formatearNumero(parseFloat(pedido.cantidad))}</td>
+                        <td>${pedido.estado === 'CANCELADO' ? '0' : formatearNumero(pedido.cantidad - pedido.recibido)}</td>
+                        <td>${formatearNumero(parseFloat(pedido.recibido))}</td>
                         <td>${pedido.subFamilia || ''}</td>
                         <td>${estadoBadge}</td>
                         <td>${pedido.usuario || ''}</td>
@@ -576,7 +602,7 @@
                                                 <tr>
                                                     <td style="font-size: 0.85em;">${item.itemCodigo}</td>
                                                     <td>${item.itemDescripcion || ''}</td>
-                                                    <td>${item.cantidad}</td>
+                                                    <td>${formatearNumero(parseFloat(item.cantidad))}</td>
                                                     <td>${estadoBadge}</td>
                                                     <td>${botonAnular}</td>
                                                 </tr>
@@ -628,7 +654,7 @@
         function anularItemIndividual(itemId, codigoItem, cantidad) {
             Swal.fire({
                 title: '¿Confirmar anulación?',
-                text: `¿Desea anular el ítem ${codigoItem} (Cantidad: ${cantidad})?`,
+                text: `¿Desea anular el ítem ${codigoItem} (Cantidad: ${formatearNumero(parseFloat(cantidad))})?`,
                 icon: 'warning',
                 showCancelButton: true,
                 confirmButtonColor: '#dc3545',

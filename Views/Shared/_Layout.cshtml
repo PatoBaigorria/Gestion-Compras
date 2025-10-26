@@ -87,7 +87,7 @@
     <!-- Barra de Navegación -->
     <nav class="navbar navbar-expand-lg navbar-dark menu-container" style="background: linear-gradient(90deg, #007bff 0%, #00bcd4 100%);">
         <div class="container">
-            <a class="navbar-brand" href="/" style="color: white !important;">Gestión de Pañol</a>
+            <a class="navbar-brand" href="@Url.Action("Index", "Home")" style="color: white !important;">Gestión de Pañol</a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarResponsive">
                 <span class="navbar-toggler-icon"></span>
             </button>
@@ -95,43 +95,43 @@
             <div class="collapse navbar-collapse" id="navbarResponsive">
                 <ul class="navbar-nav ms-auto" style="color: white !important;">
                     <li class="nav-item">
-                        <a class="nav-link" href="/" title="Página Principal del Sistema" style="color: white !important;">Inicio</a>
+                        <a class="nav-link" href="@Url.Action("Index", "Home")" title="Página Principal del Sistema" style="color: white !important;">Inicio</a>
                     </li>
                     @if (User.IsInRole("Administrador"))
                     {
                         <li class="nav-item">
-                            <a class="nav-link" href="/FamiliaSubFamilia/Index" title="Gestión de Familias, Subfamilias e Items" style="color: white !important;">Maestro</a>
+                            <a class="nav-link" href="@Url.Action("Index", "FamiliaSubFamilia")" title="Gestión de Familias, Subfamilias e Items" style="color: white !important;">Maestro</a>
                         </li>
                     }
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" id="materialesDropdown" role="button"
                             data-bs-toggle="dropdown" aria-expanded="false" title="Movimientos de Inventario" style="color: white !important;"> Movimientos </a>
                         <ul class="dropdown-menu" aria-labelledby="materialesDropdown">
-                            <li><a class="dropdown-item" href="/Ingreso/Index" title="Registrar Ingresos de Materiales">Ingreso</a></li>
-                            <li><a class="dropdown-item" href="/Salida/Index" title="Registrar Salidas de Materiales">Egreso</a></li>
-                            <li><a class="dropdown-item" href="/Devolucion" title="Registrar Devoluciones de Materiales">Devolución</a></li>
-                            <li><a class="dropdown-item" href="/Pedido/Lista" title="Pedidos">Pedido</a></li>
+                            <li><a class="dropdown-item" href="@Url.Action("Index", "Ingreso")" title="Registrar Ingresos de Materiales">Ingreso</a></li>
+                            <li><a class="dropdown-item" href="@Url.Action("Index", "Salida")" title="Registrar Salidas de Materiales">Egreso</a></li>
+                            <li><a class="dropdown-item" href="@Url.Action("Index", "Devolucion")" title="Registrar Devoluciones de Materiales">Devolución</a></li>
+                            <li><a class="dropdown-item" href="@Url.Action("Lista", "Pedido")" title="Pedidos">Pedido</a></li>
                             <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="/StockHistorico/Index" title="Consultar Stock en Fechas Pasadas"><i class="fas fa-calendar-alt me-2"></i>Stock Histórico</a></li>
+                            <li><a class="dropdown-item" href="@Url.Action("Index", "StockHistorico")" title="Consultar Stock en Fechas Pasadas"><i class="fas fa-calendar-alt me-2"></i>Stock Histórico</a></li>
                         </ul>
                     <li class="nav-item">
-                        <a class="nav-link" href="/Item/Buscador" target="_blank" title="Buscar y Consultar Items" style="color: white !important;">Items</a>
+                        <a class="nav-link" href="@Url.Action("Buscador", "Item")" target="_blank" title="Buscar y Consultar Items" style="color: white !important;">Items</a>
                     </li>
                     </li>
                     @if (User.IsInRole("Administrador"))
                     {
                         <li class="nav-item">
-                            <a class="nav-link" href="/Ajuste/Index" title="Realizar Ajustes de Stock" style="color: white !important;">Ajustes</a>
+                            <a class="nav-link" href="@Url.Action("Index", "Ajuste")" title="Realizar Ajustes de Stock" style="color: white !important;">Ajustes</a>
                         </li>
                     }
                     <li class="nav-item">
-                        <a class="nav-link" href="/Personal" title="Lista y Alta de Personal" style="color: white !important;">Personal</a>
+                        <a class="nav-link" href="@Url.Action("Index", "Personal")" title="Lista y Alta de Personal" style="color: white !important;">Personal</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="/Proveedor" title="Lista y Alta de Proveedores" style="color: white !important;">Proveedores</a>
+                        <a class="nav-link" href="@Url.Action("Index", "Proveedor")" title="Lista y Alta de Proveedores" style="color: white !important;">Proveedores</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="/Kardex" title="Historial de Movimientos de Stock" style="color: white !important;">Kardex</a>
+                        <a class="nav-link" href="@Url.Action("Index", "Kardex")" title="Historial de Movimientos de Stock" style="color: white !important;">Kardex</a>
                     </li>
                     @if (User.Identity.IsAuthenticated)
                     {
@@ -146,17 +146,17 @@
                                 @if (User.Identity.IsAuthenticated)
                                 {
                                     var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-                                    <li><a class="dropdown-item" href="/Autenticacion/CambiarPassword?id=@userId"><i class="fas fa-key me-2"></i>Cambiar Contraseña</a></li>
+                                    <li><a class="dropdown-item" href="@Url.Action("CambiarPassword", "Autenticacion", new { id = userId })"><i class="fas fa-key me-2"></i>Cambiar Contraseña</a></li>
                                 }
                                 <li><hr class="dropdown-divider"></li>
-                                <li><a class="dropdown-item text-danger" href="/Autenticacion/Logout"><i class="fas fa-power-off me-2"></i>Cerrar Sesión</a></li>
+                                <li><a class="dropdown-item text-danger" href="@Url.Action("Logout", "Autenticacion")"><i class="fas fa-power-off me-2"></i>Cerrar Sesión</a></li>
                             </ul>
                         </li>
                     }
                     else
                     {
                         <li class="nav-item">
-                            <a class="nav-link" href="/Autenticacion/Login" style="color: white !important;">Iniciar sesión</a>
+                            <a class="nav-link" href="@Url.Action("Login", "Autenticacion")" style="color: white !important;">Iniciar sesión</a>
                         </li>
                     }
 
@@ -176,7 +176,7 @@
     && ViewContext.RouteData.Values["action"].ToString().Equals("Login", StringComparison.OrdinalIgnoreCase)))
     {
         <footer>
-            <p>&copy; 2024 Gestión de Pañol | <a href="/Home/Privacy" class="text-info">Política de privacidad</a></p>
+            <p>&copy; 2024 Gestión de Pañol | <a href="@Url.Action("Privacy", "Home")" class="text-info">Política de privacidad</a></p>
         </footer>
     }
 
@@ -252,6 +252,45 @@
         if (isPWA) {
             console.log('🚀 Ejecutando como PWA');
         }
+    </script>
+
+    <script>
+        // Cerrar sesión SOLO al cerrar la ventana/pestaña (NO al navegar entre páginas)
+        let navegacionInterna = false;
+        
+        // Detectar navegación interna (clicks en links de la aplicación)
+        document.addEventListener('click', function(e) {
+            const link = e.target.closest('a');
+            if (link && link.href && link.href.startsWith(window.location.origin)) {
+                navegacionInterna = true;
+                setTimeout(() => navegacionInterna = false, 100);
+            }
+        });
+        
+        // Detectar envío de formularios
+        document.addEventListener('submit', function() {
+            navegacionInterna = true;
+            setTimeout(() => navegacionInterna = false, 100);
+        });
+        
+        // Solo cerrar sesión si NO es navegación interna
+        window.addEventListener('beforeunload', function(e) {
+            // Si es navegación interna, NO cerrar sesión
+            if (navegacionInterna) {
+                return;
+            }
+            
+            // Cerrar sesión al cerrar ventana/pestaña
+            const logoutUrl = '@Url.Action("LogoutPost", "Autenticacion")';
+            
+            if (navigator.sendBeacon) {
+                navigator.sendBeacon(logoutUrl);
+            } else {
+                var xhr = new XMLHttpRequest();
+                xhr.open('POST', logoutUrl, false);
+                xhr.send();
+            }
+        });
     </script>
 </body>
 

@@ -277,7 +277,7 @@
 
             movimientos.forEach(mov => {
                 const tipoClass = getTipoMovimientoClass(mov.tipoMovimiento);
-                const cantidadClass = mov.cantidadMovimiento.startsWith('-') ? 'cantidad-negativa' : 'cantidad-positiva';
+                const cantidadClass = parseFloat(mov.cantidadMovimiento) < 0 ? 'cantidad-negativa' : 'cantidad-positiva';
 
                 const row = `
                     <tr>
@@ -286,15 +286,20 @@
                         <td class="text-center">${mov.codigo || ''}</td>
                         <td style="text-align: left;">${mov.descripcion || ''}</td>
                         <td class="text-center"><span class="${tipoClass}">${(mov.tipoMovimiento || '').toUpperCase()}</span></td>
-                        <td class="text-center">${mov.stockInicial !== null ? mov.stockInicial : ''}</td>
-                        <td class="text-center"><span class="${cantidadClass}">${mov.cantidadMovimiento}</span></td>
-                        <td class="text-center"><strong>${mov.stockFinal !== null ? mov.stockFinal : ''}</strong></td>
+                        <td class="text-center">${mov.stockInicial !== null ? formatearNumero(parseFloat(mov.stockInicial)) : ''}</td>
+                        <td class="text-center"><span class="${cantidadClass}">${formatearNumero(parseFloat(mov.cantidadMovimiento))}</span></td>
+                        <td class="text-center"><strong>${mov.stockFinal !== null ? formatearNumero(parseFloat(mov.stockFinal)) : ''}</strong></td>
                         <td class="text-center">${mov.usuario || ''}</td>
                     </tr>
                 `;
                 resultadosContainer.insertAdjacentHTML('beforeend', row);
             });
         }
+        // Función para formatear números (mostrar decimales solo si existen)
+        function formatearNumero(num) {
+            return num % 1 === 0 ? num.toFixed(0) : num.toFixed(2);
+        }
+
         function getTipoMovimientoClass(tipo) {
             switch (tipo?.toLowerCase()) {
                 case 'ingreso':

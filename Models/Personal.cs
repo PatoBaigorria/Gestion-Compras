@@ -18,6 +18,8 @@ namespace Gestion_Compras.Models
         
         [Required]
         public string Sector { get; set; }
+
+        public bool Activo { get; set; } = true;
 		
 	}
 }

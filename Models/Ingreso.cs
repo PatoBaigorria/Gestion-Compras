@@ -19,7 +19,7 @@ namespace Gestion_Compras.Models
 		public Proveedor? Proveedor { get; set; }
 		public int ProveedorId { get; set; }
 
-        public int CantidadIngreso { get; set; }
+        public double CantidadIngreso { get; set; }
 
         [Required]
         public string Remito { get; set; } = string.Empty;

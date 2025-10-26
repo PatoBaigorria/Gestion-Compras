@@ -71,7 +71,7 @@ namespace Gestion_Compras.Controllers
                 {
                     p.Id,
                     p.NumeroPedido,
-                    FechaPedido = p.FechaPedido.ToString("dd/MM/yyyy"),
+                    p.FechaPedido,
                     p.ItemCodigo,
                     p.Cantidad,
                     p.Recibido,
@@ -79,6 +79,15 @@ namespace Gestion_Compras.Controllers
                     p.UsuarioId
                 })
                 .ToListAsync();
+            
+            // LOG: Ver qué viene DIRECTAMENTE de la BD
+            if (pagePedidos.Any())
+            {
+                var primero = pagePedidos.First();
+                var logMsg = $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] [PEDIDO LOG TEMPRANO] Primer pedido de BD - Id: {primero.Id}, NumeroPedido: {primero.NumeroPedido}, FechaPedido: '{primero.FechaPedido}', Es MinValue: {primero.FechaPedido == DateOnly.MinValue}\n";
+                Console.WriteLine(logMsg);
+                try { System.IO.File.AppendAllText("pedidos_debug.log", logMsg); } catch { }
+            }
 
             if (pagePedidos.Count == 0)
             {
@@ -111,18 +120,28 @@ namespace Gestion_Compras.Controllers
                 .Where(u => usuarioIds.Contains(u.Id))
                 .ToDictionaryAsync(u => u.Id, u => (u.Apellido + " " + u.Nombre));
 
-            // 3) Proyección final
+            // 3) Proyección final - Formatear EN MEMORIA como Kardex
             var items = pagePedidos.Select(p =>
             {
                 var infoItem = (p.ItemCodigo != null && itemsDict.TryGetValue(p.ItemCodigo, out var ii)) ? ii : null;
                 var unidad = (infoItem != null && unidadesDict.TryGetValue(infoItem.UnidadDeMedidaId, out var abrev)) ? abrev : "";
                 var subfam = (infoItem != null && subFamiliasDict.TryGetValue(infoItem.SubFamiliaId, out var sfDesc)) ? sfDesc : "";
                 var usuarioNombre = (p.UsuarioId.HasValue && usuariosDict.TryGetValue(p.UsuarioId.Value, out var nombre)) ? nombre : "";
+                
+                // Formatear fecha EN MEMORIA - Con DateOnly
+                var fechaFormateada = p.FechaPedido != DateOnly.MinValue ? p.FechaPedido.ToString("dd/MM/yyyy") : "";
+                var logMsg2 = $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] [PEDIDO LOG] Id: {p.Id}, NumeroPedido: {p.NumeroPedido}, FechaPedido RAW: '{p.FechaPedido}', Formateada: '{fechaFormateada}'\n";
+                if (p.Id >= pagePedidos.First().Id - 2) // Solo loguear los primeros 3
+                {
+                    Console.WriteLine(logMsg2);
+                    try { System.IO.File.AppendAllText("pedidos_debug.log", logMsg2); } catch { }
+                }
+                
                 return new
                 {
                     p.Id,
                     p.NumeroPedido,
-                    p.FechaPedido,
+                    FechaPedido = fechaFormateada,
                     ItemCodigo = p.ItemCodigo,
                     ItemDescripcion = infoItem?.Descripcion ?? "",
                     p.Cantidad,
@@ -664,7 +683,7 @@ namespace Gestion_Compras.Controllers
                                     table.Cell().Element(container => ModernCell(container, bgColor)).Text(it.Codigo).FontSize(8);
                                     table.Cell().Element(container => ModernCell(container, bgColor)).Text(it.Descripcion).FontSize(8);
                                     table.Cell().Element(container => ModernCell(container, bgColor)).AlignCenter().Text(it.Unidad).FontSize(8);
-                                    table.Cell().Element(container => ModernCell(container, bgColor)).AlignCenter().Text(it.Cantidad.ToString()).FontSize(8).SemiBold();
+                                    table.Cell().Element(container => ModernCell(container, bgColor)).AlignCenter().Text(it.Cantidad.ToString("F2")).FontSize(8).SemiBold();
                                     table.Cell().Element(container => ModernCell(container, bgColor)).AlignCenter().Text(it.EquipoCodigo).FontSize(8);
                                     
                                     isEven = !isEven;
@@ -842,7 +861,7 @@ namespace Gestion_Compras.Controllers
         public class ItemPedidoRequest
         {
             public int ItemId { get; set; }
-            public int Cantidad { get; set; }
+            public double Cantidad { get; set; }
         }
 
         [HttpPost("actualizar-numeros-pedido")]

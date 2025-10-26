@@ -25,9 +25,9 @@
                         <td>@pedido.FechaPedido.ToString("dd/MM/yyyy")</td>
                         <td>@(pedido.ItemCodigo?.ToUpper() ?? "")</td>
                         <td style="text-align: left;">-</td>
-                        <td>@pedido.Cantidad</td>
+                        <td>@(pedido.Cantidad % 1 == 0 ? pedido.Cantidad.ToString("0") : pedido.Cantidad.ToString("0.##"))</td>
                         <td>-</td>
-                        <td>@pedido.Recibido</td>
+                        <td>@(pedido.Recibido % 1 == 0 ? pedido.Recibido.ToString("0") : pedido.Recibido.ToString("0.##"))</td>
                         <td>
                             @if (pedido.Estado == "PENDIENTE")
                             {

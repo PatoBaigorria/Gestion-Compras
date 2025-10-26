@@ -54,7 +54,7 @@
                     <div class="col-md-1">
                         <label for="cantidad" class="form-label">Cantidad *</label>
                         <input type="number" class="form-control form-control-sm" id="cantidad" 
-                               min="1" max="9999" required>
+                               min="0.01" step="0.01" max="9999" required>
                     </div>
                     <div class="col-md-1">
                         <label for="unidadMedida" class="form-label">Unidad</label>
@@ -179,7 +179,11 @@
 
 @section Scripts {
     <script>
-        // Variables globales
+        // Función para formatear números (mostrar decimales solo si existen)
+        function formatearNumero(num) {
+            return num % 1 === 0 ? num.toFixed(0) : num.toFixed(2);
+        }
+
         let itemsPedido = [];
         let itemSeleccionado = null;
 
@@ -320,7 +324,7 @@
                 return;
             }
 
-            const cantidad = parseInt($('#cantidad').val());
+            const cantidad = parseFloat($('#cantidad').val());
             if (!cantidad || cantidad <= 0) {
                 mostrarToast('Ingrese una cantidad válida', 'warning');
                 $('#cantidad').focus();
@@ -370,7 +374,7 @@
                         <tr>
                             <td>${item.codigo}</td>
                             <td>${item.descripcion}</td>
-                            <td>${item.cantidad}</td>
+                            <td>${formatearNumero(parseFloat(item.cantidad))}</td>
                             <td>${item.unidadMedida}</td>
                             <td>
                                 <button type="button" class="btn btn-danger btn-sm" onclick="eliminarItem(${index})">

@@ -21,7 +21,7 @@ namespace Gestion_Compras.Models
         public Personal? Personal { get; set; }
 		public int PersonalId { get; set; }
 
-        public int Cantidad { get; set; }
+        public double Cantidad { get; set; }
 
         public DateTime FechaDevolucion { get; set; }
 

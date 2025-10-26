@@ -20,8 +20,8 @@
                     <tr>
                         <td>@ajuste.ItemCodigo?.ToUpper()</td>
                         <td style="text-align: left;">@(ajuste.Item?.Descripcion ?? "")</td>
-                        <td>@ajuste.StockIni</td>
-                        <td>@ajuste.StockReal</td>
+                        <td>@(ajuste.StockIni % 1 == 0 ? ajuste.StockIni.ToString("0") : ajuste.StockIni.ToString("0.##"))</td>
+                        <td>@(ajuste.StockReal % 1 == 0 ? ajuste.StockReal.ToString("0") : ajuste.StockReal.ToString("0.##"))</td>
                         <td style="text-align: left;">@(ajuste.Observaciones ?? "")</td>
                         <td>@ajuste.FechaAjuste.ToString("dd/MM/yyyy")</td>
                     </tr>

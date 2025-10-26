@@ -174,7 +174,7 @@
                     <!-- Campo para Stock Real -->
                     <div class="mb-3">
                         <label for="stockReal" class="form-label">Stock Real</label>
-                        <input type="number" id="stockReal" name="StockReal" class="form-control" placeholder="Ingrese el stock real" required />
+                        <input type="number" id="stockReal" name="StockReal" class="form-control" step="0.01" min="0" placeholder="Ingrese el stock real" required />
                     </div>
 
                     <!-- Campo para Observaciones -->
@@ -216,8 +216,8 @@
                     tr.innerHTML = `
                         <td>${(a.codigo || '').toUpperCase()}</td>
                         <td style="text-align: center;">${a.descripcion || ''}</td>
-                        <td>${a.stockIni}</td>
-                        <td>${a.stockReal}</td>
+                        <td>${parseFloat(a.stockIni).toFixed(2)}</td>
+                        <td>${parseFloat(a.stockReal).toFixed(2)}</td>
                         <td style="text-align: center;">${a.observaciones || ''}</td>
                         <td>${a.fecha || ''}</td>`;
                     frag.appendChild(tr);
@@ -358,8 +358,8 @@
 
                 const ajusteData = {
                     ItemCodigo: $('#itemCodigo').val(),
-                    StockIni: parseInt($('#stockIni').val()),
-                    StockReal: parseInt($('#stockReal').val()),
+                    StockIni: parseFloat($('#stockIni').val()),
+                    StockReal: parseFloat($('#stockReal').val()),
                     Observaciones: $('#observaciones').val()
                 };
 

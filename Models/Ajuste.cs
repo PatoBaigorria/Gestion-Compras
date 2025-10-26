@@ -11,9 +11,9 @@ namespace Gestion_Compras.Models
 
 		public string ItemCodigo { get; set; }
 		 
-		public int StockIni { get; set; }
+		public double StockIni { get; set; }
 
-        public int StockReal { get; set; }
+        public double StockReal { get; set; }
 
         public string Observaciones { get; set; }
 

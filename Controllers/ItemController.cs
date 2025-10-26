@@ -38,7 +38,7 @@ namespace Gestion_Compras.Controllers
             public string FamiliaDescripcion { get; set; }
             public string SubFamiliaDescripcion { get; set; }
             public string UnidadDeMedidaAbreviatura { get; set; }
-            public int CantidadEnPedidos { get; set; }
+            public double CantidadEnPedidos { get; set; }
             public int FamiliaId { get; set; }
             public int SubFamiliaId { get; set; }
             public int UnidadDeMedidaId { get; set; }
@@ -298,7 +298,7 @@ namespace Gestion_Compras.Controllers
             {
                 double stock = it.Stock;
                 double pp = it.PuntoDePedido;
-                int cantPed = it.CantidadEnPedidos;
+                double cantPed = it.CantidadEnPedidos;
                 bool necesitaComprar = (stock < pp) && ((stock + cantPed) < pp);
 
                 string CriticoStr = it.Critico ? "SI" : "NO";

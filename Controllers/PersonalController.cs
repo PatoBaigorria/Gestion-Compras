@@ -19,7 +19,10 @@ namespace Gestion_Compras.Controllers
         [HttpGet]
         public async Task<IActionResult> Index()
         {
-            var personas = await context.Personal.ToListAsync();
+            var personas = await context.Personal
+                .Where(p => p.Activo)
+                .OrderBy(p => p.NombreYApellido)
+                .ToListAsync();
             return View(personas); // Pasa la lista a la vista Razor
         }
 
@@ -54,6 +57,23 @@ namespace Gestion_Compras.Controllers
             { 
                 return StatusCode(500, new { error = "Error interno del servidor", detalles = ex.Message }); 
             } 
+        }
+
+        // PUT: /Personal/CambiarEstado/{id}
+        [HttpPut("CambiarEstado/{id}")]
+        public async Task<IActionResult> CambiarEstado(int id)
+        {
+            var personal = await context.Personal.FindAsync(id);
+            if (personal == null)
+            {
+                return NotFound(new { error = "El personal no fue encontrado." });
+            }
+            
+            personal.Activo = !personal.Activo;
+            await context.SaveChangesAsync();
+            
+            string estado = personal.Activo ? "activado" : "desactivado";
+            return Ok(new { message = $"Personal {estado} exitosamente.", activo = personal.Activo });
         }
 
         // DELETE: /Personal/Delete/{id} 

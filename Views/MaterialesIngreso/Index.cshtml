@@ -144,6 +144,11 @@
 
 @section Scripts {
     <script>
+        // Función para formatear números (mostrar decimales solo si existen)
+        function formatearNumero(num) {
+            return num % 1 === 0 ? num.toFixed(0) : num.toFixed(2);
+        }
+
         $(document).ready(function () {
             let paginaActualIng = 1;
             let totalPaginasIng = 1;
@@ -161,7 +166,7 @@
                     tr.innerHTML = `
                         <td>${x.itemCodigo || ''}</td>
                         <td style="text-align: left;">${x.itemDescripcion || ''}</td>
-                        <td>${x.cantidadIngreso}</td>
+                        <td>${formatearNumero(parseFloat(x.cantidadIngreso))}</td>
                         <td>${x.proveedor || ''}</td>
                         <td>${x.remito || ''}</td>
                         <td>${x.ordenCompra || ''}</td>

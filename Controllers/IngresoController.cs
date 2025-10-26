@@ -104,10 +104,11 @@ namespace Gestion_Compras.Controllers
 
         // GET: /Ingreso/ValidarItemEnPedido
         [HttpGet("ValidarItemEnPedido")]
-        public async Task<IActionResult> ValidarItemEnPedido(string itemCodigo, int numeroPedido, int cantidadIngreso)
+        public async Task<IActionResult> ValidarItemEnPedido(string itemCodigo, int numeroPedido, double cantidadIngreso)
         {
             try
             {
+                itemCodigo = itemCodigo?.ToUpper();
                 // Buscar el pedido por número
                 var pedido = await context.Pedido
                     .Where(p => p.NumeroPedido == numeroPedido)
@@ -193,6 +194,7 @@ namespace Gestion_Compras.Controllers
                 }
                 foreach (var ingreso in ingresos)
                 {
+                    ingreso.ItemCodigo = ingreso.ItemCodigo?.ToUpper();
                     Console.WriteLine($"Validando ingreso - ItemCodigo: {ingreso.ItemCodigo}, PedidoId: {ingreso.PedidoId}");
                     
                     // Verificar que el ítem existe
@@ -231,7 +233,7 @@ namespace Gestion_Compras.Controllers
                     pedido.Recibido += ingreso.CantidadIngreso;
                     
                     // Disminuir CantidadEnPedidos por la cantidad ingresada
-                    item.CantidadEnPedidos -= (int)ingreso.CantidadIngreso;
+                    item.CantidadEnPedidos -= (double)ingreso.CantidadIngreso;
                     if (item.CantidadEnPedidos < 0) item.CantidadEnPedidos = 0;
                     
                     Console.WriteLine($"CantidadEnPedidos actualizada: {item.CantidadEnPedidos} (disminuyó en {ingreso.CantidadIngreso})");

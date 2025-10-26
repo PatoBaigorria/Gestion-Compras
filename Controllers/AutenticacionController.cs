@@ -48,12 +48,14 @@ namespace Gestion_Compras.Controllers
                 Console.WriteLine($"Usuario encontrado: {usuario.UsuarioLogin}");
                 Console.WriteLine($"Password en BD: {usuario.Password}");
                 Console.WriteLine($"Password ingresada: {password}");
+                Console.WriteLine($"ActivarLogin: {usuario.ActivarLogin}");
+                Console.WriteLine($"PrimeraVezLogin: {usuario.PrimeraVezLogin}");
                 
                 // Verificar si el usuario está activo para login
                 // Si no está activo pero es su primer inicio, permitir el cambio de contraseña
                 if (!usuario.ActivarLogin && usuario.PrimeraVezLogin != 1)
                 {
-                    Console.WriteLine("Error: El usuario no está activo para iniciar sesión");
+                    Console.WriteLine($"BLOQUEADO - ActivarLogin: {usuario.ActivarLogin}, PrimeraVezLogin: {usuario.PrimeraVezLogin}");
                     TempData["ErrorType"] = "Cuenta inactiva";
                     TempData["ErrorMessage"] = "Tu cuenta no está activa. Por favor, contacta al administrador del sistema.";
                     return View("Login");
@@ -90,7 +92,13 @@ namespace Gestion_Compras.Controllers
                         };
 
                         var userClaimsIdentity = new ClaimsIdentity(userClaims, CookieAuthenticationDefaults.AuthenticationScheme);
-                        await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(userClaimsIdentity));
+                        
+                        var authPropertiesTemp = new AuthenticationProperties
+                        {
+                            IsPersistent = false // Cookie de sesión - se borra al cerrar el navegador
+                        };
+                        
+                        await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(userClaimsIdentity), authPropertiesTemp);
                         
                         // Generar URL absoluta para asegurar que la redirección funcione
                         var url = Url.Action("CambiarPassword", "Autenticacion", 
@@ -103,7 +111,7 @@ namespace Gestion_Compras.Controllers
                     // Si el usuario no está activo, no permitir el acceso
                     if (!usuario.ActivarLogin)
                     {
-                        Console.WriteLine("Error: El usuario no está activo");
+                        Console.WriteLine($"BLOQUEADO EN SEGUNDA VALIDACIÓN - ActivarLogin: {usuario.ActivarLogin}, PrimeraVezLogin: {usuario.PrimeraVezLogin}");
                         TempData["ErrorType"] = "Cuenta inactiva";
                         TempData["ErrorMessage"] = "Tu cuenta no está activa. Por favor, contacta al administrador del sistema.";
                         return View("Login");
@@ -120,7 +128,12 @@ namespace Gestion_Compras.Controllers
 
                 var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
 
-                await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(claimsIdentity));
+                var authProperties = new AuthenticationProperties
+                {
+                    IsPersistent = false // Cookie de sesión - se borra al cerrar el navegador
+                };
+
+                await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(claimsIdentity), authProperties);
                 // Código para mostrar los claims en la consola 
                 foreach (var claim in claims) 
                 { 
@@ -248,7 +261,7 @@ namespace Gestion_Compras.Controllers
                 }
 
                 usuario.Password = BCrypt.Net.BCrypt.HashPassword(newPassword);
-                usuario.ActivarLogin = false;
+                usuario.ActivarLogin = true; // Mantener la cuenta activa después del cambio
                 usuario.PrimeraVezLogin = 0; // 0 = false
                 context.Update(usuario);
                 await context.SaveChangesAsync();

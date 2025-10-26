@@ -149,6 +149,11 @@
 
 @section Scripts {
     <script>
+        // Función para formatear números (mostrar decimales solo si existen)
+        function formatearNumero(num) {
+            return num % 1 === 0 ? num.toFixed(0) : num.toFixed(2);
+        }
+
         let familias = [];
         let subFamilias = [];
 
@@ -294,7 +299,7 @@
                         <td class="text-center">${item.codigo}</td>
                         <td style="text-align: left;">${item.descripcion}</td>
                         <td class="text-center">${item.unidad}</td>
-                        <td class="text-center"><strong>${item.stock.toFixed(2)}</strong></td>
+                        <td class="text-center"><strong>${formatearNumero(item.stock)}</strong></td>
                         <td class="text-center">${item.fechaMovimiento}</td>
                     </tr>
                 `;

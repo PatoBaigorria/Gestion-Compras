@@ -337,7 +337,12 @@
 
     @section Scripts {
         <script>
-            $(document).ready(function () {
+            // Función para formatear números (mostrar decimales solo si existen)
+            function formatearNumero(num) {
+                return num % 1 === 0 ? num.toFixed(0) : num.toFixed(2);
+            }
+
+            document.addEventListener('DOMContentLoaded', function () {
                 // Variables globales para paginación
                 let paginaActual = 1;
                 let totalPaginas = 1;
@@ -591,9 +596,9 @@
                                                                                         <td>${item.familiaDescripcion || ''}</td> 
                                                                                         <td>${item.subFamiliaDescripcion || ''}</td> 
                                                                                         <td style="text-align: left">${item.descripcion || ''}</td> 
-                                                                                        <td>${item.stock !== null ? item.stock : ''}</td> 
-                                                                                        <td>${item.puntoDePedido !== null ? item.puntoDePedido : ''}</td>
-                                                                                        <td>${item.cantidadEnPedidos !== null ? item.cantidadEnPedidos : '0'}</td>
+                                                                                        <td>${item.stock !== null ? formatearNumero(parseFloat(item.stock)) : ''}</td> 
+                                                                                        <td>${item.puntoDePedido !== null ? formatearNumero(parseFloat(item.puntoDePedido)) : ''}</td>
+                                                                                        <td>${item.cantidadEnPedidos !== null ? formatearNumero(parseFloat(item.cantidadEnPedidos)) : '0'}</td>
                                                                                         <td>${item.unidadDeMedidaAbreviatura || ''}</td>
                                                                                         <td>${item.precio !== null ? item.precio : ''}</td>
                                                                                         <td><input type="checkbox" ${item.critico ? 'checked' : ''} disabled></td>

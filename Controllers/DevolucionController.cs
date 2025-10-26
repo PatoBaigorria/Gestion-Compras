@@ -177,7 +177,7 @@ namespace Gestion_Compras.Controllers
             try
             {
                 string itemCodigo = data.ItemCodigo;
-                int cantidad = data.Cantidad;
+                double cantidad = data.Cantidad;
                 int personalId = data.PersonalId;
                 string observaciones = data.Observaciones ?? "";
                 string? fechaStr = data.FechaDevolucion;

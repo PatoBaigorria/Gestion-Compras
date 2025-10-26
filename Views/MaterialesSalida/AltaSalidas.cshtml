@@ -84,7 +84,7 @@
                 <h5 class="card-title mb-0">
                     <i class="fas fa-sign-out-alt me-2"></i>Registrar Salidas de Materiales
                 </h5>
-                <a href="/Salida/Index" class="btn btn-outline-secondary btn-sm">
+                <a href="@Url.Action("Index", "Salida")" class="btn btn-outline-secondary btn-sm">
                     <i class="fas fa-arrow-left me-2"></i>Volver a la Lista
                 </a>
             </div>
@@ -93,12 +93,12 @@
                 @Html.AntiForgeryToken()
                 <div class="col-md-3">
                     <label for="itemCodigo" class="form-label">Código del Ítem</label>
-                    <input type="text" class="form-control form-control-sm" id="itemCodigo" oninput="limpiarError('itemCodigo')" />
+                    <input type="text" class="form-control form-control-sm" id="itemCodigo" oninput="limpiarError('itemCodigo')" style="text-transform: uppercase;" />
                     <div id="itemCodigoError" class="text-danger"></div>
                 </div>
                 <div class="col-md-2">
                     <label for="cantidad" class="form-label">Cantidad</label>
-                    <input type="number" class="form-control form-control-sm" id="cantidad" oninput="limpiarError('cantidad')" />
+                    <input type="number" class="form-control form-control-sm" id="cantidad" step="0.01" min="0.01" oninput="limpiarError('cantidad')" />
                     <div id="cantidadError" class="text-danger"></div>
                 </div>
                 <div class="col-md-3">
@@ -135,7 +135,7 @@
                 <button type="button" class="btn btn-primary btn-sm" onclick="registrarSalidas()">
                     <i class="fas fa-save me-2"></i>Registrar Salidas
                 </button>
-                <a href="/Salida/Index" class="btn btn-secondary btn-sm">
+                <a href="@Url.Action("Index", "Salida")" class="btn btn-secondary btn-sm">
                     <i class="fas fa-times me-2"></i>Cancelar
                 </a>
             </div>
@@ -166,11 +166,51 @@
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/5.1.3/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/js/all.min.js"></script>
+    <!-- Select2 CSS y JS -->
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <!-- Incluir FontAwesome para los íconos -->
 
     <script>
+        // Función para formatear números (mostrar decimales solo si existen)
+        function formatearNumero(num) {
+            return num % 1 === 0 ? num.toFixed(0) : num.toFixed(2);
+        }
+
         var salidas = [];
         var fechaFijada = ""; // Variable para mantener la fecha fijada
+
+        // Inicializar Select2 para el select de personal
+        $(document).ready(function() {
+            $('#personalId').select2({
+                theme: 'bootstrap-5',
+                width: '100%',
+                placeholder: 'Selecciona Personal',
+                allowClear: true,
+                selectOnClose: false,
+                language: {
+                    noResults: function() {
+                        return "No se encontraron resultados";
+                    },
+                    searching: function() {
+                        return "Buscando...";
+                    }
+                }
+            });
+            
+            // Permitir borrar en el campo de búsqueda con backspace
+            $('#personalId').on('select2:opening', function(e) {
+                setTimeout(function() {
+                    $('.select2-search__field').attr('contenteditable', 'true');
+                }, 0);
+            });
+            
+            // Limpiar error cuando se selecciona un personal
+            $('#personalId').on('change', function() {
+                limpiarError('personalId');
+            });
+        });
 
         function mostrarError(campo, mensaje) {
             document.getElementById(campo + "Error").textContent = mensaje;
@@ -214,7 +254,8 @@
         function limpiarCampos() {
             document.getElementById("itemCodigo").value = "";
             document.getElementById("cantidad").value = "";
-            document.getElementById("personalId").selectedIndex = 0;
+            // Limpiar Select2 correctamente
+            $('#personalId').val(null).trigger('change');
             // No limpiar la fecha para mantenerla fija
         }
 
@@ -238,8 +279,8 @@
         async function agregarSalida() {
             limpiarErrores();
 
-            var itemCodigo = document.getElementById("itemCodigo").value.trim();
-            var cantidad = parseInt(document.getElementById("cantidad").value);
+            var itemCodigo = document.getElementById("itemCodigo").value.trim().toUpperCase();
+            var cantidad = parseFloat(document.getElementById("cantidad").value);
             var personalId = document.getElementById("personalId").value;
             var fecha = document.getElementById("fecha").value;
 
@@ -253,7 +294,7 @@
                 return;
             }
 
-            if (personalId === "") {
+            if (personalId === "" || personalId === null) {
                 mostrarError("personalId", "Por favor, selecciona un personal.");
                 return;
             }
@@ -292,7 +333,7 @@
             // Actualiza la lista de salidas
             var listaSalidas = document.getElementById("listaSalidas");
             var tr = document.createElement("tr");
-            tr.innerHTML = `<td>${itemCodigo}</td><td>${descripcion}</td><td>${cantidad}</td><td>${personalText}</td><td>${fechaFormateada}</td><td class="text-center align-middle"><button class="btn btn-danger btn-sm" title="Borrar Fila" onclick="borrarFila(this)"><i class="fas fa-trash-alt"></i></button></td>`;
+            tr.innerHTML = `<td>${itemCodigo}</td><td>${descripcion}</td><td>${formatearNumero(parseFloat(cantidad))}</td><td>${personalText}</td><td>${fechaFormateada}</td><td class="text-center align-middle"><button class="btn btn-danger btn-sm" title="Borrar Fila" onclick="borrarFila(this)"><i class="fas fa-trash-alt"></i></button></td>`;
             listaSalidas.appendChild(tr);
         }
 
@@ -334,9 +375,17 @@
                     // Notificar a otras ventanas que hay un nuevo movimiento
                     localStorage.setItem('ultimoMovimientoStock', Date.now().toString());
                     
-                    setTimeout(function () {
-                        location.reload();
-                    }, 1000);
+                    // Limpiar la lista y resetear el formulario
+                    salidas = [];
+                    document.getElementById('listaSalidas').innerHTML = '';
+                    fechaFijada = '';
+                    document.getElementById('fecha').removeAttribute('readonly');
+                    document.getElementById('fecha').style.backgroundColor = '';
+                    document.getElementById('fecha').value = '';
+                    limpiarCampos();
+                    
+                    // Resetear el select de personal
+                    $('#personalId').val('').trigger('change');
                 },
                 error: function (xhr, status, errorThrown) {
                     console.error('Error al registrar salidas:', xhr.responseText);
