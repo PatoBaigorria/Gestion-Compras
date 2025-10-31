@@ -471,23 +471,27 @@
         $('#filtroGeneral').on('input', function() {
             clearTimeout(window.filtroTimeout);
             window.filtroTimeout = setTimeout(function() {
-                if (usandoFiltrosLocales) {
-                    // Si estamos en modo filtros locales, aplicar filtros localmente
-                    paginaFiltrada = 1; // Volver a página 1
-                    aplicarFiltrosYPaginacion();
-                } else {
-                    // Modo normal: recargar del servidor
-                    cargarPedidos(1);
-                }
+                // SIEMPRE recargar del servidor cuando cambia el filtro general
+                // Esto asegura que los datos en todosLosPedidos estén actualizados
+                paginaFiltrada = 1; // Volver a página 1
+                cargarPedidos(1);
             }, 500);
         });
         
         $('#filtroPendiente, #filtroCompletado, #filtroAnulado').on('change', function() {
-            if (usandoFiltrosLocales) {
+            // Verificar si hay filtros de checkboxes activos
+            const filtroPendiente = $('#filtroPendiente').is(':checked');
+            const filtroCompletado = $('#filtroCompletado').is(':checked');
+            const filtroAnulado = $('#filtroAnulado').is(':checked');
+            const hayFiltrosCheckbox = !(filtroPendiente && filtroCompletado && filtroAnulado);
+            
+            if (hayFiltrosCheckbox && todosLosPedidos.length > 0) {
+                // Si hay filtros de checkboxes y ya tenemos datos, aplicar filtros localmente
                 paginaFiltrada = 1; // Volver a página 1
                 aplicarFiltrosYPaginacion();
             } else {
-                // Recargar datos con filtros
+                // Si no hay filtros de checkboxes o no tenemos datos, recargar del servidor
+                paginaFiltrada = 1;
                 cargarPedidos(1);
             }
         });

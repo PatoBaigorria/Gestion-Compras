@@ -389,7 +389,13 @@
                 },
                 error: function (xhr, status, errorThrown) {
                     console.error('Error al registrar salidas:', xhr.responseText);
-                    mostrarMensajeError('Error al registrar salidas: ' + xhr.responseText);
+                    let mensaje = 'Error al registrar salidas';
+                    if (xhr.responseJSON && xhr.responseJSON.error) {
+                        mensaje = xhr.responseJSON.error;
+                    } else if (xhr.responseJSON && xhr.responseJSON.message) {
+                        mensaje = xhr.responseJSON.message;
+                    }
+                    mostrarMensajeError(mensaje);
                 }
             });
         }
