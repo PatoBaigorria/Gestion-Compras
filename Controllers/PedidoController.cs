@@ -43,40 +43,49 @@ namespace Gestion_Compras.Controllers
             pagina = Math.Max(1, pagina);
             tamanoPagina = tamanoPagina <= 0 ? 100 : tamanoPagina;
 
-            // Construir query base
-            var query = context.Pedido.AsNoTracking();
+            // Construir query base con joins para poder filtrar por descripción y subfamilia
+            var query = context.Pedido
+                .AsNoTracking()
+                .Join(context.Item, p => p.ItemCodigo, i => i.Codigo, (p, i) => new { Pedido = p, Item = i })
+                .Join(context.SubFamilia, pi => pi.Item.SubFamiliaId, sf => sf.Id, (pi, sf) => new { pi.Pedido, pi.Item, SubFamilia = sf });
 
             // Aplicar filtro general si existe
             if (!string.IsNullOrEmpty(filtroGeneral))
             {
                 var filtroLower = filtroGeneral.ToLower();
-                query = query.Where(p => 
-                    (p.ItemCodigo != null && p.ItemCodigo.ToLower().Contains(filtroLower)) ||
-                    p.Estado.ToLower().Contains(filtroLower) ||
-                    p.NumeroPedido.ToString().Contains(filtroLower) ||
-                    p.Cantidad.ToString().Contains(filtroLower) ||
-                    p.Recibido.ToString().Contains(filtroLower)
+                query = query.Where(x => 
+                    (x.Pedido.ItemCodigo != null && x.Pedido.ItemCodigo.ToLower().Contains(filtroLower)) ||
+                    x.Pedido.Estado.ToLower().Contains(filtroLower) ||
+                    x.Pedido.NumeroPedido.ToString().Contains(filtroLower) ||
+                    x.Pedido.Cantidad.ToString().Contains(filtroLower) ||
+                    x.Pedido.Recibido.ToString().Contains(filtroLower) ||
+                    (x.Item.Descripcion != null && x.Item.Descripcion.ToLower().Contains(filtroLower)) ||
+                    (x.SubFamilia.Descripcion != null && x.SubFamilia.Descripcion.ToLower().Contains(filtroLower))
                 );
             }
 
             // Total de registros (con filtro aplicado)
             var total = await query.CountAsync();
 
-            // 1) Página de pedidos (sin joins)
+            // 1) Página de pedidos (con joins)
             var pagePedidos = await query
-                .OrderByDescending(p => p.Id)
+                .OrderByDescending(x => x.Pedido.Id)
                 .Skip((pagina - 1) * tamanoPagina)
                 .Take(tamanoPagina)
-                .Select(p => new
+                .Select(x => new
                 {
-                    p.Id,
-                    p.NumeroPedido,
-                    p.FechaPedido,
-                    p.ItemCodigo,
-                    p.Cantidad,
-                    p.Recibido,
-                    p.Estado,
-                    p.UsuarioId
+                    x.Pedido.Id,
+                    x.Pedido.NumeroPedido,
+                    x.Pedido.FechaPedido,
+                    x.Pedido.ItemCodigo,
+                    x.Pedido.Cantidad,
+                    x.Pedido.Recibido,
+                    x.Pedido.Estado,
+                    x.Pedido.UsuarioId,
+                    ItemDescripcion = x.Item.Descripcion,
+                    SubFamiliaDescripcion = x.SubFamilia.Descripcion,
+                    UnidadDeMedidaId = x.Item.UnidadDeMedidaId,
+                    SubFamiliaId = x.Item.SubFamiliaId
                 })
                 .ToListAsync();
             
@@ -94,25 +103,12 @@ namespace Gestion_Compras.Controllers
                 return Ok(new { items = new object[0], total, pagina, tamanoPagina });
             }
 
-            // 2) Resolver dependencias en lotes
-            var codigos = pagePedidos.Select(x => x.ItemCodigo).Distinct().ToList();
-            var itemsDict = await context.Item
-                .AsNoTracking()
-                .Where(i => codigos.Contains(i.Codigo))
-                .Select(i => new { i.Codigo, i.Descripcion, i.UnidadDeMedidaId, i.SubFamiliaId })
-                .ToDictionaryAsync(i => i.Codigo!, i => i);
-
-            var unidadIds = itemsDict.Values.Select(v => v.UnidadDeMedidaId).Distinct().ToList();
+            // 2) Resolver dependencias en lotes (solo unidades de medida y usuarios)
+            var unidadIds = pagePedidos.Select(x => x.UnidadDeMedidaId).Distinct().ToList();
             var unidadesDict = await context.UnidadDeMedida
                 .AsNoTracking()
                 .Where(um => unidadIds.Contains(um.Id))
                 .ToDictionaryAsync(um => um.Id, um => um.Abreviatura);
-
-            var subFamiliaIds = itemsDict.Values.Select(v => v.SubFamiliaId).Distinct().ToList();
-            var subFamiliasDict = await context.SubFamilia
-                .AsNoTracking()
-                .Where(sf => subFamiliaIds.Contains(sf.Id))
-                .ToDictionaryAsync(sf => sf.Id, sf => sf.Descripcion);
 
             var usuarioIds = pagePedidos.Select(p => p.UsuarioId).Where(id => id.HasValue).Select(id => id!.Value).Distinct().ToList();
             var usuariosDict = await context.Usuario
@@ -123,9 +119,7 @@ namespace Gestion_Compras.Controllers
             // 3) Proyección final - Formatear EN MEMORIA como Kardex
             var items = pagePedidos.Select(p =>
             {
-                var infoItem = (p.ItemCodigo != null && itemsDict.TryGetValue(p.ItemCodigo, out var ii)) ? ii : null;
-                var unidad = (infoItem != null && unidadesDict.TryGetValue(infoItem.UnidadDeMedidaId, out var abrev)) ? abrev : "";
-                var subfam = (infoItem != null && subFamiliasDict.TryGetValue(infoItem.SubFamiliaId, out var sfDesc)) ? sfDesc : "";
+                var unidad = unidadesDict.TryGetValue(p.UnidadDeMedidaId, out var abrev) ? abrev : "";
                 var usuarioNombre = (p.UsuarioId.HasValue && usuariosDict.TryGetValue(p.UsuarioId.Value, out var nombre)) ? nombre : "";
                 
                 // Formatear fecha EN MEMORIA - Con DateOnly
@@ -143,9 +137,9 @@ namespace Gestion_Compras.Controllers
                     p.NumeroPedido,
                     FechaPedido = fechaFormateada,
                     ItemCodigo = p.ItemCodigo,
-                    ItemDescripcion = infoItem?.Descripcion ?? "",
+                    ItemDescripcion = p.ItemDescripcion ?? "",
                     p.Cantidad,
-                    SubFamilia = subfam,
+                    SubFamilia = p.SubFamiliaDescripcion ?? "",
                     UnidadMedida = unidad,
                     p.Recibido,
                     p.Estado,
