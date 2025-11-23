@@ -232,22 +232,22 @@
         let usandoFiltrosLocales = false; // Flag para saber si estamos en modo filtros locales
 
         function cargarPedidos(pagina = 1) {
-            // Solo enviar filtro general al servidor
-            const filtroGeneral = $('#filtroGeneral').val() || '';
-            
-            // Verificar si hay filtros de checkboxes activos
+            // Verificar si hay filtros activos (checkboxes o filtro general)
             const filtroPendiente = $('#filtroPendiente').is(':checked');
             const filtroCompletado = $('#filtroCompletado').is(':checked');
             const filtroAnulado = $('#filtroAnulado').is(':checked');
             const hayFiltrosCheckbox = !(filtroPendiente && filtroCompletado && filtroAnulado);
+            const filtroGeneral = $('#filtroGeneral').val() || '';
+            const hayFiltroGeneral = filtroGeneral.trim() !== '';
+            const hayFiltrosActivos = hayFiltrosCheckbox || hayFiltroGeneral;
             
-            console.log('Estados checkboxes:', { filtroPendiente, filtroCompletado, filtroAnulado, hayFiltrosCheckbox });
+            console.log('Filtros activos:', { hayFiltrosCheckbox, hayFiltroGeneral, hayFiltrosActivos });
             
             const params = new URLSearchParams();
-            params.append('filtroGeneral', filtroGeneral);
+            // NO enviar filtroGeneral al servidor, se aplicará localmente
             
-            if (hayFiltrosCheckbox) {
-                // Si hay filtros de checkboxes, obtener TODOS los elementos
+            if (hayFiltrosActivos) {
+                // Si hay cualquier filtro activo, obtener TODOS los elementos
                 tamanoPaginaReal = tamanoPaginaP; // Guardar el tamaño real
                 params.append('pagina', 1);
                 params.append('tamanoPagina', 10000); // Número grande para obtener todos
@@ -255,7 +255,7 @@
                 paginaFiltrada = pagina;
                 console.log('Modo filtros locales activado, página solicitada:', pagina, 'tamaño real:', tamanoPaginaReal);
             } else {
-                // Sin filtros de checkboxes, usar paginación normal
+                // Sin filtros, usar paginación normal
                 params.append('pagina', pagina);
                 params.append('tamanoPagina', tamanoPaginaP);
                 usandoFiltrosLocales = false;
@@ -400,10 +400,10 @@
             const filtroAnulado = $('#filtroAnulado').is(':checked');
             const filtroGeneral = $('#filtroGeneral').val().toLowerCase().trim();
 
-            console.log('Aplicando filtros:', { filtroPendiente, filtroCompletado, filtroAnulado, filtroGeneral });
+            console.log('Aplicando filtros locales:', { filtroPendiente, filtroCompletado, filtroAnulado, filtroGeneral });
             console.log('Total pedidos sin filtrar:', todosLosPedidos.length);
 
-            // Filtrar todos los pedidos
+            // Filtrar todos los pedidos (por estado Y filtro general)
             pedidosFiltrados = todosLosPedidos.filter(pedido => {
                 // Filtro por estado
                 const estado = pedido.estado.toUpperCase();
@@ -471,11 +471,35 @@
         $('#filtroGeneral').on('input', function() {
             clearTimeout(window.filtroTimeout);
             window.filtroTimeout = setTimeout(function() {
-                // SIEMPRE recargar del servidor cuando cambia el filtro general
-                // Esto asegura que los datos en todosLosPedidos estén actualizados
-                paginaFiltrada = 1; // Volver a página 1
-                cargarPedidos(1);
-            }, 500);
+                const filtroGeneral = $('#filtroGeneral').val() || '';
+                
+                if (filtroGeneral.trim() !== '' || usandoFiltrosLocales) {
+                    // Si hay texto en el filtro o ya estamos en modo local, aplicar filtros localmente
+                    if (!usandoFiltrosLocales) {
+                        // Primera vez que se activa el filtro, cargar todos los datos
+                        cargarPedidos(1);
+                    } else {
+                        // Ya tenemos los datos, solo aplicar filtros
+                        paginaFiltrada = 1;
+                        aplicarFiltrosYPaginacion();
+                    }
+                } else {
+                    // Filtro vacío y no hay otros filtros, volver a modo normal
+                    const filtroPendiente = $('#filtroPendiente').is(':checked');
+                    const filtroCompletado = $('#filtroCompletado').is(':checked');
+                    const filtroAnulado = $('#filtroAnulado').is(':checked');
+                    const hayFiltrosCheckbox = !(filtroPendiente && filtroCompletado && filtroAnulado);
+                    
+                    if (!hayFiltrosCheckbox) {
+                        // No hay filtros activos, recargar con paginación normal
+                        cargarPedidos(1);
+                    } else {
+                        // Hay filtros de checkbox, aplicar filtros localmente
+                        paginaFiltrada = 1;
+                        aplicarFiltrosYPaginacion();
+                    }
+                }
+            }, 300);
         });
         
         $('#filtroPendiente, #filtroCompletado, #filtroAnulado').on('change', function() {

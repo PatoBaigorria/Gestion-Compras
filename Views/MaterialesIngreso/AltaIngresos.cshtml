@@ -81,7 +81,13 @@
                         step="0.01" min="0.01" oninput="limpiarError('cantidadIngreso')" />
                     <div id="cantidadIngresoError" class="text-danger"></div>
                 </div>
-                <div class="col-md-3">
+                <div class="col-md-2">
+                    <label for="precio" class="form-label">Precio</label>
+                    <input type="number" class="form-control form-control-sm" id="precio"
+                        step="0.01" min="0" oninput="limpiarError('precio')" />
+                    <div id="precioError" class="text-danger"></div>
+                </div>
+                <div class="col-md-2">
                     <label for="proveedorId" class="form-label">Proveedor</label>
                     <select class="form-control form-control-sm" id="proveedorId"
                         onchange="limpiarError('proveedorId')">
@@ -144,14 +150,15 @@
                 <table class="table table-striped table-bordered table-hover text-center table-sm mb-0">
                     <thead class="table-header">
                         <tr>
-                            <th style="width: 12%;">Código</th>
-                            <th style="width: 25%;">Descripción</th>
-                            <th style="width: 8%;">Cantidad</th>
-                            <th style="width: 20%;">Proveedor</th>
-                            <th style="width: 10%;">Remito</th>
-                            <th style="width: 8%;">O.C.</th>
-                            <th style="width: 8%;">Pedido</th>
-                            <th style="width: 12%;">Fecha</th>
+                            <th style="width: 10%;">Código</th>
+                            <th style="width: 22%;">Descripción</th>
+                            <th style="width: 7%;">Cantidad</th>
+                            <th style="width: 8%;">Precio</th>
+                            <th style="width: 18%;">Proveedor</th>
+                            <th style="width: 9%;">Remito</th>
+                            <th style="width: 7%;">O.C.</th>
+                            <th style="width: 7%;">Pedido</th>
+                            <th style="width: 10%;">Fecha</th>
                             <th style="width: 7%;">Acción</th>
                         </tr>
                     </thead>
@@ -295,6 +302,7 @@
         function limpiarCampos() {
             document.getElementById("itemCodigo").value = "";
             document.getElementById("cantidadIngreso").value = "";
+            document.getElementById("precio").value = "";
             // Los demás campos se mantienen para facilitar la carga de múltiples items
         }
 
@@ -330,6 +338,7 @@
 
             var itemCodigo = document.getElementById("itemCodigo").value.trim();
             var cantidadIngreso = parseFloat(document.getElementById("cantidadIngreso").value);
+            var precio = parseFloat(document.getElementById("precio").value) || 0;
             var proveedorId = document.getElementById("proveedorId").value;
             var remito = document.getElementById("remito").value.trim();
             var ordenCompra = parseInt(document.getElementById("ordenCompra").value);
@@ -397,6 +406,7 @@
                 ingresos.push({
                     ItemCodigo: itemCodigoMayuscula,
                     CantidadIngreso: cantidadIngreso,
+                    Precio: precio,
                     ProveedorId: parseInt(proveedorId),
                     Remito: remito,
                     OrdenCompra: ordenCompra,
@@ -410,7 +420,7 @@
 
                 var listaIngresos = document.getElementById("listaIngresos");
                 var tr = document.createElement("tr");
-                tr.innerHTML = `<td>${itemCodigoMayuscula}</td><td>${descripcion}</td><td>${formatearNumero(parseFloat(cantidadIngreso))}</td><td>${proveedorText}</td><td>${remito}</td><td>${ordenCompra}</td><td>${pedido}</td><td>${fechaFormateada}</td><td class="text-center align-middle"><button class="btn btn-danger btn-sm" title="Borrar Fila" onclick="borrarFila(this)"><i class="fas fa-trash-alt"></i></button></td>`;
+                tr.innerHTML = `<td>${itemCodigoMayuscula}</td><td>${descripcion}</td><td>${formatearNumero(parseFloat(cantidadIngreso))}</td><td>${precio > 0 ? formatearNumero(precio) : '-'}</td><td>${proveedorText}</td><td>${remito}</td><td>${ordenCompra}</td><td>${pedido}</td><td>${fechaFormateada}</td><td class="text-center align-middle"><button class="btn btn-danger btn-sm" title="Borrar Fila" onclick="borrarFila(this)"><i class="fas fa-trash-alt"></i></button></td>`;
                 listaIngresos.appendChild(tr);
             });
         }
@@ -467,7 +477,8 @@
             }
             const ingresosDto = ingresos.map(i => ({ 
                 ItemCodigo: i.ItemCodigo, 
-                CantidadIngreso: i.CantidadIngreso, 
+                CantidadIngreso: i.CantidadIngreso,
+                Precio: i.Precio,
                 PersonalId: i.PersonalId, 
                 FechaRemito: i.FechaRemito, 
                 ItemId: i.ItemId,

@@ -333,6 +333,22 @@
             padding: 0.4rem 0.8rem;
             font-size: 0.9rem;
         }
+
+        /* Estilos para íconos de Crítico y Activo - mismos colores que los filtros */
+        .icono-critico {
+            color: #ffc107;  /* text-warning - amarillo/naranja como el filtro */
+            font-size: 1.1rem;
+        }
+
+        .icono-activo {
+            color: #198754;  /* text-success - verde como el filtro */
+            font-size: 1.1rem;
+        }
+
+        .icono-inactivo {
+            color: #dee2e6;  /* Gris claro */
+            font-size: 1.1rem;
+        }
     </style>
 
     @section Scripts {
@@ -601,8 +617,8 @@
                                                                                         <td>${item.cantidadEnPedidos !== null ? formatearNumero(parseFloat(item.cantidadEnPedidos)) : '0'}</td>
                                                                                         <td>${item.unidadDeMedidaAbreviatura || ''}</td>
                                                                                         <td>${item.precio !== null ? item.precio : ''}</td>
-                                                                                        <td><input type="checkbox" ${item.critico ? 'checked' : ''} disabled></td>
-                                                                                        <td><input type="checkbox" ${item.activo ? 'checked' : ''} disabled></td>
+                                                                                        <td>${item.critico ? '<i class="fas fa-exclamation-circle icono-critico" title="Crítico"></i>' : '<i class="far fa-circle icono-inactivo"></i>'}</td>
+                                                                                        <td>${item.activo ? '<i class="fas fa-check-circle icono-activo" title="Activo"></i>' : '<i class="far fa-circle icono-inactivo"></i>'}</td>
                                                                                         <td>${necesitaComprar ? '<i class="fas fa-shopping-cart text-danger" title="Necesita comprar"></i>' : '<span class="text-muted">-</span>'}</td>
                                                                                         <td class="text-center">
                                                                                             <button class="btn btn-sm btn-primary btn-editar" data-id="${item.id}" title="Editar ítem">
@@ -1019,11 +1035,20 @@
                     const familiaIds = $('#familiaSelect').val() || [];
                     const subFamiliaIds = $('#subfamiliaSelect').val() || [];
                     const descripcion = $('#descripcionItem').val();
+                    const comprar = $('#filtroComprar').is(':checked');
+                    const critico = $('#filtroCritico').is(':checked');
+                    const activo = $('#filtroActivo').is(':checked');
 
                     if (codigo) params.append('codigo', codigo);
                     familiaIds.forEach(v => params.append('familiaIds', v));
                     subFamiliaIds.forEach(v => params.append('subFamiliaIds', v));
                     if (descripcion) params.append('descripcion', descripcion);
+                    
+                    // Agregar filtros de checkboxes
+                    if (comprar) params.append('comprar', 'true');
+                    if (critico) params.append('critico', 'true');
+                    // Solo enviar activo si está marcado (true), si no está marcado no enviar nada
+                    if (activo) params.append('activo', 'true');
 
                     const url = '/Item/Exportar' + (params.toString() ? ('?' + params.toString()) : '');
                     window.open(url, '_blank');

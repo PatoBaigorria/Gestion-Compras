@@ -130,9 +130,39 @@ namespace Gestion_Compras.Controllers
 
                 if (itemEnPedido == null)
                 {
+                    // Buscar en qué otros pedidos pendientes está este item
+                    var pedidosConEsteItem = await context.Pedido
+                        .Where(p => p.ItemCodigo == itemCodigo && 
+                                   p.Estado == "PENDIENTE" &&
+                                   p.Recibido < p.Cantidad) // Solo pedidos con cantidad pendiente
+                        .Select(p => new {
+                            p.NumeroPedido,
+                            p.Cantidad,
+                            p.Recibido,
+                            Pendiente = p.Cantidad - p.Recibido
+                        })
+                        .ToListAsync();
+
+                    string mensajeError = $"ERROR: El item {itemCodigo} no pertenece al pedido N°{numeroPedido}.";
+
+                    // Si el item existe en otros pedidos, mostrarlos
+                    if (pedidosConEsteItem.Any())
+                    {
+                        mensajeError += $"\n\n✓ Este item SÍ está en los siguientes pedidos pendientes:";
+                        foreach (var pedidoConItem in pedidosConEsteItem)
+                        {
+                            mensajeError += $"\n• Pedido N°{pedidoConItem.NumeroPedido}:\n" +
+                                          $"  - Cantidad pendiente: {pedidoConItem.Pendiente}";
+                        }
+                    }
+                    else
+                    {
+                        mensajeError += $"\n\n⚠️ No hay pedidos pendientes con el item {itemCodigo}.";
+                    }
+
                     return Ok(new { 
                         esValido = false, 
-                        mensaje = $"El item {itemCodigo} no pertenece al pedido número {numeroPedido}.",
+                        mensaje = mensajeError,
                         cantidadDisponible = 0
                     });
                 }
@@ -154,11 +184,38 @@ namespace Gestion_Compras.Controllers
                 // Validar que la cantidad total (ya ingresada + nueva) no exceda la cantidad original del pedido
                 if (cantidadTotalDespuesDeIngreso > itemEnPedido.Cantidad)
                 {
+                    // Buscar otros pedidos pendientes con el mismo item
+                    var otrosPedidosPendientes = await context.Pedido
+                        .Where(p => p.ItemCodigo == itemCodigo && 
+                                   p.Estado == "PENDIENTE" && 
+                                   p.NumeroPedido != numeroPedido &&
+                                   p.Recibido < p.Cantidad) // Solo pedidos con cantidad pendiente
+                        .Select(p => new {
+                            p.NumeroPedido,
+                            p.Cantidad,
+                            p.Recibido,
+                            Pendiente = p.Cantidad - p.Recibido
+                        })
+                        .ToListAsync();
+
+                    string mensajeError = $"ERROR: No se puede ingresar {cantidadIngreso} unidades del item {itemCodigo}.\n\n" +
+                                         $"• Pedido N°{numeroPedido}:\n" +
+                                         $"  - Cantidad pendiente: {cantidadDisponible}";
+
+                    // Si hay otros pedidos pendientes con el mismo item, informarlos
+                    if (otrosPedidosPendientes.Any())
+                    {
+                        mensajeError += "\n\nOTROS PEDIDOS PENDIENTES CON ESTE ITEM:";
+                        foreach (var otroPedido in otrosPedidosPendientes)
+                        {
+                            mensajeError += $"\n• Pedido N°{otroPedido.NumeroPedido}:\n" +
+                                          $"  - Cantidad pendiente: {otroPedido.Pendiente}";
+                        }
+                    }
+
                     return Ok(new { 
                         esValido = false, 
-                        mensaje = $"ERROR: No se puede ingresar {cantidadIngreso} unidades del item {itemCodigo}.\n\n" +
-                                 $"• Cantidad del pedido: {itemEnPedido.Cantidad}\n" +
-                                 $"• Ya recibido: {cantidadYaIngresada}\n",
+                        mensaje = mensajeError,
                         cantidadDisponible = cantidadDisponible
                     });
                 }
@@ -179,9 +236,22 @@ namespace Gestion_Compras.Controllers
             }
         }
 
+        // DTO para recibir ingresos con precio (el precio no se guarda en Ingreso, solo actualiza Item)
+        public class IngresoConPrecioDto
+        {
+            public string ItemCodigo { get; set; }
+            public double CantidadIngreso { get; set; }
+            public double Precio { get; set; }
+            public int ProveedorId { get; set; }
+            public string Remito { get; set; }
+            public int OrdenCompra { get; set; }
+            public int PedidoId { get; set; }
+            public DateOnly FechaRemito { get; set; }
+        }
+
         // POST: /Ingreso/Create
         [HttpPost("Create")]
-        public async Task<IActionResult> Create([FromBody] List<Ingreso> ingresos)
+        public async Task<IActionResult> Create([FromBody] List<IngresoConPrecioDto> ingresosDto)
         {
             try
             {
@@ -192,30 +262,30 @@ namespace Gestion_Compras.Controllers
                     if (int.TryParse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value, out var uid))
                         usuarioId = uid;
                 }
-                foreach (var ingreso in ingresos)
+                foreach (var ingresoDto in ingresosDto)
                 {
-                    ingreso.ItemCodigo = ingreso.ItemCodigo?.ToUpper();
-                    Console.WriteLine($"Validando ingreso - ItemCodigo: {ingreso.ItemCodigo}, PedidoId: {ingreso.PedidoId}");
+                    var itemCodigo = ingresoDto.ItemCodigo?.ToUpper();
+                    Console.WriteLine($"Validando ingreso - ItemCodigo: {itemCodigo}, PedidoId: {ingresoDto.PedidoId}");
                     
                     // Verificar que el ítem existe
-                    var item = await context.Item.FirstOrDefaultAsync(i => i.Codigo == ingreso.ItemCodigo);
+                    var item = await context.Item.FirstOrDefaultAsync(i => i.Codigo == itemCodigo);
                     if (item == null)
                     {
-                        return BadRequest(new { error = $"El ítem con código {ingreso.ItemCodigo} no fue encontrado." });
+                        return BadRequest(new { error = $"El ítem con código {itemCodigo} no fue encontrado." });
                     }
 
                     Console.WriteLine($"Item encontrado - Id: {item.Id}, Codigo: {item.Codigo}");
 
                     // VALIDACIÓN CRÍTICA: Verificar que el ítem pertenece al pedido especificado
                     var pedido = await context.Pedido
-                        .FirstOrDefaultAsync(p => p.NumeroPedido == ingreso.PedidoId && 
-                                                 p.ItemCodigo == ingreso.ItemCodigo && 
+                        .FirstOrDefaultAsync(p => p.NumeroPedido == ingresoDto.PedidoId && 
+                                                 p.ItemCodigo == itemCodigo && 
                                                  p.Estado == "PENDIENTE");
 
                     if (pedido == null)
                     {
-                        Console.WriteLine($"ERROR: El ítem {ingreso.ItemCodigo} no pertenece al pedido {ingreso.PedidoId} o el pedido no existe/está completado");
-                        return BadRequest(new { error = $"El ítem {ingreso.ItemCodigo} no pertenece al pedido {ingreso.PedidoId} o el pedido no existe/está completado." });
+                        Console.WriteLine($"ERROR: El ítem {itemCodigo} no pertenece al pedido {ingresoDto.PedidoId} o el pedido no existe/está completado");
+                        return BadRequest(new { error = $"El ítem {itemCodigo} no pertenece al pedido {ingresoDto.PedidoId} o el pedido no existe/está completado." });
                     }
 
                     Console.WriteLine($"Pedido encontrado - Id: {pedido.Id}, NumeroPedido: {pedido.NumeroPedido}");
@@ -223,20 +293,27 @@ namespace Gestion_Compras.Controllers
                     // Guardar el stock anterior para el Kardex
                     double stockAnterior = item.Stock;
                     
-                    // Actualizar PedidoId con el Id real del pedido
-                    ingreso.PedidoId = pedido.Id;
-                    
-                    // Asignar ItemId para la foreign key
-                    ingreso.ItemId = item.Id;
+                    // Crear objeto Ingreso para guardar en BD (sin precio)
+                    var ingreso = new Ingreso
+                    {
+                        ItemCodigo = itemCodigo,
+                        ItemId = item.Id,
+                        CantidadIngreso = ingresoDto.CantidadIngreso,
+                        ProveedorId = ingresoDto.ProveedorId,
+                        Remito = ingresoDto.Remito,
+                        OrdenCompra = ingresoDto.OrdenCompra,
+                        PedidoId = pedido.Id,
+                        FechaRemito = ingresoDto.FechaRemito
+                    };
                     
                     // Actualizar cantidad recibida en el pedido
-                    pedido.Recibido += ingreso.CantidadIngreso;
+                    pedido.Recibido += ingresoDto.CantidadIngreso;
                     
                     // Disminuir CantidadEnPedidos por la cantidad ingresada
-                    item.CantidadEnPedidos -= (double)ingreso.CantidadIngreso;
+                    item.CantidadEnPedidos -= ingresoDto.CantidadIngreso;
                     if (item.CantidadEnPedidos < 0) item.CantidadEnPedidos = 0;
                     
-                    Console.WriteLine($"CantidadEnPedidos actualizada: {item.CantidadEnPedidos} (disminuyó en {ingreso.CantidadIngreso})");
+                    Console.WriteLine($"CantidadEnPedidos actualizada: {item.CantidadEnPedidos} (disminuyó en {ingresoDto.CantidadIngreso})");
                     
                     // Verificar si el pedido está completo
                     if (pedido.Recibido >= pedido.Cantidad)
@@ -246,7 +323,14 @@ namespace Gestion_Compras.Controllers
                     }
                     
                     // Actualizar stock del ítem
-                    item.Stock += ingreso.CantidadIngreso;
+                    item.Stock += ingresoDto.CantidadIngreso;
+                    
+                    // Actualizar precio del ítem si se proporciona un precio válido (desde el DTO)
+                    if (ingresoDto.Precio > 0)
+                    {
+                        item.Precio = ingresoDto.Precio;
+                        Console.WriteLine($"Precio actualizado: {item.Precio}");
+                    }
                     
                     // Crear registro de Kardex con propiedades correctas
                     var kardexRegistro = new Kardex

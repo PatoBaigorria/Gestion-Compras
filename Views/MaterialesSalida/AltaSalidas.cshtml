@@ -115,7 +115,7 @@
                 <div class="col-md-2">
                     <label for="fecha" class="form-label">Fecha Vale</label>
                     <input type="date" class="form-control form-control-sm" id="fecha"
-                        onchange="limpiarError('fecha'); hacerNoEditable('fecha')" />
+                        onchange="limpiarError('fecha')" />
                     <div id="fechaError" class="text-danger"></div>
                 </div>
                 <div class="col-md-2 d-flex align-items-end">
@@ -179,7 +179,6 @@
         }
 
         var salidas = [];
-        var fechaFijada = ""; // Variable para mantener la fecha fijada
 
         // Inicializar Select2 para el select de personal
         $(document).ready(function() {
@@ -242,21 +241,12 @@
             document.getElementById(campo + "Error").textContent = "";
         }
 
-        function hacerNoEditable(campo) {
-            var fechaInput = document.getElementById(campo);
-            if (fechaFijada === "") {
-                fechaFijada = fechaInput.value; // Fijar la fecha una vez
-                fechaInput.setAttribute("readonly", true);
-                fechaInput.style.backgroundColor = "#e9ecef"; // Cambiar el color de fondo a gris claro
-            }
-        }
-
         function limpiarCampos() {
             document.getElementById("itemCodigo").value = "";
             document.getElementById("cantidad").value = "";
             // Limpiar Select2 correctamente
             $('#personalId').val(null).trigger('change');
-            // No limpiar la fecha para mantenerla fija
+            // No limpiar la fecha para mantenerla (el usuario puede cambiarla si quiere)
         }
 
         function formatearFecha(fecha) {
@@ -378,9 +368,6 @@
                     // Limpiar la lista y resetear el formulario
                     salidas = [];
                     document.getElementById('listaSalidas').innerHTML = '';
-                    fechaFijada = '';
-                    document.getElementById('fecha').removeAttribute('readonly');
-                    document.getElementById('fecha').style.backgroundColor = '';
                     document.getElementById('fecha').value = '';
                     limpiarCampos();
                     

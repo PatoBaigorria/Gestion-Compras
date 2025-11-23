@@ -255,9 +255,16 @@ namespace Gestion_Compras.Controllers
         }
 
         [HttpGet("Exportar")]
-        public async Task<IActionResult> Exportar(string codigo = null, [FromQuery] List<int> familiaIds = null, [FromQuery] List<int> subFamiliaIds = null, string descripcion = null)
+        public async Task<IActionResult> Exportar(
+            string codigo = null, 
+            [FromQuery] List<int> familiaIds = null, 
+            [FromQuery] List<int> subFamiliaIds = null, 
+            string descripcion = null,
+            bool? comprar = null,
+            bool? critico = null,
+            bool? activo = null)
         {
-            // Usar el cache para exportar también
+            // Usar el cache para exportar tambin
             if (_itemsCache == null || (DateTime.Now - _lastCacheUpdate).TotalMinutes > 5)
             {
                 await RefreshCache(true);
@@ -283,6 +290,29 @@ namespace Gestion_Compras.Controllers
             if (!string.IsNullOrEmpty(descripcion))
             {
                 query = query.Where(i => i.Descripcion.Contains(descripcion, StringComparison.OrdinalIgnoreCase));
+            }
+
+            // Filtrar por activo
+            if (activo.HasValue)
+            {
+                query = query.Where(i => i.Activo == activo.Value);
+            }
+
+            // Filtrar por crtico
+            if (critico.HasValue && critico.Value)
+            {
+                query = query.Where(i => i.Critico);
+            }
+
+            // Filtrar por comprar (items que necesitan ser comprados)
+            if (comprar.HasValue && comprar.Value)
+            {
+                query = query.Where(i => {
+                    double stock = i.Stock;
+                    double pp = i.PuntoDePedido;
+                    double cantPed = i.CantidadEnPedidos;
+                    return (stock < pp) && ((stock + cantPed) < pp);
+                });
             }
 
             var items = query.ToList();
